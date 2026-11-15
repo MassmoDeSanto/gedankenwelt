@@ -1,0 +1,1263 @@
+/*
+ * Gestaltung „Nachtlabor, minimalistisch“ (KONZEPT.md, Abschnitt 6):
+ * ruhig, viel Raum, keine harten Rahmen, keine Schatten, keine Verläufe.
+ * Alle Farben stehen als Variablen oben; der helle Modus tauscht nur die Variablen aus.
+ */
+
+:root {
+  --hintergrund: #0f1117;
+  --flaeche: #181b24;
+  --erhoeht: #222633;
+  --chip: #2c3142;
+  --text: #e6e8ee;
+  --gedaempft: #8a90a2;
+  --meta: #6b7184;
+  --linie: rgba(255, 255, 255, 0.07);
+
+  /* Akzente mit fester Bedeutung */
+  --violett: #a99cf0; /* Gedanke des Tages, Gedankenwelt */
+  --tuerkis: #5dcaa5; /* To-dos */
+  --bernstein: #ef9f27; /* fällig, Erinnerung */
+  --blau: #85b7eb; /* angeheftet */
+  --rot: #e88c8c; /* Löschen */
+
+  --auf-violett: #17132e;
+  --treffer: rgba(169, 156, 240, 0.26);
+  --schleier: rgba(6, 7, 11, 0.62);
+
+  --schrift: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --kurz: 120ms;
+
+  color-scheme: dark;
+}
+
+:root[data-thema='hell'] {
+  --hintergrund: #f4f5f8;
+  --flaeche: #ffffff;
+  --erhoeht: #eaecf2;
+  --chip: #dde1ea;
+  --text: #1c1f29;
+  --gedaempft: #5b6173;
+  --meta: #80869a;
+  --linie: rgba(0, 0, 0, 0.09);
+
+  --violett: #6a5acd;
+  --tuerkis: #17866a;
+  --bernstein: #ad6805;
+  --blau: #2f76c2;
+  --rot: #c0453f;
+
+  --auf-violett: #ffffff;
+  --treffer: rgba(106, 90, 205, 0.2);
+  --schleier: rgba(28, 31, 41, 0.32);
+
+  color-scheme: light;
+}
+
+/* ───────── Grundlagen ───────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--hintergrund);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--hintergrund);
+  color: var(--text);
+  font-family: var(--schrift);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--violett);
+  outline-offset: 2px;
+}
+
+textarea:focus-visible,
+.suchfeld input:focus-visible,
+.aufgabe-neu:focus-visible {
+  outline: none;
+}
+
+::selection {
+  background: var(--treffer);
+}
+
+.seite {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 22px 22px 120px;
+  padding-left: max(22px, env(safe-area-inset-left));
+  padding-right: max(22px, env(safe-area-inset-right));
+}
+
+section {
+  margin-top: 16px;
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.meta {
+  color: var(--meta);
+}
+
+.gedaempft {
+  color: var(--gedaempft);
+}
+
+.bernstein {
+  color: var(--bernstein);
+}
+
+.etikett {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--meta);
+  margin-bottom: 10px;
+}
+
+.etikett.violett {
+  color: var(--violett);
+}
+.etikett.tuerkis {
+  color: var(--tuerkis);
+}
+.etikett.blau {
+  color: var(--blau);
+}
+.etikett.bernstein {
+  color: var(--bernstein);
+}
+
+.hinweis {
+  color: var(--gedaempft);
+  font-size: 14px;
+}
+
+.hinweis a {
+  color: var(--violett);
+}
+
+.hinweis.leer {
+  text-align: center;
+  padding: 36px 0 12px;
+}
+
+.hinweis.klein {
+  display: block;
+  font-size: 12.5px;
+  color: var(--meta);
+  margin-top: 2px;
+}
+
+.hinweis.mitte {
+  text-align: center;
+  margin-top: 28px;
+}
+
+/* ───────── Knöpfe ───────── */
+
+.symbolknopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--gedaempft);
+  transition:
+    background var(--kurz),
+    color var(--kurz);
+  flex: none;
+}
+
+.symbolknopf:hover,
+.symbolknopf.aktiv {
+  background: var(--erhoeht);
+  color: var(--text);
+}
+
+.symbolknopf.klein {
+  width: 32px;
+  height: 32px;
+}
+
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--erhoeht);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--kurz);
+  flex: none;
+}
+
+.knopf:hover {
+  background: var(--chip);
+}
+
+.knopf.haupt {
+  background: var(--violett);
+  color: var(--auf-violett);
+}
+
+.knopf.gefahr {
+  color: var(--rot);
+}
+
+.knopf:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.textknopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--gedaempft);
+  padding: 4px 0;
+  transition: color var(--kurz);
+}
+
+.textknopf:hover {
+  color: var(--text);
+}
+
+.segment {
+  display: inline-flex;
+  background: var(--chip);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+  max-width: 100%;
+}
+
+.segment button {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--gedaempft);
+  white-space: nowrap;
+  transition:
+    background var(--kurz),
+    color var(--kurz);
+}
+
+.segment button.gewaehlt {
+  background: var(--flaeche);
+  color: var(--text);
+}
+
+select,
+input[type='date'],
+input[type='time'] {
+  background: var(--chip);
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 13.5px;
+  min-height: 32px;
+}
+
+select:disabled,
+input:disabled {
+  opacity: 0.5;
+}
+
+/* ───────── Startseite ───────── */
+
+.startkopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--gedaempft);
+  margin-bottom: 14px;
+  min-height: 36px;
+}
+
+.suchfeld {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 8px 0 16px;
+  background: var(--flaeche);
+  border-radius: 14px;
+  color: var(--gedaempft);
+}
+
+.suchfeld > svg {
+  flex: none;
+}
+
+.suchfeld input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: none;
+  border: 0;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.suchfeld input::placeholder {
+  color: var(--meta);
+}
+
+.suchfeld input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.filter {
+  margin-top: 10px;
+  padding: 16px 18px;
+  background: var(--flaeche);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filter-zeile {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-zeile .etikett {
+  margin: 0;
+}
+
+.filter-zeile select,
+.filter-zeile .segment {
+  justify-self: start;
+  max-width: 100%;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--gedaempft);
+  font-size: 13px;
+  transition:
+    background var(--kurz),
+    color var(--kurz);
+}
+
+.chip.an {
+  background: var(--violett);
+  color: var(--auf-violett);
+}
+
+.datumsfilter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.trefferliste {
+  margin-top: 22px;
+}
+
+.treffer {
+  display: block;
+  padding: 12px 14px;
+  margin: 0 -14px;
+  border-radius: 12px;
+  transition: background var(--kurz);
+}
+
+.treffer:hover {
+  background: var(--flaeche);
+}
+
+.treffer-text {
+  font-size: 15.5px;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.treffer-text.erledigt {
+  color: var(--meta);
+  text-decoration: line-through;
+}
+
+.treffer .meta {
+  margin-top: 4px;
+}
+
+mark {
+  background: var(--treffer);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+  margin: 0 -2px;
+}
+
+.minikasten {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border-radius: 4px;
+  border: 1.5px solid var(--meta);
+  vertical-align: -1px;
+}
+
+.minikasten.an {
+  background: var(--tuerkis);
+  border-color: var(--tuerkis);
+}
+
+/* Karten: Gedanke des Tages, To-dos, Einstellungen */
+
+.karte {
+  background: var(--flaeche);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.kartenkopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kartenfuss {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.gedanke-text {
+  font-size: 16px;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.gedanke-text.gekuerzt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.herkunft {
+  display: block;
+  margin-top: 10px;
+  transition: color var(--kurz);
+}
+
+.herkunft:hover {
+  color: var(--gedaempft);
+}
+
+.aufgabenzeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+}
+
+.aufgabenzeile .kaestchen {
+  margin-top: 0;
+}
+
+.aufgabentext {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aufgabenzeile .meta {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aufgabe-neu {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  font-size: 15px;
+  padding: 0;
+}
+
+.aufgabe-neu::placeholder {
+  color: var(--meta);
+}
+
+.aufgabenpfad {
+  margin: -6px 0 6px 30px;
+}
+
+.weltknopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 22px 24px;
+  border-radius: 14px;
+  background: var(--violett);
+  color: var(--auf-violett);
+  transition: opacity var(--kurz);
+}
+
+.weltknopf:hover {
+  opacity: 0.92;
+}
+
+.weltknopf-titel {
+  display: block;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.weltknopf-unter {
+  display: block;
+  margin-top: 2px;
+  opacity: 0.72;
+}
+
+/* ───────── Kopfzeile der Unterseiten ───────── */
+
+.kopfzeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin: 0 0 18px -8px;
+}
+
+.kopfzeile-titel {
+  flex: 1;
+  min-width: 0;
+}
+
+.kopfzeile-rechts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pfad {
+  color: var(--meta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfad a {
+  transition: color var(--kurz);
+}
+
+.pfad a:hover {
+  color: var(--text);
+}
+
+.listentitel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+
+.punkt {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.punkt.blau {
+  background: var(--blau);
+}
+
+/* ───────── Kacheln ───────── */
+
+.kacheln {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.kacheln.gross {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.kachel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  background: var(--erhoeht);
+  min-width: 0;
+  transition: background var(--kurz);
+}
+
+a.kachel:hover,
+.kachel-kopf:hover,
+.unterkachel:hover {
+  background: var(--chip);
+}
+
+.kachel-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kachel.gross {
+  padding: 0;
+  gap: 0;
+}
+
+.kachel-kopf {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 15px 17px;
+  border-radius: 12px;
+  transition: background var(--kurz);
+}
+
+.kachel.gross .kachel-name {
+  font-size: 16px;
+}
+
+.unterkacheln {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
+.unterkachel {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 11px;
+  border-radius: 9px;
+  background: var(--flaeche);
+  font-size: 13.5px;
+  transition: background var(--kurz);
+}
+
+.unterkachel .mono {
+  font-size: 11px;
+}
+
+/* ───────── Schreibbereich ───────── */
+
+.schreibbereich {
+  margin-top: 26px;
+}
+
+.notiz {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 -12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+}
+
+.notiz.zieht {
+  background: var(--erhoeht);
+  z-index: 5;
+}
+
+.notiz.leuchtet {
+  animation: leuchten 1.8s ease-out;
+}
+
+@keyframes leuchten {
+  0%,
+  35% {
+    background: var(--treffer);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.griff {
+  position: absolute;
+  left: -10px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--meta);
+  opacity: 0;
+  cursor: grab;
+  touch-action: none;
+  transition: opacity var(--kurz);
+}
+
+.notiz:hover .griff,
+.notiz.aktiv .griff,
+.notiz.zieht .griff {
+  opacity: 1;
+}
+
+.kaestchen {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  border-radius: 6px;
+  border: 1.5px solid var(--meta);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition:
+    background var(--kurz),
+    border-color var(--kurz),
+    color var(--kurz);
+}
+
+.kaestchen:hover {
+  border-color: var(--tuerkis);
+  color: var(--tuerkis);
+}
+
+.kaestchen.an {
+  background: var(--tuerkis);
+  border-color: var(--tuerkis);
+  color: var(--hintergrund);
+}
+
+.kaestchen.leer {
+  border-style: dashed;
+}
+
+.notiz-inhalt {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Textfeld und Spiegel liegen deckungsgleich übereinander. Der Spiegel zeigt den
+   Text (mit farbigen Tags), das Textfeld darüber ist durchsichtig und nimmt die Eingabe an. */
+.textfeld {
+  position: relative;
+  display: grid;
+}
+
+.textfeld > .spiegel,
+.textfeld > textarea {
+  grid-area: 1 / 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--schrift);
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: normal;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.textfeld > .spiegel {
+  pointer-events: none;
+}
+
+.textfeld > textarea {
+  display: block;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+}
+
+.textfeld > textarea::placeholder {
+  color: var(--meta);
+}
+
+.textfeld > textarea::selection {
+  color: transparent;
+}
+
+.spiegel .tag {
+  color: var(--violett);
+}
+
+.notiz.erledigt .spiegel {
+  color: var(--meta);
+  text-decoration: line-through;
+}
+
+.notiz-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--meta);
+}
+
+.faellig {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gedaempft);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--chip);
+}
+
+.faellig.dringend {
+  color: var(--bernstein);
+}
+
+.notiz.erledigt .faellig {
+  color: var(--meta);
+}
+
+.notiz-aktionen {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--kurz);
+}
+
+.notiz:hover .notiz-aktionen,
+.notiz.aktiv .notiz-aktionen,
+.notiz-aktionen:focus-within {
+  opacity: 1;
+}
+
+.notiz-aktionen button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--meta);
+  font-family: var(--mono);
+  font-size: 14px;
+  transition:
+    background var(--kurz),
+    color var(--kurz);
+}
+
+.notiz-aktionen button:hover,
+.notiz-aktionen button.aktiv {
+  background: var(--erhoeht);
+  color: var(--text);
+}
+
+.notiz-aktionen button.an {
+  color: var(--tuerkis);
+}
+
+.tag-auswahl {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  min-width: 220px;
+  max-width: 100%;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--erhoeht);
+  border: 1px solid var(--linie);
+}
+
+.tag-auswahl button {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.tag-auswahl button.gewaehlt,
+.tag-auswahl button:hover {
+  background: var(--chip);
+}
+
+.tag-auswahl .anzahl {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--meta);
+}
+
+/* ───────── Menüs und Dialoge ───────── */
+
+.menue-huelle {
+  position: relative;
+  display: inline-flex;
+}
+
+.menue {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  min-width: 240px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--erhoeht);
+  border: 1px solid var(--linie);
+  font-family: var(--schrift);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.menue.links {
+  right: auto;
+  left: 0;
+}
+
+.menue-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  transition: background var(--kurz);
+}
+
+.menue-zeile:hover {
+  background: var(--chip);
+}
+
+.menue-zeile.gefahr {
+  color: var(--rot);
+}
+
+.menue-zeile svg {
+  color: var(--gedaempft);
+  flex: none;
+}
+
+.menue-zeile.gefahr svg {
+  color: inherit;
+}
+
+.menue-block {
+  padding: 10px 10px 8px;
+  margin: 4px 0;
+  border-top: 1px solid var(--linie);
+  border-bottom: 1px solid var(--linie);
+}
+
+.menue-block .etikett {
+  margin-bottom: 8px;
+}
+
+.faellig-menue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px;
+}
+
+.faellig-menue label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--gedaempft);
+}
+
+.faellig-menue label.gesperrt {
+  opacity: 0.6;
+}
+
+.faellig-menue .menue-zeile {
+  padding-left: 0;
+  color: var(--gedaempft);
+}
+
+.schnellwahl {
+  display: flex;
+  gap: 6px;
+}
+
+.schnellwahl button {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--chip);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.schnellwahl button:hover {
+  color: var(--bernstein);
+}
+
+.dialog-hintergrund {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 14vh 16px 16px;
+  background: var(--schleier);
+}
+
+.dialog {
+  width: min(440px, 100%);
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 20px;
+  border-radius: 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+
+.dialog form {
+  display: contents;
+}
+
+.dialog-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -4px -8px 12px 0;
+}
+
+.dialog-text {
+  color: var(--gedaempft);
+  line-height: 1.55;
+}
+
+.dialog-knoepfe {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.eingabe {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--erhoeht);
+  font-size: 16px;
+}
+
+.eingabe::placeholder {
+  color: var(--meta);
+}
+
+.listenwahl {
+  margin-top: 10px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.listenwahl-zeile {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background var(--kurz);
+}
+
+.listenwahl-zeile:hover {
+  background: var(--erhoeht);
+}
+
+/* ───────── Einstellungen und Papierkorb ───────── */
+
+.einstellung {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 6px 0;
+}
+
+.einstellung.link {
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: background var(--kurz);
+}
+
+.einstellung.link:hover {
+  background: var(--erhoeht);
+}
+
+.meldung {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--erhoeht);
+  font-size: 14px;
+  color: var(--tuerkis);
+}
+
+.korbzeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.korbzeile + .korbzeile {
+  border-top: 1px solid var(--linie);
+}
+
+.korbzeile > div {
+  min-width: 0;
+}
+
+.korbtext {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ───────── Schmale Bildschirme (Handy) ───────── */
+
+@media (max-width: 560px) {
+  .seite {
+    padding-top: 16px;
+  }
+
+  .filter-zeile {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .kacheln.gross {
+    grid-template-columns: 1fr;
+  }
+
+  /* Ohne Maus gibt es kein „Darüberfahren“: Aktionen der aktiven Notiz bleiben sichtbar. */
+  .einstellung {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
