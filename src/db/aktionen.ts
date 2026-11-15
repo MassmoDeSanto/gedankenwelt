@@ -1,0 +1,330 @@
+/**
+ * Alle Änderungen an den Daten laufen über diese Datei. Die Oberfläche ruft
+ * hier Funktionen auf („Notiz schreiben“, „Liste löschen“ …); die eigentlichen
+ * Regeln stehen in src/logik/.
+ */
+import {
+  bearbeiteNotiz,
+  erzeugeNotizen,
+  fuehreZusammen,
+  positionenZwischen,
+  type Bearbeitung,
+  type Umgebung,
+} from '../logik/absatz';
+import { kinderVon, mitNachfahren, naechstePosition } from '../logik/listen';
+import { ausDateien, zuDateien } from '../logik/markdown';
+import * as papierkorb from '../logik/papierkorb';
+import { leseTags } from '../logik/tags';
+import { waehleTagesgedanke } from '../logik/tagesgedanke';
+import { jetztStempel, lokalesDatum } from '../logik/zeit';
+import { entpacke, packe } from '../logik/zip';
+import {
+  EINGANG_ID,
+  STANDARD_EINSTELLUNGEN,
+  eingangsListe,
+  neueAufgabe,
+  type Faelligkeit,
+  type Liste,
+  type Notiz,
+  type TagesgedankeSchalter,
+} from '../modell/typen';
+import { neueId } from '../modell/ulid';
+import { beispieldaten } from './beispieldaten';
+import {
+  alsBestand,
+  entferneEndgueltig,
+  ersetzeAlles,
+  leseZustand,
+  sichereEinstellungen,
+  sichereListen,
+  sichereNotizen,
+  sichereVerlauf,
+} from './speicher';
+
+function umgebung(): Umgebung {
+  return { jetzt: jetztStempel(), neueId: () => neueId() };
+}
+
+// ───────────────────────── Notizen ─────────────────────────
+
+/** Aktive Notizen einer Liste in ihrer Reihenfolge. */
+export function notizenVon(liste_id: string): Notiz[] {
+  const reihe: Notiz[] = [];
+  for (const n of leseZustand().notizen.values()) if (n.liste_id === liste_id && !n.geloescht) reihe.push(n);
+  return reihe.sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1));
+}
+
+/** Sind zwei Positionen (fast) gleich geworden, wird die Liste einmal sauber durchnummeriert. */
+function pruefePositionen(liste_id: string): void {
+  const reihe = notizenVon(liste_id);
+  const zuEng = reihe.some((n, i) => i > 0 && n.position - reihe[i - 1].position < 1e-7);
+  if (zuEng) sichereNotizen(reihe.map((n, i) => ({ ...n, position: i + 1 })));
+}
+
+/**
+ * Übernimmt den getippten Text einer Notiz. Enthält er eine Trennung (≥ 2× Enter),
+ * entstehen darunter neue Notizen. Ist der Text leer, passiert nichts
+ * (`notiz` im Ergebnis ist dann null) – das Löschen entscheidet die Oberfläche.
+ */
+export function schreibeNotiz(id: string, roh: string): Bearbeitung | null {
+  const notiz = leseZustand().notizen.get(id);
+  if (!notiz) return null;
+  const reihe = notizenVon(notiz.liste_id);
+  const nach = reihe[reihe.findIndex((n) => n.id === id) + 1]?.position ?? null;
+
+  const ergebnis = bearbeiteNotiz(notiz, roh, nach, umgebung());
+  const geaendert = [...ergebnis.abgetrennt];
+  if (ergebnis.notiz && ergebnis.notiz !== notiz) geaendert.unshift(ergebnis.notiz);
+  sichereNotizen(geaendert);
+  if (ergebnis.abgetrennt.length > 0) pruefePositionen(notiz.liste_id);
+  return ergebnis;
+}
+
+/**
+ * Legt aus getipptem Text neue Notizen an (jeder Absatz eine).
+ *  - `nachId`: direkt unter dieser Notiz einfügen; ohne Angabe ans Ende der Liste.
+ *  - `ersteId`: ID für die erste neue Notiz (der Schreibbereich reserviert sie vorab).
+ */
+export function erstelleNotizen(
+  liste_id: string,
+  roh: string,
+  optionen: { nachId?: string | null; ersteId?: string; alsAufgabe?: boolean } = {},
+): Notiz[] {
+  const reihe = notizenVon(liste_id);
+  const index = optionen.nachId ? reihe.findIndex((n) => n.id === optionen.nachId) : -1;
+  const vor = index >= 0 ? reihe[index].position : (reihe[reihe.length - 1]?.position ?? null);
+  const nach = index >= 0 ? (reihe[index + 1]?.position ?? null) : null;
+
+  const basis = umgebung();
+  let reserviert = optionen.ersteId;
+  const umg: Umgebung = {
+    jetzt: basis.jetzt,
+    neueId: () => {
+      const id = reserviert ?? basis.neueId();
+      reserviert = undefined;
+      return id;
+    },
+  };
+
+  let neue = erzeugeNotizen(roh, liste_id, vor, nach, umg);
+  if (optionen.alsAufgabe) neue = neue.map((n) => (n.aufgabe ? n : { ...n, aufgabe: neueAufgabe() }));
+  sichereNotizen(neue);
+  if (neue.length > 0) pruefePositionen(liste_id);
+  return neue;
+}
+
+/**
+ * Verschiebt eine Notiz in den Papierkorb. `text` setzt vorher den Text zurück
+ * (wenn jemand eine Notiz leer getippt hat, landet der Text von vor dem Leeren im Papierkorb).
+ */
+export function loescheNotiz(id: string, text?: string): void {
+  const notiz = leseZustand().notizen.get(id);
+  if (!notiz || notiz.geloescht) return;
+  const jetzt = jetztStempel();
+  const inhalt = text ?? notiz.text;
+  sichereNotizen([{ ...notiz, text: inhalt, tags: leseTags(inhalt), geloescht: jetzt, geaendert: jetzt }]);
+}
+
+/** Führt eine Notiz mit der darüber zusammen. Gibt die obere zurück (oder null, wenn es keine gibt). */
+export function fuehreMitObererZusammen(untereId: string): { obere: Notiz; nahtstelle: number } | null {
+  const untere = leseZustand().notizen.get(untereId);
+  if (!untere) return null;
+  const reihe = notizenVon(untere.liste_id);
+  const obere = reihe[reihe.findIndex((n) => n.id === untereId) - 1];
+  if (!obere) return null;
+  const ergebnis = fuehreZusammen(obere, untere, umgebung());
+  sichereNotizen([ergebnis.obere, ergebnis.untere]);
+  return { obere: ergebnis.obere, nahtstelle: obere.text.length };
+}
+
+function aendereNotiz(id: string, aendern: (n: Notiz, jetzt: string) => Notiz | null): void {
+  const notiz = leseZustand().notizen.get(id);
+  if (!notiz) return;
+  const jetzt = jetztStempel();
+  const neu = aendern(notiz, jetzt);
+  if (neu) sichereNotizen([{ ...neu, geaendert: jetzt }]);
+}
+
+/** Macht eine Notiz zur Aufgabe oder wieder zur normalen Notiz. */
+export function setzeAufgabe(id: string, istAufgabe: boolean): void {
+  aendereNotiz(id, (n) => {
+    if (istAufgabe === !!n.aufgabe) return null;
+    return { ...n, aufgabe: istAufgabe ? neueAufgabe() : null };
+  });
+}
+
+export function setzeErledigt(id: string, erledigt: boolean): void {
+  aendereNotiz(id, (n, jetzt) =>
+    n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, erledigt, erledigt_am: erledigt ? jetzt : null } } : null,
+  );
+}
+
+export function setzeFaellig(id: string, faellig: Faelligkeit | null): void {
+  aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, faellig } } : null));
+}
+
+/** Verschiebt eine Notiz ans Ende einer anderen Liste. */
+export function verschiebeNotiz(id: string, liste_id: string): void {
+  aendereNotiz(id, (n) => {
+    if (n.liste_id === liste_id) return null;
+    const ziel = notizenVon(liste_id);
+    return { ...n, liste_id, position: (ziel[ziel.length - 1]?.position ?? 0) + 1 };
+  });
+}
+
+/** Sortiert eine Notiz um. `reihenfolge` sind die IDs der Liste in der neuen Reihenfolge. */
+export function ordneNotiz(id: string, reihenfolge: string[]): void {
+  const notizen = leseZustand().notizen;
+  const index = reihenfolge.indexOf(id);
+  const notiz = notizen.get(id);
+  if (index < 0 || !notiz) return;
+  const vor = notizen.get(reihenfolge[index - 1])?.position ?? null;
+  const nach = notizen.get(reihenfolge[index + 1])?.position ?? null;
+  const [position] = positionenZwischen(vor, nach, 1);
+  aendereNotiz(id, (n) => ({ ...n, position }));
+  pruefePositionen(notiz.liste_id);
+}
+
+// ───────────────────────── Listen ─────────────────────────
+
+export function erstelleListe(name: string, eltern_id: string | null): Liste | null {
+  const sauber = name.trim();
+  if (!sauber) return null;
+  const jetzt = jetztStempel();
+  const liste: Liste = {
+    id: neueId(),
+    name: sauber,
+    eltern_id,
+    angeheftet: false,
+    tagesgedanke: 'erben',
+    position: naechstePosition(kinderVon(eltern_id, leseZustand().listen)),
+    erstellt: jetzt,
+    geaendert: jetzt,
+    geloescht: null,
+  };
+  sichereListen([liste]);
+  return liste;
+}
+
+function aendereListe(id: string, teil: Partial<Liste>): void {
+  const liste = leseZustand().listen.get(id);
+  if (liste) sichereListen([{ ...liste, ...teil, geaendert: jetztStempel() }]);
+}
+
+export function benenneListeUm(id: string, name: string): void {
+  if (id !== EINGANG_ID && name.trim()) aendereListe(id, { name: name.trim() });
+}
+
+export function setzeAngeheftet(id: string, angeheftet: boolean): void {
+  aendereListe(id, { angeheftet });
+}
+
+export function setzeTagesgedanke(id: string, tagesgedanke: TagesgedankeSchalter): void {
+  aendereListe(id, { tagesgedanke });
+}
+
+/** Wohin darf eine Liste verschoben werden? Nicht in sich selbst oder ihre eigenen Unterlisten. */
+export function darfVerschieben(id: string, eltern_id: string | null): boolean {
+  if (id === EINGANG_ID) return false;
+  return eltern_id === null || !mitNachfahren(id, leseZustand().listen).has(eltern_id);
+}
+
+export function verschiebeListe(id: string, eltern_id: string | null): void {
+  const listen = leseZustand().listen;
+  if (!darfVerschieben(id, eltern_id) || listen.get(id)?.eltern_id === eltern_id) return;
+  aendereListe(id, { eltern_id, position: naechstePosition(kinderVon(eltern_id, listen)) });
+}
+
+export function loescheListe(id: string): void {
+  const z = leseZustand();
+  const aenderung = papierkorb.loescheListe(id, z.listen, z.notizen.values(), jetztStempel());
+  sichereListen(aenderung.listen);
+  sichereNotizen(aenderung.notizen);
+}
+
+// ───────────────────────── Papierkorb ─────────────────────────
+
+export function stelleListeWiederHer(id: string): void {
+  const z = leseZustand();
+  const aenderung = papierkorb.stelleListeWiederHer(id, z.listen, z.notizen.values(), jetztStempel());
+  sichereListen(aenderung.listen);
+  sichereNotizen(aenderung.notizen);
+}
+
+export function stelleNotizWiederHer(id: string): void {
+  const z = leseZustand();
+  const notiz = z.notizen.get(id);
+  if (!notiz?.geloescht) return;
+  const wieder = papierkorb.stelleNotizWiederHer(notiz, z.listen, jetztStempel());
+  const ziel = notizenVon(wieder.liste_id);
+  // Ist ihre alte Stelle inzwischen belegt oder die Liste eine andere, kommt sie ans Ende.
+  const belegt = ziel.some((n) => n.position === wieder.position);
+  sichereNotizen([
+    wieder.liste_id !== notiz.liste_id || belegt
+      ? { ...wieder, position: (ziel[ziel.length - 1]?.position ?? 0) + 1 }
+      : wieder,
+  ]);
+}
+
+export function leerePapierkorb(): void {
+  const z = leseZustand();
+  entferneEndgueltig(
+    [...z.notizen.values()].filter((n) => n.geloescht).map((n) => n.id),
+    [...z.listen.values()].filter((l) => l.geloescht).map((l) => l.id),
+  );
+}
+
+// ───────────────────────── Einstellungen und Gedanke des Tages ─────────────────────────
+
+export function setzeThema(thema: 'dunkel' | 'hell'): void {
+  sichereEinstellungen({ ...leseZustand().einstellungen, thema });
+}
+
+/** Der Gedanke für heute. Merkt sich die Wahl, damit sie den ganzen Tag gleich bleibt. */
+export function gedankeDesTages(): Notiz | null {
+  const z = leseZustand();
+  const ergebnis = waehleTagesgedanke(z.notizen.values(), z.listen, z.verlauf, lokalesDatum());
+  if (ergebnis.verlauf !== z.verlauf) sichereVerlauf(ergebnis.verlauf);
+  return ergebnis.notiz;
+}
+
+// ───────────────────────── Export, Import, Beispieldaten ─────────────────────────
+
+/** Alle Daten als ZIP mit Markdown-Dateien. */
+export function exportiereZip(): Uint8Array {
+  return packe(zuDateien(alsBestand()));
+}
+
+/** Ersetzt alle Daten durch den Inhalt eines ZIP-Exports. Gibt die Zahl der Listen und Notizen zurück. */
+export async function importiereZip(zip: Uint8Array): Promise<{ listen: number; notizen: number }> {
+  const dateien = entpacke(zip);
+  if (![...dateien.keys()].some((pfad) => pfad.endsWith('.md'))) {
+    throw new Error('In der ZIP-Datei wurden keine Markdown-Dateien gefunden.');
+  }
+  const bestand = ausDateien(dateien, umgebung());
+  await ersetzeAlles(bestand);
+  return {
+    listen: bestand.listen.filter((l) => !l.geloescht).length,
+    notizen: bestand.notizen.filter((n) => !n.geloescht).length,
+  };
+}
+
+/** Fügt Beispiel-Listen und -Notizen zu den vorhandenen Daten hinzu. */
+export function ladeBeispieldaten(): void {
+  const z = leseZustand();
+  const start = naechstePosition(kinderVon(null, z.listen));
+  const eingang = notizenVon(EINGANG_ID);
+  const daten = beispieldaten(new Date(), () => neueId(), start, eingang[eingang.length - 1]?.position ?? 0);
+  sichereListen(daten.listen);
+  sichereNotizen(daten.notizen);
+}
+
+/** Löscht wirklich alles (auch den Papierkorb) und beginnt mit einem leeren Eingang. */
+export async function loescheAlles(): Promise<void> {
+  await ersetzeAlles({
+    listen: [eingangsListe(jetztStempel())],
+    notizen: [],
+    einstellungen: { ...STANDARD_EINSTELLUNGEN, thema: leseZustand().einstellungen.thema },
+    tagesgedanke_verlauf: [],
+  });
+}
