@@ -58,7 +58,8 @@ export function notizenVon(liste_id: string): Notiz[] {
 function pruefePositionen(liste_id: string): void {
   const reihe = notizenVon(liste_id);
   const zuEng = reihe.some((n, i) => i > 0 && n.position - reihe[i - 1].position < 1e-7);
-  if (zuEng) sichereNotizen(reihe.map((n, i) => ({ ...n, position: i + 1 })));
+  const jetzt = jetztStempel();
+  if (zuEng) sichereNotizen(reihe.map((n, i) => ({ ...n, position: i + 1, geaendert: jetzt })));
 }
 
 /**
@@ -277,7 +278,7 @@ export function leerePapierkorb(): void {
 // ───────────────────────── Einstellungen und Gedanke des Tages ─────────────────────────
 
 export function setzeThema(thema: 'dunkel' | 'hell'): void {
-  sichereEinstellungen({ ...leseZustand().einstellungen, thema });
+  sichereEinstellungen({ ...leseZustand().einstellungen, thema, geaendert: jetztStempel() });
 }
 
 /** Der Gedanke für heute. Merkt sich die Wahl, damit sie den ganzen Tag gleich bleibt. */

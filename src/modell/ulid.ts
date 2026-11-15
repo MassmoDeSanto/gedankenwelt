@@ -42,3 +42,25 @@ export function neueId(zeit: number = Date.now()): string {
 export function istUlid(wert: string): boolean {
   return /^[0-9A-HJKMNP-TV-Z]{26}$/.test(wert);
 }
+
+/**
+ * Macht aus einem Text immer dieselbe ID (26 gültige Zeichen).
+ * Gebraucht für Absätze, die jemand von Hand in Drive geschrieben hat: Sie haben
+ * noch keine ID, sollen aber bei jedem Einlesen als dieselbe Notiz erkannt werden.
+ */
+export function festeId(hinweis: string): string {
+  let id = '';
+  for (let stelle = 0; stelle < 26; stelle++) {
+    let h = 0x811c9dc5 ^ (stelle * 0x9e3779b1);
+    for (let i = 0; i < hinweis.length; i++) {
+      h ^= hinweis.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    h ^= h >>> 15;
+    h = Math.imul(h, 0x2c1b3c6d);
+    h ^= h >>> 12;
+    // Das erste Zeichen einer ULID darf höchstens „7“ sein.
+    id += ALPHABET[(h >>> 0) % (stelle === 0 ? 8 : 32)];
+  }
+  return id;
+}

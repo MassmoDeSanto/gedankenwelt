@@ -13,7 +13,11 @@ import { leseTags } from './tags';
 /** Was eine Funktion von außen braucht: die aktuelle Zeit und einen ID-Erzeuger. */
 export interface Umgebung {
   jetzt: Zeitstempel;
-  neueId: () => string;
+  /**
+   * Erzeugt eine neue ID. Der Hinweis beschreibt, wofür sie ist. Der Abgleich nutzt ihn,
+   * damit dieselbe von Hand geschriebene Stelle in Drive immer dieselbe ID bekommt.
+   */
+  neueId: (hinweis?: string) => string;
 }
 
 /** Eine Trennung: Zeilenumbruch, dann mindestens eine (bis auf Leerzeichen) leere Zeile. */

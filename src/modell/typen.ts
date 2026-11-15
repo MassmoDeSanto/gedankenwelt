@@ -67,6 +67,8 @@ export const EINGANG_NAME = 'Eingang';
 
 export interface Einstellungen {
   thema: 'dunkel' | 'hell';
+  /** Wann die Einstellungen zuletzt geändert wurden (für den Abgleich: die neuere Fassung gewinnt). */
+  geaendert?: Zeitstempel;
 }
 
 /** Welche Notiz an welchem Kalendertag „Gedanke des Tages“ war. */

@@ -120,6 +120,7 @@ describe('Markdown-Format', () => {
         '---',
         'id: 01LISTE0000000000000GE1D01',
         'name: Monetarisierung',
+        'eltern: 01LISTE0000000000000REJSE1',
         'angeheftet: false',
         'tagesgedanke: erben',
         'position: 1',

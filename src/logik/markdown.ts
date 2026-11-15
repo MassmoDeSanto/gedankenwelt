@@ -76,6 +76,8 @@ function schreibeKopf(liste: Liste): string {
     '---',
     `id: ${liste.id}`,
     `name: ${kopfText(liste.name)}`,
+    // Die Elternliste steht ausdrücklich hier. Der Ordner, in dem die Datei liegt, ist nur die Darstellung davon.
+    `eltern: ${liste.eltern_id ?? '-'}`,
     `angeheftet: ${liste.angeheftet}`,
     `tagesgedanke: ${liste.tagesgedanke}`,
     `position: ${liste.position}`,
@@ -116,6 +118,14 @@ function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
 }
 
 export function zuDateien(bestand: Datenbestand): Dateien {
+  return zuDateienMitVerzeichnis(bestand).dateien;
+}
+
+/** Wie `zuDateien`, liefert aber zusätzlich, welche Liste in welcher Datei steht. */
+export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
+  dateien: Dateien;
+  verzeichnis: { id: string; pfad: string }[];
+} {
   const dateien: Dateien = new Map();
   const aktiveListen = bestand.listen.filter((l) => !l.geloescht);
   const aktiveIds = new Set(aktiveListen.map((l) => l.id));
@@ -171,7 +181,7 @@ export function zuDateien(bestand: Datenbestand): Dateien {
   };
   dateien.set(META_DATEI, JSON.stringify(meta, null, 2) + '\n');
 
-  return dateien;
+  return { dateien, verzeichnis };
 }
 
 // ───────────────────────── Lesen: Dateien → Datenbestand ─────────────────────────
@@ -197,6 +207,11 @@ function leseKopf(inhalt: string): { felder: Map<string, string>; rumpf: string 
     felder.set(zeile.slice(0, trenner).trim(), wert);
   }
   return { felder, rumpf: text.slice(ende + 4) };
+}
+
+/** Der Inhalt einer Listendatei ohne den Kopf zwischen den „---“-Zeilen. */
+export function ohneDateikopf(inhalt: string): string {
+  return leseKopf(inhalt).rumpf;
 }
 
 const META_ZEILE = /^<!--\s+(id:.+?)\s+-->$/;
@@ -254,6 +269,13 @@ function leseWiederholung(wert: string | undefined): Wiederholung | null {
 function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Notiz[] {
   const roh = leseRumpf(rumpf);
   const allePositionen = roh.every((r) => r.meta && Number.isFinite(Number(r.meta.get('pos'))));
+  /** Wie oft derselbe Text ohne Metadaten in dieser Datei schon vorkam (für eindeutige Hinweise) */
+  const gleicheTexte = new Map<string, number>();
+  const hinweis = (text: string) => {
+    const n = gleicheTexte.get(text) ?? 0;
+    gleicheTexte.set(text, n + 1);
+    return `notiz|${liste_id ?? '_papierkorb'}|${n}|${text}`;
+  };
 
   return roh.map((r, index) => {
     const meta = r.meta ?? new Map<string, string>();
@@ -274,7 +296,7 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
     if (liste_id === null) geloescht = r.meta ? (meta.get('geloescht') ?? null) : umg.jetzt;
 
     return {
-      id: meta.get('id') ?? umg.neueId(),
+      id: meta.get('id') ?? umg.neueId(hinweis(r.text)),
       text,
       liste_id: liste_id ?? meta.get('liste') ?? EINGANG_ID,
       position: allePositionen ? Number(meta.get('pos')) : index + 1,
@@ -292,17 +314,27 @@ function istSchalter(wert: string | undefined): wert is TagesgedankeSchalter {
   return wert === 'an' || wert === 'aus' || wert === 'erben';
 }
 
+/** Was beim Lesen nebenbei festgehalten wird: welche Datei und welcher Ordner zu welcher Liste gehört. */
+export interface LeseProtokoll {
+  /** Pfad einer Listendatei → ID der Liste */
+  listeJePfad: Map<string, string>;
+  /** Pfad eines Ordners → ID der Liste, deren Unterlisten darin liegen */
+  ordnerJePfad: Map<string, string>;
+}
+
 /**
  * Baut den ganzen Datenbestand aus den Dateien neu auf.
  * Von Hand ergänzte Absätze ohne Kommentar bekommen eine neue ID und das aktuelle Datum.
  */
-export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
+export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProtokoll): Datenbestand {
   const listen: Liste[] = [];
   const notizen: Notiz[] = [];
   /** Ordner einer Liste mit Unterlisten → ihre ID */
   const ordnerZuId = new Map<string, string>();
   /** Liste → Ordner, in dem sie liegt ('' = oberste Ebene) */
   const elternOrdner = new Map<string, string>();
+  /** Liste → Elternliste laut Dateikopf (null = oberste Ebene) */
+  const angegebeneEltern = new Map<string, string | null>();
 
   for (const [pfad, inhalt] of dateien) {
     const teile = pfad.split('/');
@@ -319,7 +351,7 @@ export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
     const schalter = felder.get('tagesgedanke');
     const position = Number(felder.get('position'));
     const liste: Liste = {
-      id: felder.get('id') || umg.neueId(),
+      id: felder.get('id') || umg.neueId(`liste|${pfad}`),
       name: felder.get('name') || (istOrdnerListe ? teile[teile.length - 1] : datei.slice(0, -3)),
       eltern_id: null,
       angeheftet: felder.get('angeheftet') === 'true',
@@ -330,6 +362,9 @@ export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
       geloescht: null,
     };
     listen.push(liste);
+    protokoll?.listeJePfad.set(pfad, liste.id);
+    const eltern = felder.get('eltern');
+    if (eltern !== undefined) angegebeneEltern.set(liste.id, eltern === '-' || eltern === '' ? null : eltern);
     if (istOrdnerListe) {
       ordnerZuId.set(ordner, liste.id);
       elternOrdner.set(liste.id, teile.slice(0, -1).join('/'));
@@ -340,8 +375,11 @@ export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
   }
 
   // Ordner ohne eigene _liste.md (z. B. von Hand in Drive angelegt) bekommen eine leere Liste.
+  // Nur nötig für Dateien, deren Elternliste nicht im Kopf steht – sonst ist der Ordner bloße Darstellung
+  // (und darf z. B. während eines unterbrochenen Abgleichs vorübergehend „falsch“ sein).
   const fehlend = new Set<string>();
-  for (const ordner of elternOrdner.values()) {
+  for (const [liste_id, ordner] of elternOrdner) {
+    if (angegebeneEltern.has(liste_id)) continue;
     const teile = ordner.split('/');
     for (let tiefe = teile.length; tiefe > 0; tiefe--) {
       const teilPfad = teile.slice(0, tiefe).join('/');
@@ -351,7 +389,7 @@ export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
   for (const ordner of [...fehlend].sort()) {
     const teile = ordner.split('/');
     const liste: Liste = {
-      id: umg.neueId(),
+      id: umg.neueId(`ordner|${ordner}`),
       name: teile[teile.length - 1],
       eltern_id: null,
       angeheftet: false,
@@ -366,7 +404,15 @@ export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
     elternOrdner.set(liste.id, teile.slice(0, -1).join('/'));
   }
 
+  if (protokoll) for (const [ordner, id] of ordnerZuId) protokoll.ordnerJePfad.set(ordner, id);
+
   for (const liste of listen) {
+    // Steht die Elternliste im Dateikopf, gilt sie. Sonst (von Hand angelegte Datei) zählt der Ordner.
+    const angegeben = angegebeneEltern.get(liste.id);
+    if (angegeben !== undefined) {
+      liste.eltern_id = angegeben;
+      continue;
+    }
     const ordner = elternOrdner.get(liste.id) ?? '';
     liste.eltern_id = ordner ? (ordnerZuId.get(ordner) ?? null) : null;
   }
@@ -384,6 +430,7 @@ export function ausDateien(dateien: Dateien, umg: Umgebung): Datenbestand {
       const meta = JSON.parse(metaText);
       if (meta.einstellungen?.thema === 'hell' || meta.einstellungen?.thema === 'dunkel') {
         einstellungen = { thema: meta.einstellungen.thema };
+        if (typeof meta.einstellungen.geaendert === 'string') einstellungen.geaendert = meta.einstellungen.geaendert;
       }
       if (Array.isArray(meta.tagesgedanke_verlauf)) {
         tagesgedanke_verlauf = meta.tagesgedanke_verlauf
