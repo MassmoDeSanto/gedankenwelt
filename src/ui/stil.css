@@ -439,14 +439,18 @@ input:disabled {
   background: var(--flaeche);
 }
 
+.treffer-zeile {
+  display: flex;
+  align-items: baseline;
+}
+
 .treffer-text {
+  flex: 1;
+  min-width: 0;
   font-size: 15.5px;
   line-height: 1.55;
-  white-space: pre-line;
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
+  max-height: calc(1.55em * 4);
   overflow: hidden;
 }
 
@@ -506,14 +510,11 @@ mark {
 .gedanke-text {
   font-size: 16px;
   line-height: 1.6;
-  white-space: pre-line;
   overflow-wrap: anywhere;
 }
 
 .gedanke-text.gekuerzt {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  max-height: calc(1.6em * 3);
   overflow: hidden;
 }
 
@@ -852,8 +853,14 @@ a.kachel:hover,
   word-break: normal;
 }
 
+/* Der Spiegel liegt über dem Textfeld, lässt Klicks aber durch – außer auf Links. */
 .textfeld > .spiegel {
+  z-index: 1;
   pointer-events: none;
+}
+
+.textfeld > .spiegel a {
+  pointer-events: auto;
 }
 
 .textfeld > textarea {
@@ -875,8 +882,46 @@ a.kachel:hover,
   color: transparent;
 }
 
-.spiegel .tag {
+.tag {
   color: var(--violett);
+}
+
+/* ───────── Markdown light in der Anzeige ───────── */
+
+.md strong {
+  font-weight: 650;
+}
+
+.md code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--chip);
+}
+
+.md a,
+.md-link {
+  text-decoration: underline;
+  text-decoration-color: var(--meta);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.md a:hover {
+  text-decoration-color: var(--text);
+}
+
+.md-punkt {
+  position: relative;
+  padding-left: 1.2em;
+}
+
+.md-punkt::before {
+  content: '•';
+  position: absolute;
+  left: 0.2em;
+  color: var(--meta);
 }
 
 .notiz.erledigt .spiegel {

@@ -76,7 +76,7 @@ Tests sind kleine Programme, die automatisch prüfen, ob die wichtigen Regeln no
 npm test
 ```
 
-Am Ende sollte stehen: `Test Files  6 passed (6)` und `Tests  68 passed (68)`.
+Am Ende sollte stehen: `Test Files  7 passed (7)` und `Tests  79 passed (79)`.
 
 **Typen prüfen.** Kontrolliert, ob im Code alles zusammenpasst, ohne ihn auszuführen. Keine Ausgabe heißt: alles in Ordnung.
 
@@ -111,6 +111,7 @@ npm run preview
 | Pfeil hoch / runter am Rand | zur Notiz davor / danach |
 | `#` | Tag-Dropdown (Pfeiltasten, Enter wählt, Esc schließt) |
 | `[ ] ` am Anfang | macht die Notiz zur Aufgabe, `[x] ` zu einer erledigten |
+| `**fett**`, `*kursiv*`, `` `Code` ``, `- Punkt`, `[Text](Adresse)` | wird schön dargestellt, sobald du die Notiz verlässt |
 
 Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen rechts unter dem Text kleine Knöpfe: Tag einfügen, Aufgabe an/aus, Fälligkeit, Verschieben nach …, Papierkorb. Links erscheint ein Griff aus sechs Punkten zum Umsortieren per Ziehen.
 
@@ -139,7 +140,8 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 - Markdown-Format als „Export als ZIP“ und „Import aus ZIP“
 - Beispieldaten
 - PWA-Grundgerüst (Offline-Zwischenspeicher wird beim Bauen erzeugt)
-- 68 automatische Tests
+- Markdown light in der Anzeige: `**fett**`, `*kursiv*`, `` `Code` ``, Links und Aufzählungen mit `-`. Beim Bearbeiten sieht man den Rohtext.
+- 79 automatische Tests
 
 ### Geprüft und nicht geprüft
 
@@ -153,7 +155,6 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 - Import aus Apple Notizen – Phase 4
 - `[[ ]]`-Links und KI – später
 - Listen lassen sich noch nicht per Ziehen umsortieren (nur Notizen). Neue Listen kommen ans Ende.
-- „Markdown light“ wird nicht umgewandelt dargestellt: `**fett**` bleibt als Text stehen. Nur Tags werden eingefärbt.
 - Das App-Symbol gibt es nur als SVG. Das iPhone braucht zusätzlich PNG-Dateien – Phase 2.
 - Nach 30 Tagen wird Gelöschtes wirklich entfernt. Für den Drive-Abgleich muss Phase 2 klären, wie ein zweites Gerät davon erfährt.
 - `npm install` meldet 6 Sicherheitshinweise (2 niedrig, 4 mittel). Sie betreffen nur Werkzeuge, die beim Bauen laufen (über `vite-plugin-pwa`), nicht die App im Browser: `npm audit --omit=dev` meldet 0. Nicht behoben, weil die angebotene Korrektur eine ältere Version des Werkzeugs erzwingen würde.

@@ -4,11 +4,12 @@ import { erstelleNotizen, gedankeDesTages, setzeErledigt } from '../db/aktionen'
 import { suchindex, useZustand } from '../db/speicher';
 import { aufgabenZusammenfassung, gruppiereAufgaben, offeneAufgaben } from '../logik/aufgaben';
 import { kinderVon, pfadText } from '../logik/listen';
-import { LEERER_FILTER, filterAktiv, markiere, type SuchFilter, type Treffer } from '../logik/suche';
+import { LEERER_FILTER, filterAktiv, type SuchFilter, type Treffer } from '../logik/suche';
 import { tagHaeufigkeit } from '../logik/tags';
 import { faelligDatum, formatFaellig, formatKopfdatum, formatStempel, lokalesDatum } from '../logik/zeit';
 import { EINGANG_ID, type Notiz } from '../modell/typen';
 import { Segment, klassen, useListenBaum } from './Bausteine';
+import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { adresse } from './router';
 import { Haken, Kreuz, Lupe, PfeilRechts, Plus, Trichter, Zahnrad } from './Symbole';
 import { zuletztGeoeffnet } from './zuletzt';
@@ -194,9 +195,11 @@ function Trefferliste({ treffer }: { treffer: Treffer[] }) {
       </div>
       {treffer.map(({ notiz, terme }) => (
         <a key={notiz.id} className="treffer" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
-          <div className={klassen('treffer-text', notiz.aufgabe?.erledigt && 'erledigt')}>
+          <div className="treffer-zeile">
             {notiz.aufgabe && <span className={klassen('minikasten', notiz.aufgabe.erledigt && 'an')} />}
-            {markiere(notiz.text, terme).map((a, i) => (a.treffer ? <mark key={i}>{a.text}</mark> : a.text))}
+            <div className={klassen('treffer-text', notiz.aufgabe?.erledigt && 'erledigt')}>
+              <MarkdownAnzeige text={notiz.text} terme={terme} ohneLinks />
+            </div>
           </div>
           <div className="mono meta">
             {pfadText(notiz.liste_id, z.listen)} · {formatStempel(notiz.erstellt, heute)}
@@ -215,7 +218,7 @@ function TagesgedankeKarte() {
   const notiz = useMemo(() => gedankeDesTages(), [z]);
   const [offen, setOffen] = useState(false);
   const [zuLang, setZuLang] = useState(false);
-  const text = useRef<HTMLParagraphElement>(null);
+  const text = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const el = text.current;
@@ -236,9 +239,9 @@ function TagesgedankeKarte() {
   return (
     <section className="karte gedanke">
       <div className="etikett violett">Gedanke des Tages</div>
-      <p ref={text} className={klassen('gedanke-text', !offen && 'gekuerzt')}>
-        {notiz.text}
-      </p>
+      <div ref={text} className={klassen('gedanke-text', !offen && 'gekuerzt')}>
+        <MarkdownAnzeige text={notiz.text} />
+      </div>
       {(zuLang || offen) && (
         <button className="textknopf" onClick={() => setOffen(!offen)}>
           {offen ? 'Weniger' : 'Weiterlesen'}
@@ -270,7 +273,7 @@ export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz;
         <Haken />
       </button>
       <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
-        {notiz.text}
+        <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
       </a>
       {(faellig || mitListe) && (
         <span className={klassen('mono meta', dringend && 'bernstein')}>

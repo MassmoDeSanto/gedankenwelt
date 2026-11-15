@@ -50,6 +50,7 @@ import {
 import type { Notiz } from '../modell/typen';
 import { neueId } from '../modell/ulid';
 import { ListenWahlDialog, Menue, klassen } from './Bausteine';
+import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { Griff, Haken, KaestchenSymbol, Korb, OrdnerPfeil, Uhr } from './Symbole';
 
 interface Entwurf {
@@ -220,8 +221,19 @@ export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; he
 const TAG_VOR_CURSOR = /(?:^|[\s(])#([\p{L}\p{N}_-]*)$/u;
 const TAG_IM_TEXT = /(^|[\s(])(#[\p{L}\p{N}_][\p{L}\p{N}_-]*)/gu;
 
-/** Der sichtbare Text unter dem (durchsichtigen) Textfeld – mit eingefärbten Tags. */
-function Spiegel({ text }: { text: string }) {
+/**
+ * Der sichtbare Text zum (durchsichtigen) Textfeld.
+ *  - Beim Bearbeiten (`roh`): der Rohtext, wie getippt, nur Tags sind eingefärbt.
+ *  - Sonst: „Markdown light“ umgesetzt (fett, kursiv, Aufzählungen, Links, Code).
+ */
+function Spiegel({ text, roh }: { text: string; roh: boolean }) {
+  if (!roh) {
+    return (
+      <div className="spiegel" aria-hidden="true">
+        {text ? <MarkdownAnzeige text={text} /> : '​'}
+      </div>
+    );
+  }
   const teile: ReactNode[] = [];
   let ende = 0;
   for (const treffer of text.matchAll(TAG_IM_TEXT)) {
@@ -497,7 +509,7 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
 
       <div className="notiz-inhalt">
         <div className="textfeld">
-          <Spiegel text={roh} />
+          <Spiegel text={roh} roh={aktiv} />
           <textarea
             ref={feld}
             rows={1}
