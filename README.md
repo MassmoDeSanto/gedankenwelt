@@ -2,7 +2,7 @@
 
 Persönliche Notiz-App für kurze Gedanken, Aufgaben und längere Texte. Sie läuft als Web-App im Browser.
 
-**Stand: Phase 1** – Kern am Laptop. Alle Daten liegen nur in deinem Browser auf diesem Laptop. Google Drive, iPhone, Erinnerungen und der Import aus Apple Notizen kommen in den nächsten Phasen.
+**Stand: Phase 2 in Arbeit.** Phase 1 (Kern am Laptop) ist fertig. Der Abgleich mit Google Drive ist als geprüfter Kern vorhanden, aber noch nicht an die App angeschlossen: Noch liegen alle Daten nur in deinem Browser. Was für Phase 2 schon geht und was du dafür einrichten musst, steht in Abschnitt 7.
 
 ---
 
@@ -76,7 +76,7 @@ Tests sind kleine Programme, die automatisch prüfen, ob die wichtigen Regeln no
 npm test
 ```
 
-Am Ende sollte stehen: `Test Files  7 passed (7)` und `Tests  79 passed (79)`.
+Am Ende sollte stehen: `Test Files  8 passed (8)` und `Tests  107 passed (107)`.
 
 **Typen prüfen.** Kontrolliert, ob im Code alles zusammenpasst, ohne ihn auszuführen. Keine Ausgabe heißt: alles in Ordnung.
 
@@ -141,7 +141,7 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 - Beispieldaten
 - PWA-Grundgerüst (Offline-Zwischenspeicher wird beim Bauen erzeugt)
 - Markdown light in der Anzeige: `**fett**`, `*kursiv*`, `` `Code` ``, Links und Aufzählungen mit `-`. Beim Bearbeiten sieht man den Rohtext.
-- 79 automatische Tests
+- 107 automatische Tests
 
 ### Geprüft und nicht geprüft
 
@@ -193,3 +193,102 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 | `public/` | Symbol der App |
 
 Phase 2 kann `src/logik/markdown.ts` unverändert für Google Drive benutzen: Es wandelt den Datenbestand in Dateien (Pfad + Text) um und zurück.
+
+---
+
+## 7. Phase 2: Google Drive und iPhone (in Arbeit)
+
+### Was schon da ist
+
+- **Abgleich-Kern** (`src/logik/abgleich/`), geprüft gegen ein simuliertes Drive mit 28 Tests: zwei Geräte offline, dieselbe Notiz auf beiden geändert, Löschen gegen Bearbeiten, Umbenennen und Verschieben ohne doppelte Dateien, Abbruch an jeder einzelnen Stelle des Hochladens, von Hand in Drive ergänzter Text, Papierkorb nach 30 Tagen.
+- **Anmeldung bei Google** mit Testseite unter Einstellungen → Google Drive.
+- **Automatische Veröffentlichung** auf GitHub Pages bei jedem Push (`.github/workflows/veroeffentlichen.yml`).
+
+Noch **nicht** da: der Anschluss des Abgleichs an das echte Google Drive, das Status-Symbol und der iPhone-Feinschliff.
+
+### Wie die Anmeldung funktioniert – und ihre Grenze
+
+Die App hat keinen eigenen Server. Google gibt einer reinen Browser-App nur einen Zugangsschlüssel, der etwa eine Stunde gilt, und nichts, womit sie ihn unbemerkt verlängern könnte ([Googles Beschreibung](https://developers.google.com/identity/oauth2/web/guides/use-token-model), Stand 15. Nov 2026). Eine echte Dauer-Anmeldung gibt es nur mit eigenem Server. Das lässt sich nicht umgehen.
+
+Die App holt sich deshalb selbst einen neuen Schlüssel:
+
+- **Weiterleitung, still:** Die App springt kurz zu Google und zurück, ohne dass du etwas tippen musst. Das klappt, solange du im Browser bzw. in der installierten App noch bei Google angemeldet bist. Google beschreibt diesen Weg, rät aber eher zum Pop-up, weil der Schlüssel dabei kurz in der Adresse steht ([Quelle](https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow)). Die App entfernt ihn sofort wieder aus der Adresse.
+- **Rückfall:** Klappt das stille Erneuern nicht, zeigt die App „Neu anmelden“. Ein Tipp genügt dann meist, ohne Passwort.
+
+In beiden Fällen arbeitet die App offline weiter. Es geht nichts verloren.
+
+Ob das stille Erneuern auf deinem iPhone in der installierten App funktioniert, ist **nicht geprüft**. Erfahrungsberichte dazu sind uneinheitlich. Deshalb gibt es die Testseite.
+
+### Google Cloud einrichten (machst du selbst, einmalig)
+
+Diese Schritte stammen aus Googles Anleitungen ([Zustimmungsbildschirm](https://developers.google.com/workspace/guides/configure-oauth-consent), [Zugangsdaten](https://developers.google.com/workspace/guides/create-credentials), Stand 15. Nov 2026). Ich konnte sie nicht selbst durchklicken. Die Menüs können auf Deutsch etwas anders heißen.
+
+1. **Projekt anlegen.** Öffne <https://console.cloud.google.com> und melde dich mit dem Google-Konto an, in dessen Drive die Notizen liegen sollen. Oben in der Leiste auf die Projektauswahl klicken → **Neues Projekt** → Name `Gedankenwelt` → **Erstellen**. Danach dieses Projekt auswählen.
+2. **Google Drive API einschalten.** Menü → **APIs & Dienste** → **Bibliothek** → nach `Google Drive API` suchen → **Aktivieren**.
+3. **Zustimmungsbildschirm einrichten.** Menü → **Google Auth Platform** → **Branding** → **Erste Schritte** (Get started).
+   - App-Name: `Gedankenwelt`, Support-E-Mail: deine Adresse → **Weiter**
+   - Zielgruppe (Audience): **Extern** → **Weiter**
+   - Kontakt-E-Mail: deine Adresse → **Weiter**
+   - Richtlinie bestätigen → **Weiter** → **Erstellen**
+4. **Dich selbst als Testnutzer eintragen.** **Google Auth Platform** → **Zielgruppe** (Audience) → unter **Testnutzer** auf **Nutzer hinzufügen** → deine Google-Adresse → **Speichern**. Damit bist du der einzige, der die App benutzen darf.
+5. **Berechtigung festlegen.** **Google Auth Platform** → **Datenzugriff** (Data Access) → **Bereiche hinzufügen oder entfernen** → `…/auth/drive.file` ankreuzen → **Speichern**. Diese Berechtigung erlaubt der App nur Dateien, die sie selbst angelegt hat. Deinen übrigen Drive sieht sie nicht.
+6. **Client anlegen.** **Google Auth Platform** → **Clients** → **Client erstellen** → Anwendungstyp **Webanwendung**, Name `Gedankenwelt Web`.
+   - Unter **Autorisierte JavaScript-Quellen** zwei Einträge:
+     `http://localhost:5173` und `https://massmodesanto.github.io`
+   - Unter **Autorisierte Weiterleitungs-URIs** zwei Einträge, jeweils **mit** Schrägstrich am Ende:
+     `http://localhost:5173/` und `https://massmodesanto.github.io/gedankenwelt/`
+   - **Erstellen**
+7. **Client-ID kopieren.** Sie sieht aus wie `1234567890-abc….apps.googleusercontent.com`. Trage sie in `src/konfig.ts` bei `GOOGLE_CLIENT_ID` ein (zwischen die Anführungszeichen) – oder gib sie Claude, dann erledigt er das. Die Client-ID ist kein Geheimnis. Ein „Client-Secret“ brauchst du nicht und sollst du nirgends eintragen.
+
+**Der Hinweis „App nicht überprüft“.** Bei der ersten Anmeldung kann Google warnen, die App sei nicht überprüft. Das heißt nur: Google hat diese App nicht für die Öffentlichkeit geprüft. Das ist hier richtig so, denn du hast sie selbst gebaut und bist der einzige Nutzer. Klicke auf **Erweitert** → **Weiter zu Gedankenwelt**.
+
+**Falls du dich jede Woche neu bestätigen musst:** Im Status „Test“ lässt Google Zustimmungen nach Erfahrungsberichten nach 7 Tagen verfallen. Das habe ich in Googles eigener Dokumentation nicht bestätigt gefunden. Abhilfe laut diesen Berichten: unter **Zielgruppe** auf **App veröffentlichen** klicken. Sag mir Bescheid, wenn das auftritt, bevor du es umstellst.
+
+### GitHub und Veröffentlichung
+
+Das Repository `gedankenwelt` wird öffentlich, weil GitHub Pages mit einem kostenlosen Konto nur so funktioniert. Im Code liegen keine Notizen und keine Geheimnisse; deine Notizen liegen nur in deinem Browser und später in deinem Google Drive.
+
+Die App ist danach unter <https://massmodesanto.github.io/gedankenwelt/> erreichbar. Die Adresse steht auch auf GitHub im Repository unter **Settings** → **Pages**.
+
+Nach einer Änderung am Code veröffentlichst du so:
+
+`git add` merkt die geänderten Dateien vor:
+
+```bash
+git add .
+```
+
+`git commit` speichert sie als Zwischenstand mit einer kurzen Beschreibung:
+
+```bash
+git commit -m "Kurz, was geändert wurde"
+```
+
+`git push` lädt den Zwischenstand zu GitHub hoch. GitHub lässt dann die Tests laufen und veröffentlicht die neue Version automatisch (dauert ein bis zwei Minuten; den Fortschritt siehst du im Repository unter **Actions**):
+
+```bash
+git push
+```
+
+### iPhone
+
+1. In **Safari** die Adresse <https://massmodesanto.github.io/gedankenwelt/> öffnen.
+2. Unten auf **Teilen** (Quadrat mit Pfeil) → **Zum Home-Bildschirm** → **Hinzufügen**.
+3. Die App vom Home-Bildschirm öffnen → Zahnrad → **Google Drive** → **Mit Google verbinden**.
+
+Wichtig: Die App auf dem Home-Bildschirm hat einen eigenen Speicher, getrennt von Safari ([Apple, WWDC 2023](https://developer.apple.com/videos/play/wwdc2023/10120/)). Melde dich deshalb in der installierten App an, nicht vorher in Safari.
+
+### Anmeldung testen (Laptop und iPhone)
+
+Unter Einstellungen → Google Drive:
+
+1. **Mit Google verbinden** → bei Google anmelden und zustimmen → du landest wieder in der App, Status „Angemeldet“.
+2. **Drive-Zugriff prüfen** → es sollte „Drive-Zugriff klappt“ erscheinen.
+3. **Still erneuern** → die App springt kurz weg und zurück. Im Protokoll sollte „Still erneuert – ohne Eingabe“ stehen.
+4. **Per Pop-up anmelden** → zum Vergleich der zweite Weg.
+
+Am iPhone bitte alle vier Schritte in der installierten App ausprobieren, dann die App ganz schließen, nach über einer Stunde wieder öffnen und Schritt 3 wiederholen. Das Protokoll mit den Uhrzeiten zeigt, was geklappt hat.
+
+### Wenn etwas nicht abgleicht
+
+Folgt, sobald der Abgleich an die App angeschlossen ist.
