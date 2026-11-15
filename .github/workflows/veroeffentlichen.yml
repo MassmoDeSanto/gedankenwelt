@@ -1,0 +1,50 @@
+# Automatische Veröffentlichung auf GitHub Pages.
+#
+# Bei jedem Push auf den Zweig „main“ passiert Folgendes auf einem Rechner von GitHub:
+#   1. Code holen, Node.js einrichten, Bausteine installieren
+#   2. Tests laufen lassen – schlägt einer fehl, wird NICHT veröffentlicht
+#   3. Fertige Version bauen (Ordner dist) und auf GitHub Pages stellen
+name: Veröffentlichen
+
+on:
+  push:
+    branches: [main]
+  # erlaubt, die Veröffentlichung auf der GitHub-Seite von Hand zu starten
+  workflow_dispatch:
+
+# Rechte, die GitHub Pages zum Veröffentlichen braucht
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nie zwei Veröffentlichungen gleichzeitig; eine laufende wird zu Ende geführt
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  veroeffentlichen:
+    needs: bauen
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v5
