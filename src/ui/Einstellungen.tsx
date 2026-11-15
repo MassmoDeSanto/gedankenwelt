@@ -4,6 +4,7 @@ import { exportiereZip, importiereZip, ladeBeispieldaten, loescheAlles, setzeThe
 import { useZustand } from '../db/speicher';
 import { lokalesDatum } from '../logik/zeit';
 import { BestaetigungsDialog, Kopfzeile, Segment } from './Bausteine';
+import { DriveBereich } from './DriveBereich';
 import { adresse } from './router';
 
 export function Einstellungen() {
@@ -54,6 +55,8 @@ export function Einstellungen() {
           />
         </div>
       </section>
+
+      <DriveBereich />
 
       <section className="karte">
         <div className="etikett">Papierkorb</div>
@@ -126,8 +129,8 @@ export function Einstellungen() {
       </section>
 
       <p className="hinweis klein mitte">
-        Alle Daten liegen in dieser Phase nur in diesem Browser. Google Drive, iPhone, Erinnerungen und der Import aus
-        Apple Notizen folgen in den nächsten Phasen.
+        Noch liegen alle Daten nur in diesem Browser. Der Abgleich mit Google Drive wird gerade gebaut; Erinnerungen
+        und der Import aus Apple Notizen folgen in den nächsten Phasen.
       </p>
 
       {importDatei && (

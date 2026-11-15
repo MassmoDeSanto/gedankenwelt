@@ -6,8 +6,13 @@ import './ui/stil.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
+import { verarbeiteRueckkehr } from './db/anmeldung';
 import { ladeAlles } from './db/speicher';
 import { App } from './ui/App';
+
+// Kommt die Seite gerade von der Google-Anmeldung zurück? Dann die Antwort auswerten,
+// bevor die App startet (sie steht hinter dem „#“ der Adresse und wird sofort entfernt).
+verarbeiteRueckkehr();
 
 // Offline-Betrieb: Der „Service Worker“ speichert die App-Dateien im Browser zwischen.
 // Er ist nur in der gebauten Version aktiv, nicht im Entwicklungsmodus.

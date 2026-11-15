@@ -1278,6 +1278,27 @@ a.kachel:hover,
   overflow: hidden;
 }
 
+.etikett.abstand {
+  margin-top: 16px;
+}
+
+.knopfreihe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.protokoll {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--erhoeht);
+  color: var(--gedaempft);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
 /* ───────── Schmale Bildschirme (Handy) ───────── */
 
 @media (max-width: 560px) {
