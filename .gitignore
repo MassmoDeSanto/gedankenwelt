@@ -1,0 +1,23 @@
+# Abhängigkeiten und Bau-Ergebnisse
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.tsbuildinfo
+
+# Geheimnisse
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+key.properties
+
+# Editor und System
+.vscode/
+.idea/
+.DS_Store
+*.log
+
+# Claude-Einstellungen, die nur für diesen Laptop gelten
+.claude/settings.local.json
