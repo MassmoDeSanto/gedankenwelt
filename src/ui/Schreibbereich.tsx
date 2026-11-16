@@ -33,24 +33,19 @@ import {
   schreibeNotiz,
   setzeAufgabe,
   setzeErledigt,
-  setzeFaellig,
   verschiebeNotiz,
 } from '../db/aktionen';
 import { leseZustand, useZustand } from '../db/speicher';
 import { endetMitTrennung, enthaeltTrennung } from '../logik/absatz';
 import { filtereTags, istTagName, tagHaeufigkeit, type TagAnzahl } from '../logik/tags';
-import {
-  faelligDatum,
-  faelligUhrzeit,
-  formatFaellig,
-  formatStempel,
-  lokalesDatum,
-  verschiebeDatum,
-} from '../logik/zeit';
+import { formatStempel, lokalesDatum } from '../logik/zeit';
 import type { Notiz } from '../modell/typen';
 import { neueId } from '../modell/ulid';
+import { AufgabenMenue } from './AufgabenMenue';
 import { ListenWahlDialog, Menue, klassen } from './Bausteine';
+import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
+import { hakeAbMitMeldung } from './meldung';
 import { Griff, Haken, KaestchenSymbol, Korb, OrdnerPfeil, Uhr } from './Symbole';
 
 interface Entwurf {
@@ -477,7 +472,6 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
   const aufgabe = notiz?.aufgabe ?? null;
   const heute = lokalesDatum();
   const faellig = aufgabe?.faellig ?? null;
-  const dringend = !!faellig && !aufgabe?.erledigt && faelligDatum(faellig) <= heute;
   const halteFokus = (e: { preventDefault: () => void }) => e.preventDefault();
 
   return (
@@ -514,7 +508,7 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
           role="checkbox"
           aria-checked={aufgabe.erledigt}
           aria-label={aufgabe.erledigt ? 'Als offen markieren' : 'Abhaken'}
-          onClick={() => setzeErledigt(id, !aufgabe.erledigt)}
+          onClick={() => (aufgabe.erledigt ? setzeErledigt(id, false) : hakeAbMitMeldung(id))}
         >
           {aufgabe.erledigt && <Haken />}
         </button>
@@ -567,14 +561,25 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
         {notiz && (
           <div className="notiz-meta">
             <span>{formatStempel(notiz.erstellt, heute)}</span>
-            {aufgabe && faellig && (
+            {aufgabe && (
               <Menue
-                knopf={formatFaellig(faellig, heute)}
-                beschriftung="Fälligkeit ändern"
-                knopfKlasse={klassen('faellig', dringend && 'dringend')}
+                knopf={
+                  faellig ? (
+                    <>
+                      <FaelligText aufgabe={aufgabe} heute={heute} />
+                      <WiederholungsHinweis aufgabe={aufgabe} />
+                    </>
+                  ) : (
+                    <>
+                      <Uhr /> Termin
+                    </>
+                  )
+                }
+                beschriftung="Fälligkeit, Erinnerung und Wiederholung"
+                knopfKlasse={klassen('faellig', !faellig && 'leer')}
                 links
               >
-                {() => <FaelligMenue notiz={notiz} />}
+                {() => <AufgabenMenue notiz={notiz} />}
               </Menue>
             )}
             <span className="notiz-aktionen">
@@ -590,11 +595,6 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
               >
                 <KaestchenSymbol />
               </button>
-              {aufgabe && !faellig && (
-                <Menue knopf={<Uhr />} beschriftung="Fälligkeit festlegen" knopfKlasse="">
-                  {() => <FaelligMenue notiz={notiz} />}
-                </Menue>
-              )}
               <button
                 title="Verschieben nach …"
                 aria-label="Verschieben nach …"
@@ -609,44 +609,6 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-/** Kleines Menü an einer Aufgabe: Datum, optionale Uhrzeit, Wiederholung (kommt später). */
-function FaelligMenue({ notiz }: { notiz: Notiz }) {
-  const faellig = notiz.aufgabe?.faellig ?? null;
-  const datum = faellig ? faelligDatum(faellig) : '';
-  const uhrzeit = faellig ? (faelligUhrzeit(faellig) ?? '') : '';
-  const heute = lokalesDatum();
-  const setze = (d: string, u: string) => setzeFaellig(notiz.id, d ? (u ? `${d}T${u}` : d) : null);
-
-  return (
-    <div className="faellig-menue">
-      <div className="schnellwahl">
-        <button onClick={() => setze(heute, uhrzeit)}>Heute</button>
-        <button onClick={() => setze(verschiebeDatum(heute, 1), uhrzeit)}>Morgen</button>
-        <button onClick={() => setze(verschiebeDatum(heute, 7), uhrzeit)}>In 1 Woche</button>
-      </div>
-      <label>
-        Datum
-        <input type="date" value={datum} onChange={(e) => setze(e.target.value, uhrzeit)} />
-      </label>
-      <label>
-        Uhrzeit (optional)
-        <input type="time" value={uhrzeit} disabled={!datum} onChange={(e) => setze(datum, e.target.value)} />
-      </label>
-      <label className="gesperrt">
-        Wiederholung
-        <select disabled>
-          <option>keine – kommt in Phase 3</option>
-        </select>
-      </label>
-      {faellig && (
-        <button className="menue-zeile" onClick={() => setzeFaellig(notiz.id, null)}>
-          Fälligkeit entfernen
-        </button>
-      )}
     </div>
   );
 }

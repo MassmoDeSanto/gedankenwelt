@@ -963,6 +963,9 @@ a.kachel:hover,
 }
 
 .faellig {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--mono);
   font-size: 12px;
   color: var(--gedaempft);
@@ -971,8 +974,45 @@ a.kachel:hover,
   background: var(--chip);
 }
 
-.faellig.dringend {
+/* Aufgabe ohne Termin: nur ein blasser Knopf, der zum Menü führt */
+.faellig.leer {
+  gap: 5px;
+  background: none;
+  padding-left: 0;
+  color: var(--meta);
+}
+
+.faellig.leer:hover,
+.faellig.leer.aktiv {
+  color: var(--text);
+}
+
+.faellig.leer svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Fälligkeit: heute in Bernstein, überfällig ruhig in Rot */
+.faelligtext.heute {
   color: var(--bernstein);
+}
+
+.faelligtext.ueberfaellig {
+  color: var(--rot);
+}
+
+/* Wiederholungs-Symbol mit Kurztext, z. B. „jeden So“ */
+.wdh {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--meta);
+}
+
+.aufgabeninfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .notiz.erledigt .faellig {
@@ -997,7 +1037,7 @@ a.kachel:hover,
   pointer-events: auto;
 }
 
-.notiz-aktionen button {
+.notiz-aktionen > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1012,13 +1052,13 @@ a.kachel:hover,
     color var(--kurz);
 }
 
-.notiz-aktionen button:hover,
-.notiz-aktionen button.aktiv {
+.notiz-aktionen > button:hover,
+.notiz-aktionen > button.aktiv {
   background: var(--erhoeht);
   color: var(--text);
 }
 
-.notiz-aktionen button.an {
+.notiz-aktionen > button.an {
   color: var(--tuerkis);
 }
 
@@ -1123,14 +1163,20 @@ a.kachel:hover,
   margin-bottom: 8px;
 }
 
-.faellig-menue {
+.aufgaben-menue {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 6px;
+  width: min(300px, 78vw);
+  white-space: normal;
 }
 
-.faellig-menue label {
+.aufgaben-menue .hinweis.klein {
+  margin-top: -6px;
+}
+
+.aufgaben-menue label {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1139,11 +1185,11 @@ a.kachel:hover,
   color: var(--gedaempft);
 }
 
-.faellig-menue label.gesperrt {
+.aufgaben-menue label.gesperrt {
   opacity: 0.6;
 }
 
-.faellig-menue .menue-zeile {
+.aufgaben-menue .menue-zeile {
   padding-left: 0;
   color: var(--gedaempft);
 }
@@ -1324,6 +1370,95 @@ a.kachel:hover,
   overflow-wrap: anywhere;
 }
 
+/* ───────── Wiederholung: Dialog „Benutzerdefiniert“ ───────── */
+
+.wdh-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-y: auto;
+  min-height: 0;
+  font-family: var(--schrift);
+  font-size: 15px;
+  white-space: normal;
+}
+
+.wdh-dialog .segment {
+  flex-wrap: wrap;
+}
+
+.wdh-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--gedaempft);
+}
+
+.wdh-zeile input[type='number'] {
+  width: 68px;
+  background: var(--chip);
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  min-height: 32px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.wdh-vorschau {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--erhoeht);
+  color: var(--gedaempft);
+  line-height: 1.7;
+}
+
+/* ───────── Rückmeldung am unteren Rand ───────── */
+
+.meldungsleiste {
+  position: fixed;
+  left: 50%;
+  bottom: calc(22px + var(--rand-unten));
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 12px 10px 18px;
+  border-radius: 999px;
+  background: var(--erhoeht);
+  border: 1px solid var(--linie);
+  font-size: 14px;
+  animation: einblenden 140ms ease-out;
+}
+
+.meldungsleiste > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meldungsleiste button {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--tuerkis);
+  font-weight: 500;
+  min-height: 32px;
+}
+
+@keyframes einblenden {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
 /* ───────── Abgleich mit Google Drive ───────── */
 
 .startkopf-rechts {
@@ -1408,6 +1543,18 @@ details.diagnose > summary {
 /* ───────── Schmale Bildschirme (Handy) ───────── */
 
 @media (max-width: 560px) {
+  /* Das Aufgaben-Menü erscheint am Handy unten über die ganze Breite – gut mit dem Daumen erreichbar. */
+  .menue:has(.aufgaben-menue) {
+    position: fixed;
+    inset: auto 10px calc(10px + var(--rand-unten)) 10px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .aufgaben-menue {
+    width: auto;
+  }
+
   .seite {
     padding-top: calc(16px + var(--rand-oben));
   }
@@ -1448,7 +1595,7 @@ details.diagnose > summary {
     gap: 6px;
   }
 
-  .notiz-aktionen button {
+  .notiz-aktionen > button {
     width: 40px;
     height: 32px;
     font-size: 17px;
@@ -1491,6 +1638,18 @@ details.diagnose > summary {
   .aufgabe-neu {
     font-size: 16px;
     min-height: 40px;
+  }
+
+  .schnellwahl button {
+    min-height: 38px;
+    padding: 5px 14px;
+    font-size: 14px;
+  }
+
+  .chip {
+    min-height: 36px;
+    padding: 4px 14px;
+    font-size: 14px;
   }
 
   /* Platz unter der letzten Notiz, damit sie sich über die Tastatur schieben lässt */

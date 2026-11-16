@@ -160,3 +160,10 @@ export const WolkeAchtung = () => (
     <path d="M12 11.2v3.2m0 2.1v.1" />
   </Symbol>
 );
+
+/** Wiederholung: zwei Pfeile im Kreis */
+export const Wiederholen = () => (
+  <Symbol groesse={12}>
+    <path d="M4 11a8 8 0 0 1 13.7-5.2L20 8M20 4v4h-4M20 13a8 8 0 0 1-13.7 5.2L4 16m0 4v-4h4" strokeWidth="2" />
+  </Symbol>
+);

@@ -16,7 +16,8 @@ import { ausDateien, zuDateien } from '../logik/markdown';
 import * as papierkorb from '../logik/papierkorb';
 import { leseTags } from '../logik/tags';
 import { waehleTagesgedanke } from '../logik/tagesgedanke';
-import { jetztStempel, lokalesDatum } from '../logik/zeit';
+import { ersterTermin, hakeAb } from '../logik/wiederholung';
+import { jetztStempel, lokalJetzt, lokalesDatum } from '../logik/zeit';
 import { entpacke, packe } from '../logik/zip';
 import {
   EINGANG_ID,
@@ -27,6 +28,7 @@ import {
   type Liste,
   type Notiz,
   type TagesgedankeSchalter,
+  type Wiederholung,
 } from '../modell/typen';
 import { neueId } from '../modell/ulid';
 import { beispieldaten } from './beispieldaten';
@@ -154,14 +156,63 @@ export function setzeAufgabe(id: string, istAufgabe: boolean): void {
   });
 }
 
+export interface Abgehakt {
+  /** Die Notiz, wie sie vor dem Abhaken war – für „Rückgängig“ */
+  vorher: Notiz;
+  /** Neue Fälligkeit einer wiederkehrenden Aufgabe; null = die Aufgabe ist jetzt erledigt */
+  naechste: Faelligkeit | null;
+}
+
+/**
+ * Hakt eine Aufgabe ab. Eine wiederkehrende Aufgabe bleibt offen und springt auf ihre
+ * nächste Fälligkeit (Regeln in src/logik/wiederholung.ts).
+ */
+export function hakeAufgabeAb(id: string): Abgehakt | null {
+  const vorher = leseZustand().notizen.get(id);
+  if (!vorher?.aufgabe || vorher.aufgabe.erledigt) return null;
+  const jetzt = jetztStempel();
+  const ergebnis = hakeAb(vorher.aufgabe, lokalJetzt(), jetzt);
+  sichereNotizen([{ ...vorher, aufgabe: ergebnis.aufgabe, geaendert: jetzt }]);
+  return { vorher, naechste: ergebnis.naechste };
+}
+
+/** „Rückgängig“ nach dem Abhaken: stellt die Aufgabe so wieder her, wie sie vorher war. */
+export function nimmAbhakenZurueck(vorher: Notiz): void {
+  aendereNotiz(vorher.id, (n) => ({ ...n, aufgabe: vorher.aufgabe }));
+}
+
 export function setzeErledigt(id: string, erledigt: boolean): void {
-  aendereNotiz(id, (n, jetzt) =>
-    n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, erledigt, erledigt_am: erledigt ? jetzt : null } } : null,
+  if (erledigt) {
+    hakeAufgabeAb(id);
+    return;
+  }
+  aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, erledigt: false, erledigt_am: null } } : null));
+}
+
+/** Setzt Datum und optional Uhrzeit. Ohne Fälligkeit gibt es auch keine Wiederholung. */
+export function setzeFaellig(id: string, faellig: Faelligkeit | null): void {
+  aendereNotiz(id, (n) =>
+    n.aufgabe
+      ? { ...n, aufgabe: { ...n.aufgabe, faellig, wiederholung: faellig ? n.aufgabe.wiederholung : null } }
+      : null,
   );
 }
 
-export function setzeFaellig(id: string, faellig: Faelligkeit | null): void {
-  aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, faellig } } : null));
+/**
+ * Setzt oder entfernt die Wiederholung. Hat die Aufgabe noch kein Datum, bekommt sie
+ * den ersten Termin der Regel (ab heute).
+ */
+export function setzeWiederholung(id: string, wiederholung: Wiederholung | null): void {
+  aendereNotiz(id, (n) => {
+    if (!n.aufgabe) return null;
+    const faellig = n.aufgabe.faellig ?? (wiederholung ? ersterTermin(wiederholung, lokalesDatum()) : null);
+    return { ...n, aufgabe: { ...n.aufgabe, wiederholung, faellig } };
+  });
+}
+
+/** Erinnerung so viele Minuten vor der Fälligkeit (0 = zur Uhrzeit). */
+export function setzeErinnerung(id: string, minuten: number): void {
+  aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, erinnerung: Math.max(0, minuten) } } : null));
 }
 
 /** Verschiebt eine Notiz ans Ende einer anderen Liste. */

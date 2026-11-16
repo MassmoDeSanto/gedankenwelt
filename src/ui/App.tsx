@@ -6,7 +6,8 @@ import { Einstellungen } from './Einstellungen';
 import { Gedankenwelt } from './Gedankenwelt';
 import { Listenansicht } from './Listenansicht';
 import { Papierkorb } from './Papierkorb';
-import { useRoute } from './router';
+import { Meldungsleiste } from './Meldungsleiste';
+import { useRoute, type Route } from './router';
 import { Start } from './Start';
 
 export function App() {
@@ -29,6 +30,15 @@ export function App() {
 
   if (!z.geladen) return null;
 
+  return (
+    <>
+      {seite(route)}
+      <Meldungsleiste />
+    </>
+  );
+}
+
+function seite(route: Route) {
   switch (route.seite) {
     case 'welt':
       return <Gedankenwelt />;

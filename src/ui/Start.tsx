@@ -1,16 +1,18 @@
 /** Startseite: Datum, Suche, Gedanke des Tages, To-dos, großer Gedankenwelt-Knopf. */
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { erstelleNotizen, gedankeDesTages, setzeErledigt } from '../db/aktionen';
+import { erstelleNotizen, gedankeDesTages } from '../db/aktionen';
 import { suchindex, useZustand } from '../db/speicher';
 import { aufgabenZusammenfassung, gruppiereAufgaben, offeneAufgaben } from '../logik/aufgaben';
 import { kinderVon, pfadText } from '../logik/listen';
 import { LEERER_FILTER, filterAktiv, type SuchFilter, type Treffer } from '../logik/suche';
 import { tagHaeufigkeit } from '../logik/tags';
-import { faelligDatum, formatFaellig, formatKopfdatum, formatStempel, lokalesDatum } from '../logik/zeit';
+import { formatKopfdatum, formatStempel, lokalesDatum } from '../logik/zeit';
 import { EINGANG_ID, type Notiz } from '../modell/typen';
 import { AbgleichSymbol } from './AbgleichSymbol';
 import { Segment, klassen, useListenBaum } from './Bausteine';
+import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
+import { hakeAbMitMeldung } from './meldung';
 import { adresse } from './router';
 import { Haken, Kreuz, Lupe, PfeilRechts, Plus, Trichter, Zahnrad } from './Symbole';
 import { zuletztGeoeffnet } from './zuletzt';
@@ -264,7 +266,6 @@ function TagesgedankeKarte() {
 export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz; heute: string; mitListe?: boolean }) {
   const z = useZustand();
   const faellig = notiz.aufgabe?.faellig ?? null;
-  const dringend = !!faellig && faelligDatum(faellig) <= heute;
   return (
     <div className="aufgabenzeile">
       <button
@@ -272,7 +273,7 @@ export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz;
         role="checkbox"
         aria-checked={false}
         aria-label="Abhaken"
-        onClick={() => setzeErledigt(notiz.id, true)}
+        onClick={() => hakeAbMitMeldung(notiz.id, true)}
       >
         <Haken />
       </button>
@@ -280,8 +281,9 @@ export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz;
         <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
       </a>
       {(faellig || mitListe) && (
-        <span className={klassen('mono meta', dringend && 'bernstein')}>
-          {faellig ? formatFaellig(faellig, heute) : z.listen.get(notiz.liste_id)?.name}
+        <span className="mono meta aufgabeninfo">
+          {notiz.aufgabe && <WiederholungsHinweis aufgabe={notiz.aufgabe} />}
+          {notiz.aufgabe && faellig ? <FaelligText aufgabe={notiz.aufgabe} heute={heute} /> : z.listen.get(notiz.liste_id)?.name}
         </span>
       )}
     </div>
