@@ -190,7 +190,8 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 | `src/logik/` | Regeln ohne Oberfläche und ohne Datenbank, mit Tests (`*.test.ts`) |
 | `src/db/` | Speicherung im Browser, alle Daten-Änderungen, Beispieldaten |
 | `src/ui/` | Oberfläche (React-Komponenten) und `stil.css` |
-| `public/` | Symbol der App |
+| `public/` | Symbole der App und Startbilder fürs iPhone |
+| `werkzeuge/` | Skript, das die Symbole und Startbilder erzeugt (nur nötig, wenn sich das Symbol ändert) |
 
 Phase 2 kann `src/logik/markdown.ts` unverändert für Google Drive benutzen: Es wandelt den Datenbestand in Dateien (Pfad + Text) um und zurück.
 
@@ -205,13 +206,14 @@ Phase 2 kann `src/logik/markdown.ts` unverändert für Google Drive benutzen: Es
 - **Anmeldung bei Google** mit stillem Erneuern; Testseite unter Einstellungen → Google Drive → Diagnose.
 - **Automatische Veröffentlichung** auf GitHub Pages bei jedem Push (`.github/workflows/veroeffentlichen.yml`).
 - **Updates:** Eine neue Version der App wird still übernommen, sobald die App in den Hintergrund geht.
+- **iPhone:** App-Symbol und Startbilder als PNG, Darstellung ohne Browserleiste, dunkle Statusleiste, Ränder für Notch und Home-Leiste, größere Tippflächen, Tag-Dropdown mit hohen Zeilen, Platz unter der letzten Notiz für die Tastatur. Die App bittet den Browser um dauerhaften Speicher.
 
 ### Geprüft und nicht geprüft
 
 - **Geprüft:** alle Tests; dazu im Browser der ganze Ablauf mit einem simulierten Drive (erstes Verbinden, Beispieldaten löschen, Sicherung, Warteschlange, automatischer Abgleich, Neuaufbau, Status-Symbol).
-- **Nicht geprüft:** alles, was das echte Google braucht – die Anmeldung, die Datei `src/db/googleDrive.ts` (die Übersetzung in Googles Schnittstelle) und das Verhalten am iPhone. Das geht erst mit deiner Client-ID. Rechne damit, dass beim ersten echten Versuch noch etwas nachzubessern ist.
+- **Nicht geprüft:** alles, was das echte Google braucht – die Anmeldung und die Datei `src/db/googleDrive.ts` (die Übersetzung in Googles Schnittstelle). Das geht erst mit deiner Client-ID. Rechne damit, dass beim ersten echten Versuch noch etwas nachzubessern ist.
+- **Nicht geprüft:** alles am echten iPhone. Die Handy-Darstellung habe ich nur in einer auf Handy-Breite verkleinerten Vorschau am Laptop gesehen. Ob Startbild, Statusleiste, Tastatur und das Schreiben mit der iOS-Tastatur stimmen, zeigt erst dein Gerät.
 
-Noch **nicht** da: der iPhone-Feinschliff (App-Symbol als PNG, Ränder für Notch und Home-Leiste, Tastatur).
 
 ### Wie die Anmeldung funktioniert – und ihre Grenze
 
@@ -284,6 +286,14 @@ git push
 3. Die App vom Home-Bildschirm öffnen → Zahnrad → **Google Drive** → **Mit Google verbinden**.
 
 Wichtig: Die App auf dem Home-Bildschirm hat einen eigenen Speicher, getrennt von Safari ([Apple, WWDC 2023](https://developer.apple.com/videos/play/wwdc2023/10120/)). Melde dich deshalb in der installierten App an, nicht vorher in Safari.
+
+Bitte am iPhone einmal durchprobieren und mir sagen, was nicht stimmt:
+
+- Startet die App ohne Browserleiste, ist oben die Uhrzeit lesbar, und verdeckt die Home-Leiste unten nichts?
+- In einer Liste schreiben: einmal Enter = neue Zeile, zweimal Enter = neue Notiz. Bleibt die Tastatur dabei offen?
+- Verschwindet die Zeile, in der du tippst, hinter der Tastatur?
+- `#` tippen: Lässt sich ein Tag im Dropdown gut mit dem Finger treffen?
+- Flugmodus einschalten, App ganz schließen und neu öffnen: Sind die Notizen da?
 
 ### Anmeldung testen (Laptop und iPhone)
 
