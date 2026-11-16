@@ -47,6 +47,20 @@ function gleich(a: TerminDaten, b: TerminDaten): boolean {
   return a.titel === b.titel && a.beginn === b.beginn && a.erinnerung === b.erinnerung && a.beschreibung === b.beschreibung;
 }
 
+/**
+ * Trägt die Termin-ID in eine Notiz ein.
+ *
+ * Der Zeitstempel der Notiz rückt dabei nur um eine Sekunde vor – nicht auf „jetzt“. So gilt der
+ * Eintrag beim Drive-Abgleich als Änderung und kommt auf dem anderen Gerät an, ist aber älter als
+ * jede echte Bearbeitung, die dort inzwischen (z. B. offline) gemacht wurde. Eine automatisch
+ * eingetragene Termin-ID kann deshalb nie getippten Text verdrängen.
+ */
+export function mitTerminId(notiz: Notiz, terminId: string | null): Notiz {
+  if (!notiz.aufgabe) return notiz;
+  const geaendert = new Date(new Date(notiz.geaendert).getTime() + 1000).toISOString().slice(0, 19) + 'Z';
+  return { ...notiz, geaendert, aufgabe: { ...notiz.aufgabe, kalender_event_id: terminId } };
+}
+
 export interface KalenderErgebnis {
   angelegt: number;
   geaendert: number;

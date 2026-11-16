@@ -8,7 +8,7 @@ import { KeineVerbindung } from '../abgleich/drive';
 import { alsKarte } from '../listen';
 import { baueListe, baueNotiz } from '../test-hilfe';
 import { hakeAb } from '../wiederholung';
-import { gleicheKalenderAb, terminFuer, titelAus } from './abgleich';
+import { gleicheKalenderAb, mitTerminId, terminFuer, titelAus } from './abgleich';
 import { SimulierterKalender } from './simulierterKalender';
 
 const JETZT = '2026-11-16T10:00';
@@ -50,7 +50,9 @@ class Geraet {
       appAdresse: APP,
       verwaisteAufraeumen,
     });
-    for (const [id, terminId] of ergebnis.ids) this.aendere(id, {}, { kalender_event_id: terminId });
+    for (const [id, terminId] of ergebnis.ids) {
+      this.notizen = this.notizen.map((n) => (n.id === id ? mitTerminId(n, terminId) : n));
+    }
     return ergebnis;
   }
 }

@@ -8,6 +8,7 @@ import { neueId } from '../../modell/ulid';
 import { bearbeiteNotiz, erzeugeNotizen } from '../absatz';
 import { alsKarte } from '../listen';
 import * as papierkorb from '../papierkorb';
+import { mitTerminId } from '../kalender/abgleich';
 import { KeineVerbindung } from './drive';
 import { abgleiche, type CacheEintrag, type Geraet } from './runde';
 import { SimuliertesDrive } from './simuliertesDrive';
@@ -608,42 +609,48 @@ describe('Sicherheit: bei unklarem Zustand wird nichts gelöscht', () => {
 });
 
 describe('Termin-ID aus dem Kalender', () => {
-  /** Trägt – wie der Kalender-Abgleich – eine Termin-ID ein, ohne den Zeitstempel der Notiz zu ändern. */
+  /** Trägt – wie der Kalender-Abgleich in der App – eine Termin-ID ein. */
   function trageTerminEin(geraet: TestGeraet, id: string, terminId: string): void {
     geraet.lokal = {
       ...geraet.lokal,
-      notizen: geraet.lokal.notizen.map((n) =>
-        n.id === id && n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, kalender_event_id: terminId } } : n,
-      ),
+      notizen: geraet.lokal.notizen.map((n) => (n.id === id ? mitTerminId(n, terminId) : n)),
     };
   }
 
-  it('wandert über Drive zum anderen Gerät, ohne dessen Bearbeitung zu verdrängen', async () => {
+  it('kommt beim anderen Gerät an', async () => {
     const { reise } = await grundaufbau();
     const aufgabe = a.schreibe(reise.id, '[ ] Wochenplanung', um('09:20'));
     await alleAbgleichen(um('09:30'));
 
-    // B bearbeitet den Text; danach trägt A (ohne von der Bearbeitung zu wissen) die Termin-ID ein.
+    trageTerminEin(a, aufgabe.id, 'termin-0001');
+    await alleAbgleichen(um('11:00'));
+
+    expect(a.notiz(aufgabe.id).aufgabe?.kalender_event_id).toBe('termin-0001');
+    expect(b.notiz(aufgabe.id).aufgabe?.kalender_event_id).toBe('termin-0001');
+    // der Zeitstempel ist nur um eine Sekunde vorgerückt
+    expect(b.notiz(aufgabe.id).geaendert).toBe('2026-11-01T09:20:01Z');
+    erwarteGleichstand();
+  });
+
+  it('verdrängt keine Bearbeitung, die das andere Gerät offline gemacht hat', async () => {
+    const { reise } = await grundaufbau();
+    const aufgabe = a.schreibe(reise.id, '[ ] Wochenplanung', um('09:20'));
+    await alleAbgleichen(um('09:30'));
+
+    // B bearbeitet offline den Text. Erst danach trägt A – ohne davon zu wissen – die Termin-ID ein.
     b.bearbeite(aufgabe.id, 'Wochenplanung mit Tee', um('10:00'));
     trageTerminEin(a, aufgabe.id, 'termin-0001');
     await alleAbgleichen(um('11:00'));
 
     expect(a.notiz(aufgabe.id).text).toBe('Wochenplanung mit Tee');
     expect(b.notiz(aufgabe.id).text).toBe('Wochenplanung mit Tee');
-    erwarteGleichstand();
-  });
 
-  it('kommt beim anderen Gerät an, wenn dort nichts geändert wurde', async () => {
-    const { reise } = await grundaufbau();
-    const aufgabe = a.schreibe(reise.id, '[ ] Wochenplanung', um('09:20'));
-    await alleAbgleichen(um('09:30'));
-
+    // Beim nächsten Kalender-Abgleich trägt A die ID wieder ein – jetzt auf der Fassung mit dem neuen Text.
     trageTerminEin(a, aufgabe.id, 'termin-0001');
-    await alleAbgleichen(um('11:00'));
+    await alleAbgleichen(um('11:05'));
 
+    expect(b.notiz(aufgabe.id)).toMatchObject({ text: 'Wochenplanung mit Tee' });
     expect(b.notiz(aufgabe.id).aufgabe?.kalender_event_id).toBe('termin-0001');
-    // der Zeitstempel der Notiz ist dabei unverändert geblieben
-    expect(b.notiz(aufgabe.id).geaendert).toBe(um('09:20'));
     erwarteGleichstand();
   });
 });

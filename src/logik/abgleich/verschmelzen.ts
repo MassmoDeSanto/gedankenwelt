@@ -37,19 +37,13 @@ function alsKarte<T extends { id: string }>(eintraege: T[]): Map<string, T> {
   return new Map(eintraege.map((e) => [e.id, e]));
 }
 
-/**
- * Inhaltlicher Vergleich für die Erkennung von Handarbeit in Drive. Die Termin-ID zählt nicht mit:
- * Sie wird vom Kalender-Abgleich ohne neuen Zeitstempel eingetragen und darf deshalb nie wie eine
- * „Änderung von Hand“ aussehen (sonst würde sie Bearbeitungen des anderen Geräts verdrängen).
- */
 function gleicheNotiz(a: Notiz, b: Notiz): boolean {
-  const ohneTermin = (n: Notiz) => JSON.stringify(n.aufgabe && { ...n.aufgabe, kalender_event_id: null });
   return (
     a.text === b.text &&
     a.liste_id === b.liste_id &&
     a.position === b.position &&
     a.geloescht === b.geloescht &&
-    ohneTermin(a) === ohneTermin(b)
+    JSON.stringify(a.aufgabe) === JSON.stringify(b.aufgabe)
   );
 }
 
