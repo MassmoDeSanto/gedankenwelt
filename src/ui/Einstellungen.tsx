@@ -1,6 +1,7 @@
 /** Einstellungen: Hell/Dunkel, Papierkorb, Export/Import als ZIP, Beispieldaten. */
 import { useRef, useState } from 'react';
 import { exportiereZip, importiereZip, ladeBeispieldaten, loescheAlles, setzeThema } from '../db/aktionen';
+import { useAbgleichStatus } from '../db/abgleichDienst';
 import { useZustand } from '../db/speicher';
 import { lokalesDatum } from '../logik/zeit';
 import { BestaetigungsDialog, Kopfzeile, Segment } from './Bausteine';
@@ -9,6 +10,7 @@ import { adresse } from './router';
 
 export function Einstellungen() {
   const z = useZustand();
+  const verbunden = useAbgleichStatus().zustand !== 'aus';
   const dateiwahl = useRef<HTMLInputElement>(null);
   const [meldung, setMeldung] = useState<string | null>(null);
   const [importDatei, setImportDatei] = useState<File | null>(null);
@@ -81,7 +83,11 @@ export function Einstellungen() {
         <div className="einstellung">
           <span>
             Import aus ZIP
-            <span className="hinweis klein">Ersetzt alle Daten in der App durch den Inhalt der Datei.</span>
+            <span className="hinweis klein">
+              {verbunden
+                ? 'Ersetzt die Daten auf diesem Gerät; beim nächsten Abgleich wird mit Drive zusammengeführt.'
+                : 'Ersetzt alle Daten in der App durch den Inhalt der Datei.'}
+            </span>
           </span>
           <button className="knopf" onClick={() => dateiwahl.current?.click()}>
             Datei wählen
@@ -112,15 +118,17 @@ export function Einstellungen() {
             Laden
           </button>
         </div>
-        <div className="einstellung">
-          <span>
-            Alle Daten löschen
-            <span className="hinweis klein">Leert die App vollständig, auch den Papierkorb.</span>
-          </span>
-          <button className="knopf gefahr" onClick={() => setAllesLoeschen(true)}>
-            Löschen
-          </button>
-        </div>
+        {!verbunden && (
+          <div className="einstellung">
+            <span>
+              Alle Daten löschen
+              <span className="hinweis klein">Leert die App vollständig, auch den Papierkorb.</span>
+            </span>
+            <button className="knopf gefahr" onClick={() => setAllesLoeschen(true)}>
+              Löschen
+            </button>
+          </div>
+        )}
         {meldung && (
           <p className="meldung" role="status">
             {meldung}
@@ -129,8 +137,10 @@ export function Einstellungen() {
       </section>
 
       <p className="hinweis klein mitte">
-        Noch liegen alle Daten nur in diesem Browser. Der Abgleich mit Google Drive wird gerade gebaut; Erinnerungen
-        und der Import aus Apple Notizen folgen in den nächsten Phasen.
+        {verbunden
+          ? 'Deine Notizen liegen auf diesem Gerät und als Markdown-Dateien in deinem Google Drive.'
+          : 'Ohne Google Drive liegen alle Daten nur in diesem Browser.'}{' '}
+        Erinnerungen und der Import aus Apple Notizen folgen in den nächsten Phasen.
       </p>
 
       {importDatei && (

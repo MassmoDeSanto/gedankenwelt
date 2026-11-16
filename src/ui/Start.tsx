@@ -8,6 +8,7 @@ import { LEERER_FILTER, filterAktiv, type SuchFilter, type Treffer } from '../lo
 import { tagHaeufigkeit } from '../logik/tags';
 import { faelligDatum, formatFaellig, formatKopfdatum, formatStempel, lokalesDatum } from '../logik/zeit';
 import { EINGANG_ID, type Notiz } from '../modell/typen';
+import { AbgleichSymbol } from './AbgleichSymbol';
 import { Segment, klassen, useListenBaum } from './Bausteine';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { adresse } from './router';
@@ -40,9 +41,12 @@ export function Start() {
     <div className="seite">
       <header className="startkopf">
         <span className="mono">{formatKopfdatum()}</span>
-        <a className="symbolknopf" href={adresse({ seite: 'einstellungen' })} aria-label="Einstellungen">
-          <Zahnrad />
-        </a>
+        <span className="startkopf-rechts">
+          <AbgleichSymbol />
+          <a className="symbolknopf" href={adresse({ seite: 'einstellungen' })} aria-label="Einstellungen">
+            <Zahnrad />
+          </a>
+        </span>
       </header>
 
       <div className="suchfeld">

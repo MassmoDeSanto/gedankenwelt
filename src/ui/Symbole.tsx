@@ -126,3 +126,37 @@ export const PfeilRechts = () => (
     <path d="M5 12h14m-6-6 6 6-6 6" />
   </Symbol>
 );
+
+const WOLKE = 'M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.6a4 4 0 0 1-1 7.9z';
+
+/** Abgeglichen: Wolke mit Haken */
+export const WolkeFertig = () => (
+  <Symbol>
+    <path d={WOLKE} />
+    <path d="m9.3 13.4 2 2 3.6-3.8" />
+  </Symbol>
+);
+
+/** Abgleich läuft oder steht aus: Wolke mit Pfeil nach oben */
+export const WolkeHoch = () => (
+  <Symbol>
+    <path d={WOLKE} />
+    <path d="M12 16v-4.6m-2 1.8 2-2 2 2" />
+  </Symbol>
+);
+
+/** Offline: durchgestrichene Wolke */
+export const WolkeAus = () => (
+  <Symbol>
+    <path d={WOLKE} />
+    <path d="M4 4l16 16" />
+  </Symbol>
+);
+
+/** Anmeldung nötig oder Fehler: Wolke mit Ausrufezeichen */
+export const WolkeAchtung = () => (
+  <Symbol>
+    <path d={WOLKE} />
+    <path d="M12 11.2v3.2m0 2.1v.1" />
+  </Symbol>
+);

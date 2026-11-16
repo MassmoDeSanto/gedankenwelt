@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } 
 import { useZustand } from '../db/speicher';
 import { kinderVon, pfadText } from '../logik/listen';
 import type { Liste } from '../modell/typen';
+import { AbgleichSymbol } from './AbgleichSymbol';
 import { adresse, type Route } from './router';
 import { Kreuz, PfeilZurueck } from './Symbole';
 
@@ -40,7 +41,10 @@ export function Kopfzeile({ zurueck, titel, rechts }: { zurueck: Route; titel: R
         <PfeilZurueck />
       </a>
       <div className="kopfzeile-titel">{titel}</div>
-      <div className="kopfzeile-rechts">{rechts}</div>
+      <div className="kopfzeile-rechts">
+        <AbgleichSymbol />
+        {rechts}
+      </div>
     </header>
   );
 }
