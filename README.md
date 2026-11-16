@@ -2,7 +2,7 @@
 
 Persönliche Notiz-App für kurze Gedanken, Aufgaben und längere Texte. Sie läuft als Web-App im Browser.
 
-**Stand: Phase 2 in Arbeit.** Phase 1 (Kern am Laptop) ist fertig. Der Abgleich mit Google Drive ist als geprüfter Kern vorhanden, aber noch nicht an die App angeschlossen: Noch liegen alle Daten nur in deinem Browser. Was für Phase 2 schon geht und was du dafür einrichten musst, steht in Abschnitt 7.
+**Stand: Phase 2 in Arbeit.** Phase 1 (Kern am Laptop) ist fertig. Der Abgleich mit Google Drive ist gebaut und an die App angeschlossen, aber **noch nie gegen das echte Google Drive gelaufen** – dafür fehlt die Client-ID aus deiner Google Cloud. Bis du die App verbindest, liegen alle Daten nur in deinem Browser. Was du einrichten musst, steht in Abschnitt 7.
 
 ---
 
@@ -76,7 +76,7 @@ Tests sind kleine Programme, die automatisch prüfen, ob die wichtigen Regeln no
 npm test
 ```
 
-Am Ende sollte stehen: `Test Files  8 passed (8)` und `Tests  107 passed (107)`.
+Am Ende sollte stehen: `Test Files  9 passed (9)` und `Tests  111 passed (111)`.
 
 **Typen prüfen.** Kontrolliert, ob im Code alles zusammenpasst, ohne ihn auszuführen. Keine Ausgabe heißt: alles in Ordnung.
 
@@ -141,7 +141,7 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 - Beispieldaten
 - PWA-Grundgerüst (Offline-Zwischenspeicher wird beim Bauen erzeugt)
 - Markdown light in der Anzeige: `**fett**`, `*kursiv*`, `` `Code` ``, Links und Aufzählungen mit `-`. Beim Bearbeiten sieht man den Rohtext.
-- 107 automatische Tests
+- 111 automatische Tests
 
 ### Geprüft und nicht geprüft
 
@@ -201,10 +201,17 @@ Phase 2 kann `src/logik/markdown.ts` unverändert für Google Drive benutzen: Es
 ### Was schon da ist
 
 - **Abgleich-Kern** (`src/logik/abgleich/`), geprüft gegen ein simuliertes Drive mit 28 Tests: zwei Geräte offline, dieselbe Notiz auf beiden geändert, Löschen gegen Bearbeiten, Umbenennen und Verschieben ohne doppelte Dateien, Abbruch an jeder einzelnen Stelle des Hochladens, von Hand in Drive ergänzter Text, Papierkorb nach 30 Tagen.
-- **Anmeldung bei Google** mit Testseite unter Einstellungen → Google Drive.
+- **Anschluss an die App:** Warteschlange in der Browser-Datenbank, automatischer Abgleich (beim Öffnen, beim Zurückkehren in die App, wenn das Netz zurückkommt, vier Sekunden nach einer Änderung, alle zwei Minuten), Status-Symbol, erstes Verbinden mit automatischer Sicherung und der Frage nach den Beispieldaten, „Lokale Daten neu aus Drive laden“, „Verbindung trennen“.
+- **Anmeldung bei Google** mit stillem Erneuern; Testseite unter Einstellungen → Google Drive → Diagnose.
 - **Automatische Veröffentlichung** auf GitHub Pages bei jedem Push (`.github/workflows/veroeffentlichen.yml`).
+- **Updates:** Eine neue Version der App wird still übernommen, sobald die App in den Hintergrund geht.
 
-Noch **nicht** da: der Anschluss des Abgleichs an das echte Google Drive, das Status-Symbol und der iPhone-Feinschliff.
+### Geprüft und nicht geprüft
+
+- **Geprüft:** alle Tests; dazu im Browser der ganze Ablauf mit einem simulierten Drive (erstes Verbinden, Beispieldaten löschen, Sicherung, Warteschlange, automatischer Abgleich, Neuaufbau, Status-Symbol).
+- **Nicht geprüft:** alles, was das echte Google braucht – die Anmeldung, die Datei `src/db/googleDrive.ts` (die Übersetzung in Googles Schnittstelle) und das Verhalten am iPhone. Das geht erst mit deiner Client-ID. Rechne damit, dass beim ersten echten Versuch noch etwas nachzubessern ist.
+
+Noch **nicht** da: der iPhone-Feinschliff (App-Symbol als PNG, Ränder für Notch und Home-Leiste, Tastatur).
 
 ### Wie die Anmeldung funktioniert – und ihre Grenze
 
@@ -289,6 +296,67 @@ Unter Einstellungen → Google Drive:
 
 Am iPhone bitte alle vier Schritte in der installierten App ausprobieren, dann die App ganz schließen, nach über einer Stunde wieder öffnen und Schritt 3 wiederholen. Das Protokoll mit den Uhrzeiten zeigt, was geklappt hat.
 
+### Abgleich einschalten
+
+Nach dem Anmelden erscheint unter Einstellungen → Google Drive der Kasten **Abgleich einschalten**. Das machst du einmal pro Gerät.
+
+1. Die App sichert zuerst den Stand dieses Geräts als ZIP (in der Browser-Datenbank; später unter „Sicherung vom ersten Verbinden“ herunterladbar).
+2. Liegen noch Beispieldaten aus Phase 1 auf dem Gerät, fragt sie einmal, ob sie gelöscht werden sollen.
+3. Ist dein Drive leer, wird der Stand hochgeladen. Liegen schon Daten dort (zweites Gerät), wird zusammengeführt.
+
+**Reihenfolge für zwei Geräte:** erst am Laptop einschalten und warten, bis das Wolken-Symbol einen Haken zeigt. Danach am iPhone.
+
+### Das Wolken-Symbol
+
+Oben rechts, neben dem Zahnrad. Antippen zeigt eine Erklärung und „Jetzt abgleichen“.
+
+| Symbol | Bedeutung |
+|---|---|
+| Wolke mit Haken, blass | alles abgeglichen |
+| Wolke mit Pfeil | Änderungen warten oder der Abgleich läuft gerade |
+| durchgestrichene Wolke | offline – du kannst normal weiterarbeiten |
+| Wolke mit Ausrufezeichen, bernsteinfarben | „Neu anmelden“ nötig |
+| Wolke mit Ausrufezeichen, rot | Fehler – Antippen zeigt, was los ist |
+
+Ohne eingerichteten Abgleich ist kein Symbol zu sehen.
+
 ### Wenn etwas nicht abgleicht
 
-Folgt, sobald der Abgleich an die App angeschlossen ist.
+1. **Symbol antippen.** Dort steht in einem Satz, was los ist.
+2. **„Neu anmelden“** erscheint, wenn Google eine Eingabe braucht. Ein Tipp genügt meist. Bis dahin bleibt alles auf dem Gerät gespeichert.
+3. **Offline:** nichts tun. Sobald das Netz zurück ist, gleicht die App von selbst ab.
+4. **Roter Fehler, der bleibt:** „Jetzt abgleichen“ antippen. Hilft das nicht: Einstellungen → Google Drive → Diagnose → „Drive-Zugriff prüfen“. Die Meldung dort sagt, ob Google erreichbar ist.
+5. **Ein Gerät zeigt etwas anderes als das andere:** auf beiden „Jetzt abgleichen“. Die App führt pro Notiz zusammen; es gewinnt die zuletzt geänderte Fassung. Das hängt an den Uhren der Geräte – sie sollten auf „automatisch“ stehen.
+6. **Letzter Ausweg:** „Lokale Daten neu aus Drive laden“ wirft den Speicher dieses Geräts weg und baut ihn aus Drive neu auf. Vorher prüfen, dass nichts mehr auf den Abgleich wartet (die App warnt sonst).
+
+Was die App **nie** tut: Dateien in Drive löschen oder leeren, wenn sie den Stand dort nicht vollständig laden konnte. Fehlt in Drive die Datei `_meta.json` (z. B. anderes Konto oder Ordner gelöscht), deutet sie nichts als „gelöscht“, sondern lädt den lokalen Stand neu hoch.
+
+### Was du in Drive tun darfst – und was nicht
+
+- **Text in einer Listendatei ändern oder ergänzen:** ja. Absätze ohne die Kommentarzeile `<!-- id:… -->` werden beim nächsten Abgleich zu neuen Notizen.
+- **Einen Absatz samt Kommentarzeile löschen:** Die Notiz landet im Papierkorb der App (30 Tage wiederherstellbar).
+- **Dateien verschieben oder umbenennen:** nein. Die App bringt sie an ihren Platz zurück. Listen verschiebst und benennst du in der App.
+- **Neue Dateien anlegen:** Die App sieht sie nicht. Ihre Berechtigung (`drive.file`) umfasst nur Dateien, die sie selbst angelegt hat.
+- **Die Dateien `_meta.json` und `_papierkorb.md`:** bitte nicht anfassen.
+
+### Entscheidungen in Phase 2
+
+| Entscheidung | Grund |
+|---|---|
+| Zusammenführen aus drei Ständen (lokal, Drive, letzter gemeinsamer Stand) | Nur so lässt sich unterscheiden, ob etwas auf einer Seite fehlt, weil es neu ist oder weil es dort gelöscht wurde. |
+| Die Warteschlange merkt sich, *welche* Notizen und Listen geändert wurden; hochgeladen wird durch Vergleich der Stände | Ein unterbrochener Abgleich muss nichts „nachspielen“: Die nächste Runde stellt aus den Ständen dasselbe Ziel wieder her. Das prüfen die Abbruch-Tests an jeder einzelnen Stelle. |
+| Dateien werden an der Listen-ID im Dateikopf erkannt, nicht am Namen | Umbenennen und Verschieben benennt bzw. verschiebt die Datei in Drive, statt sie neu anzulegen. |
+| `eltern:` steht im Dateikopf | Der Ordner ist nur die Darstellung. Sonst würde ein unterbrochenes Verschieben beim nächsten Abgleich rückgängig gemacht. |
+| Bei gleichem Zeitstempel gilt die Fassung aus Drive | So landen alle Geräte beim selben Ergebnis. |
+| Notiz lebt, ihre Liste wurde woanders gelöscht → die Liste kommt zurück | „Löschen ist älter als die Bearbeitung“ soll die Notiz an ihrem Ort zurückbringen, nicht im Eingang abladen. |
+| „Alle Daten löschen“ gibt es nur ohne Drive-Verbindung | Ein Fehlklick soll nie den Drive leeren. Verbunden gibt es stattdessen „Lokale Daten neu aus Drive laden“. |
+| Sicherung vor dem ersten Verbinden liegt in der Browser-Datenbank | Ein automatischer Download wäre am iPhone ein störendes Fenster. Herunterladen geht jederzeit in den Einstellungen. |
+| Stilles Erneuern nur beim Öffnen, beim Zurückkehren oder nach 30 Sekunden ohne Tastendruck | Die Seite springt dafür kurz zu Google. Das soll nie mitten im Tippen passieren. |
+| Abgleich einschalten ist ein eigener Knopf | Anmelden allein soll noch nichts hochladen. |
+
+### Einschränkungen
+
+- **Keine Dauer-Anmeldung ohne Server** (siehe oben). Am iPhone ungetestet.
+- **Zwischen „nachsehen, ob sich die Datei geändert hat“ und „schreiben“ liegt ein Sekundenbruchteil.** Schreiben beide Geräte exakt gleichzeitig, gewinnt das spätere; die andere Fassung liegt dann im Versionsverlauf von Google Drive. Beim nächsten Abgleich wird trotzdem wieder zusammengeführt.
+- **„Neuere Fassung gewinnt“ vertraut den Uhren der Geräte.**
+- **Leere Ordner räumt die App weg.** Hast du von Hand eine eigene Datei in einen Listen-Ordner gelegt, sieht die App sie nicht und könnte den Ordner in den Drive-Papierkorb legen (dort 30 Tage wiederherstellbar).
