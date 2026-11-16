@@ -277,15 +277,18 @@ export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz;
       >
         <Haken />
       </button>
-      <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
-        <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
-      </a>
-      {(faellig || mitListe) && (
-        <span className="mono meta aufgabeninfo">
-          {notiz.aufgabe && <WiederholungsHinweis aufgabe={notiz.aufgabe} />}
-          {notiz.aufgabe && faellig ? <FaelligText aufgabe={notiz.aufgabe} heute={heute} /> : z.listen.get(notiz.liste_id)?.name}
-        </span>
-      )}
+      {/* Am Laptop nebeneinander, am Handy untereinander – damit das Datum nie abgeschnitten wird */}
+      <div className="aufgabeninhalt">
+        <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
+          <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
+        </a>
+        {(faellig || mitListe) && (
+          <span className="mono meta aufgabeninfo">
+            {notiz.aufgabe && faellig ? <FaelligText aufgabe={notiz.aufgabe} heute={heute} /> : z.listen.get(notiz.liste_id)?.name}
+            {notiz.aufgabe && <WiederholungsHinweis aufgabe={notiz.aufgabe} />}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

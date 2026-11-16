@@ -49,6 +49,7 @@ export function AbgleichSymbol() {
         <div className="abgleich-info">
           <div className="etikett">Google Drive · {KURZ[status.zustand]}</div>
           <p>{status.meldung}</p>
+          {status.kalenderHinweis && <p className="bernstein">Erinnerungen: {status.kalenderHinweis}</p>}
           <p className="mono meta">
             Letzter Abgleich: {vorWieLange(status.letzterAbgleich)}
             {status.offen > 0 && ` · ${status.offen} offen`}

@@ -6,6 +6,7 @@ import { useZustand } from '../db/speicher';
 import { lokalesDatum } from '../logik/zeit';
 import { BestaetigungsDialog, Kopfzeile, Segment } from './Bausteine';
 import { DriveBereich } from './DriveBereich';
+import { ErinnerungenBereich } from './ErinnerungenBereich';
 import { adresse } from './router';
 
 export function Einstellungen() {
@@ -59,6 +60,7 @@ export function Einstellungen() {
       </section>
 
       <DriveBereich />
+      <ErinnerungenBereich />
 
       <section className="karte">
         <div className="etikett">Papierkorb</div>

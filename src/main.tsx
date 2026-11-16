@@ -6,9 +6,10 @@ import './ui/stil.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
-import { nutzeTestDrive, starteAbgleichDienst } from './db/abgleichDienst';
+import { nutzeTestDrive, nutzeTestKalender, starteAbgleichDienst } from './db/abgleichDienst';
 import { verarbeiteRueckkehr } from './db/anmeldung';
 import { ladeAlles } from './db/speicher';
+import { GOOGLE_CLIENT_ID } from './konfig';
 import { App } from './ui/App';
 
 // Kommt die Seite gerade von der Google-Anmeldung zurück? Dann die Antwort auswerten,
@@ -20,6 +21,18 @@ verarbeiteRueckkehr();
 if (import.meta.env.DEV && localStorage.getItem('gedankenwelt.testdrive') === '1') {
   const { SimuliertesDrive } = await import('./logik/abgleich/simuliertesDrive');
   nutzeTestDrive(new SimuliertesDrive());
+}
+
+// Nur in der Entwicklung (`npm run dev`): Solange keine Google-Client-ID eingetragen ist, laufen die
+// Erinnerungen gegen einen simulierten Kalender. Er merkt sich seine Termine im localStorage und
+// ist „offline“, wenn der Browser es ist. In der veröffentlichten App ist er nicht enthalten.
+if (import.meta.env.DEV && (!GOOGLE_CLIENT_ID || localStorage.getItem('gedankenwelt.testkalender') === '1')) {
+  const { SimulierterKalender } = await import('./logik/kalender/simulierterKalender');
+  const SPEICHER = 'gedankenwelt.simulierterKalender';
+  const gemerkt = JSON.parse(localStorage.getItem(SPEICHER) ?? 'null');
+  const simuliert = new SimulierterKalender(gemerkt, (stand) => localStorage.setItem(SPEICHER, JSON.stringify(stand)));
+  simuliert.istOffline = () => !navigator.onLine;
+  nutzeTestKalender(simuliert);
 }
 
 // Offline-Betrieb und Updates: Der „Service Worker“ speichert die App-Dateien im Browser zwischen

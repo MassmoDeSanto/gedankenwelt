@@ -557,6 +557,14 @@ mark {
   margin-top: 0;
 }
 
+.aufgabeninhalt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .aufgabentext {
   flex: 1;
   min-width: 0;
@@ -567,7 +575,7 @@ mark {
 
 .aufgabenzeile .meta {
   flex: none;
-  max-width: 40%;
+  max-width: 55%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1324,6 +1332,18 @@ a.kachel:hover,
   color: var(--tuerkis);
 }
 
+.meldung.warnung {
+  color: var(--bernstein);
+}
+
+.protokoll .etikett {
+  margin-bottom: 6px;
+}
+
+.dialog-knoepfe {
+  flex-wrap: wrap;
+}
+
 .korbzeile {
   display: flex;
   align-items: center;
@@ -1555,6 +1575,31 @@ details.diagnose > summary {
     width: auto;
   }
 
+  /* Aufgaben-Zeilen: Text oben, Fälligkeit und Wiederholung darunter */
+  .aufgabenzeile {
+    align-items: flex-start;
+    padding: 7px 0;
+  }
+
+  .aufgabeninhalt {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+  }
+
+  .aufgabentext {
+    flex: none;
+    max-width: 100%;
+  }
+
+  .aufgabenzeile .meta {
+    max-width: 100%;
+  }
+
+  .aufgabenpfad {
+    margin-top: -4px;
+  }
+
   .seite {
     padding-top: calc(16px + var(--rand-oben));
   }
@@ -1638,6 +1683,10 @@ details.diagnose > summary {
   .aufgabe-neu {
     font-size: 16px;
     min-height: 40px;
+  }
+
+  .aufgabenpfad {
+    margin-left: 34px;
   }
 
   .schnellwahl button {

@@ -4,8 +4,20 @@
     {
       "name": "gedankenwelt",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", ". ~/.nvm/nvm.sh && npm run dev -- --port 5173 --strictPort"],
+      "runtimeArgs": [
+        "-c",
+        ". ~/.nvm/nvm.sh && npm run dev -- --port 5173 --strictPort"
+      ],
       "port": 5173
+    },
+    {
+      "name": "gedankenwelt-gebaut",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        ". ~/.nvm/nvm.sh && npm run build && npm run preview -- --port 4173 --strictPort"
+      ],
+      "port": 4173
     }
   ]
 }

@@ -13,14 +13,25 @@
 import { useSyncExternalStore } from 'react';
 import { KeineVerbindung, NichtAngemeldet, VersionsKonflikt, type Drive } from '../logik/abgleich/drive';
 import { abgleiche, type CacheEintrag, type Geraet } from '../logik/abgleich/runde';
+import { gleicheKalenderAb, mitTerminId } from '../logik/kalender/abgleich';
+import {
+  KALENDER_NAME,
+  KalenderFehlt,
+  KeineKalenderBerechtigung,
+  type Kalender,
+  type TerminDaten,
+} from '../logik/kalender/kalender';
+import type { SimulierterKalender, SimulierterTermin } from '../logik/kalender/simulierterKalender';
 import { zuDateien } from '../logik/markdown';
-import { jetztStempel, lokalesDatum } from '../logik/zeit';
+import { jetztStempel, lokalJetzt, lokalesDatum, verschiebeDatum } from '../logik/zeit';
 import { packe } from '../logik/zip';
 import { STANDARD_EINSTELLUNGEN, eingangsListe, type Datenbestand } from '../modell/typen';
+import { APP_ADRESSE, DRIVE_SCOPE, KALENDER_SCOPE, ZEITZONE } from '../konfig';
 import {
   abmelden,
   anmeldeZustand,
   gueltigesToken,
+  hatBerechtigung,
   starteWeiterleitung,
   stillesErneuernMoeglich,
   verwirfToken,
@@ -28,12 +39,15 @@ import {
 import { findeBeispieldaten } from './beispieldaten';
 import { db } from './db';
 import { GoogleDrive } from './googleDrive';
+import { GoogleKalender } from './googleKalender';
 import {
   alsBestand,
   entferneEndgueltig,
   ersetzeAlles,
   leseZustand,
   setzeAbgleichHaken,
+  sichereEinstellungen,
+  sichereNotizen,
   uebernimmAbgleich,
 } from './speicher';
 
@@ -64,6 +78,8 @@ export interface AbgleichStatus {
   letzterAbgleich: number | null;
   /** Wie viele Notizen und Listen noch nicht hochgeladen sind */
   offen: number;
+  /** Wenn bei den Erinnerungen etwas nicht stimmt: Erklärung dazu, sonst null */
+  kalenderHinweis: string | null;
 }
 
 const MELDUNGEN: Record<Exclude<AbgleichZustand, 'fehler'>, string> = {
@@ -76,7 +92,7 @@ const MELDUNGEN: Record<Exclude<AbgleichZustand, 'fehler'>, string> = {
     'Die Anmeldung bei Google ist abgelaufen. Tippe auf „Neu anmelden“. Bis dahin bleibt alles auf diesem Gerät gespeichert, es geht nichts verloren.',
 };
 
-let status: AbgleichStatus = { zustand: 'aus', meldung: MELDUNGEN.aus, letzterAbgleich: null, offen: 0 };
+let status: AbgleichStatus = { zustand: 'aus', meldung: MELDUNGEN.aus, letzterAbgleich: null, offen: 0, kalenderHinweis: null };
 const hoerer = new Set<() => void>();
 
 function setze(zustand: AbgleichZustand, meldung?: string, teil: Partial<AbgleichStatus> = {}): void {
@@ -129,6 +145,46 @@ export function istTestbetrieb(): boolean {
   return testbetrieb;
 }
 
+// ───────────────────────── Kalender für die Erinnerungen ─────────────────────────
+
+let kalender: Kalender = new GoogleKalender(gueltigesToken, verwirfToken, { zeitzone: ZEITZONE });
+let simulierter: SimulierterKalender | null = null;
+
+/**
+ * Nur für die Entwicklung (`npm run dev`): tauscht den Google Kalender gegen einen simulierten.
+ * In der veröffentlichten App wird diese Funktion nie aufgerufen.
+ */
+export function nutzeTestKalender(ersatz: SimulierterKalender): void {
+  kalender = ersatz;
+  simulierter = ersatz;
+}
+
+export function istKalenderSimuliert(): boolean {
+  return simulierter !== null;
+}
+
+/** Was im simulierten Kalender steht – für die Entwickler-Ansicht in den Einstellungen. */
+export function simulierteTermine(): SimulierterTermin[] | null {
+  const id = leseZustand().einstellungen.kalender_id;
+  return simulierter && id ? simulierter.alle(id) : null;
+}
+
+/** Sind die Erinnerungen eingeschaltet? (Die Einstellung wandert über Drive auf alle Geräte.) */
+export function erinnerungenAktiv(): boolean {
+  const e = leseZustand().einstellungen;
+  return e.erinnerungen === true && !!e.kalender_id;
+}
+
+/** Lassen sich Erinnerungen auf diesem Gerät überhaupt nutzen? In der veröffentlichten App nur mit Google. */
+export function erinnerungenVerfuegbar(): boolean {
+  return istKalenderSimuliert() || istVerbunden();
+}
+
+/** Darf dieses Gerät gerade auf den Kalender zugreifen? */
+function kalenderNutzbar(): boolean {
+  return istKalenderSimuliert() || (istVerbunden() && hatBerechtigung(KALENDER_SCOPE));
+}
+
 // ───────────────────────── Was sich der Abgleich merkt ─────────────────────────
 
 let basis: Datenbestand | null = null;
@@ -177,7 +233,8 @@ function plane(ms: number, anlass: Anlass = 'aenderung'): void {
 
 /** Wird vom Speicher nach jeder Änderung durch den Nutzer aufgerufen. */
 function trageEin(ids: string[]): void {
-  if (!istVerbunden()) return;
+  // Vorgemerkt wird nur, wenn es etwas abzugleichen gibt: Drive verbunden oder Erinnerungen aktiv.
+  if (!istVerbunden() && !erinnerungenAktiv()) return;
   const stand = Date.now();
   for (const id of ids) offeneIds.add(id);
   db.warteschlange.bulkPut(ids.map((id) => ({ id, stand }))).catch(meldeFehler);
@@ -231,45 +288,91 @@ async function erneuereAnmeldung(anlass: Anlass): Promise<void> {
   else setze('offline');
 }
 
-export async function gleicheAb(anlass: Anlass = 'hand'): Promise<void> {
-  if (!bereit || !istVerbunden()) return;
+/**
+ * Richtet den Kalender nach den Aufgaben aus und trägt die Termin-IDs in die Notizen ein.
+ * Gibt es den Kalender nicht mehr (z. B. im Google Kalender von Hand gelöscht), wird er neu angelegt.
+ */
+async function kalenderRunde(verwaisteAufraeumen = false): Promise<void> {
+  for (let versuch = 1; ; versuch++) {
+    const z = leseZustand();
+    const kalenderId = z.einstellungen.kalender_id;
+    if (!z.einstellungen.erinnerungen || !kalenderId) return;
+    try {
+      const ergebnis = await gleicheKalenderAb(kalender, kalenderId, [...z.notizen.values()], z.listen, {
+        jetztLokal: lokalJetzt(),
+        appAdresse: APP_ADRESSE,
+        verwaisteAufraeumen,
+      });
+      // Termin-IDs übernehmen – auf dem aktuellen Stand der Notiz, falls inzwischen getippt wurde.
+      const geaendert = [...ergebnis.ids].flatMap(([id, terminId]) => {
+        const notiz = leseZustand().notizen.get(id);
+        return notiz?.aufgabe && notiz.aufgabe.kalender_event_id !== terminId ? [mitTerminId(notiz, terminId)] : [];
+      });
+      sichereNotizen(geaendert);
+      return;
+    } catch (fehler) {
+      if (!(fehler instanceof KalenderFehlt) || versuch > 1) throw fehler;
+      const neu = await kalender.erstelleKalender(KALENDER_NAME);
+      sichereEinstellungen({ ...leseZustand().einstellungen, kalender_id: neu, geaendert: jetztStempel() });
+    }
+  }
+}
+
+export async function gleicheAb(anlass: Anlass = 'hand', kalenderAufraeumen = false): Promise<void> {
+  if (!bereit) return;
+  const mitDrive = istVerbunden();
+  const mitKalender = erinnerungenAktiv() && kalenderNutzbar();
+  if (!mitDrive && !mitKalender) return;
   if (laeuft) {
     nochmal = true;
     return;
   }
+  // Ohne Drive (nur in der Entwicklung mit simuliertem Kalender) bleibt das Wolken-Symbol aus.
+  const zeige: typeof setze = (...a) => (mitDrive ? setze(...a) : setze(status.zustand, status.meldung, a[2]));
+
   if (!navigator.onLine) {
-    setze('offline');
+    zeige('offline');
     return;
   }
-  if (!testbetrieb && !gueltigesToken()) {
+  const brauchtGoogle = (mitDrive && !testbetrieb) || (mitKalender && !istKalenderSimuliert());
+  if (brauchtGoogle && !gueltigesToken()) {
     await erneuereAnmeldung(anlass);
     return;
   }
 
   laeuft = true;
-  setze('laeuft');
+  zeige('laeuft');
   const start = Date.now();
   try {
-    await abgleiche(drive, geraet, () => jetztStempel());
-    // Aus der Warteschlange streichen, was vor dieser Runde eingetragen wurde.
-    await db.warteschlange.where('stand').below(start).delete();
+    const drive_ = mitDrive ? await abgleiche(drive, geraet, () => jetztStempel()) : null;
+
+    // Kalender: nur, wenn sich etwas getan haben kann (nicht bei jedem Takt ohne Änderung).
+    let kalenderFertig = true;
+    if (mitKalender && (anlass !== 'takt' || offeneIds.size > 0 || (drive_?.heruntergeladen ?? 0) > 0)) {
+      kalenderFertig = await versucheKalender(kalenderAufraeumen);
+    }
+
+    // Aus der Warteschlange streichen, was vor dieser Runde eingetragen wurde – aber nur,
+    // wenn auch der Kalender nachgezogen ist. Sonst wird es beim nächsten Mal nachgeholt.
+    if (kalenderFertig) await db.warteschlange.where('stand').below(start).delete();
     offeneIds = new Set((await db.warteschlange.toArray()).map((e) => e.id));
-    setze(offeneIds.size > 0 ? 'ausstehend' : 'abgeglichen', undefined, {
+    zeige(offeneIds.size > 0 ? 'ausstehend' : 'abgeglichen', undefined, {
       letzterAbgleich: Date.now(),
       offen: offeneIds.size,
     });
     db.abgleich.put({ schluessel: 'letzterAbgleich', wert: Date.now() }).catch(meldeFehler);
-    if (offeneIds.size > 0) nochmal = true;
+    // Die eingetragenen Termin-IDs sind neue Änderungen und müssen noch nach Drive.
+    if (kalenderFertig && offeneIds.size > 0) nochmal = true;
   } catch (fehler) {
-    if (fehler instanceof KeineVerbindung) setze('offline');
+    if (fehler instanceof KeineVerbindung) zeige('offline');
     else if (fehler instanceof NichtAngemeldet) await erneuereAnmeldung(anlass);
     else if (fehler instanceof VersionsKonflikt) {
-      setze('ausstehend', 'Google Drive wurde gleichzeitig von einem anderen Gerät geändert. Der Abgleich wird gleich wiederholt.');
+      zeige('ausstehend', 'Google Drive wurde gleichzeitig von einem anderen Gerät geändert. Der Abgleich wird gleich wiederholt.');
       nochmal = true;
     } else {
       console.error('Abgleich fehlgeschlagen:', fehler);
       const text = fehler instanceof Error ? fehler.message : 'Unbekannter Fehler.';
-      setze('fehler', `Der Abgleich hat nicht geklappt: ${text} Deine Daten auf diesem Gerät sind sicher; es wird später erneut versucht.`);
+      zeige('fehler', `Der Abgleich hat nicht geklappt: ${text} Deine Daten auf diesem Gerät sind sicher; es wird später erneut versucht.`);
     }
   } finally {
     laeuft = false;
@@ -277,6 +380,27 @@ export async function gleicheAb(anlass: Anlass = 'hand'): Promise<void> {
       nochmal = false;
       plane(NACH_AENDERUNG_MS);
     }
+  }
+}
+
+/**
+ * Kalender-Abgleich als Teil einer Runde. Ein Problem mit dem Kalender soll den Drive-Abgleich
+ * nicht als gescheitert dastehen lassen: Es wird als Hinweis bei den Erinnerungen gezeigt.
+ * Rückgabe: Ist der Kalender auf dem Stand der Aufgaben?
+ */
+async function versucheKalender(verwaisteAufraeumen: boolean): Promise<boolean> {
+  try {
+    await kalenderRunde(verwaisteAufraeumen);
+    if (status.kalenderHinweis) setze(status.zustand, status.meldung, { kalenderHinweis: null });
+    return true;
+  } catch (fehler) {
+    // Kein Netz oder abgelaufene Anmeldung betreffen die ganze Runde: nach oben weitergeben.
+    if (fehler instanceof KeineVerbindung || fehler instanceof NichtAngemeldet) throw fehler;
+    console.error('Kalender-Abgleich fehlgeschlagen:', fehler);
+    const text = fehler instanceof Error ? fehler.message : 'Unbekannter Fehler.';
+    setze(status.zustand, status.meldung, { kalenderHinweis: text });
+    // Fehlt nur die Berechtigung auf diesem Gerät, bleibt die Warteschlange nicht ewig stehen.
+    return fehler instanceof KeineKalenderBerechtigung;
   }
 }
 
@@ -316,8 +440,17 @@ export async function starteAbgleichDienst(): Promise<void> {
       letzterAbgleich: (wert('letzterAbgleich') as number | undefined) ?? null,
       offen: offeneIds.size,
     });
-    void gleicheAb('start');
   }
+
+  // Kommt die Seite gerade von Google zurück, weil „Erinnerungen aktivieren“ die Kalender-Berechtigung
+  // angefragt hat? Dann dort weitermachen.
+  if (liesMerker(VORHABEN_ERINNERUNGEN)) {
+    setzeMerker(VORHABEN_ERINNERUNGEN, false);
+    if (hatBerechtigung(KALENDER_SCOPE)) await aktiviereErinnerungen();
+    else setze(status.zustand, status.meldung, { kalenderHinweis: 'Die Kalender-Berechtigung wurde nicht erteilt. Die Erinnerungen bleiben aus.' });
+  }
+
+  void gleicheAb('start');
 }
 
 // ───────────────────────── Erstes Verbinden, Trennen, Neuaufbau ─────────────────────────
@@ -387,4 +520,168 @@ export async function ladeNeuAusDrive(): Promise<void> {
   await vergissAbgleichDaten();
   setze('ausstehend', 'Die Daten werden neu aus Google Drive geladen.', { offen: 0 });
   await gleicheAb('hand');
+}
+
+// ───────────────────────── Erinnerungen ein- und ausschalten ─────────────────────────
+
+const VORHABEN_ERINNERUNGEN = 'gedankenwelt.erinnerungen.vorhaben';
+
+function liesMerker(schluessel: string): boolean {
+  try {
+    return localStorage.getItem(schluessel) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setzeMerker(schluessel: string, an: boolean): void {
+  try {
+    if (an) localStorage.setItem(schluessel, '1');
+    else localStorage.removeItem(schluessel);
+  } catch {
+    // ohne localStorage geht es eben ohne Merker
+  }
+}
+
+function fehlertext(fehler: unknown): string {
+  return fehler instanceof Error ? fehler.message : 'Unbekannter Fehler.';
+}
+
+/** Findet den Kalender „Gedankenwelt“ über die gemerkte ID wieder oder legt ihn neu an. */
+async function sichereKalender(): Promise<{ id: string; neu: boolean }> {
+  const bekannt = leseZustand().einstellungen.kalender_id;
+  if (bekannt && (await kalender.kalenderVorhanden(bekannt))) return { id: bekannt, neu: false };
+  const id = await kalender.erstelleKalender(KALENDER_NAME);
+  sichereEinstellungen({ ...leseZustand().einstellungen, kalender_id: id, geaendert: jetztStempel() });
+  return { id, neu: true };
+}
+
+/**
+ * „Erinnerungen aktivieren“: fragt – erst jetzt – die Kalender-Berechtigung an, legt den Kalender
+ * „Gedankenwelt“ an und trägt alle offenen Aufgaben mit Uhrzeit nach.
+ * Rückgabe: null bei Erfolg (oder wenn die Seite zu Google springt), sonst eine Fehlermeldung.
+ */
+export async function aktiviereErinnerungen(): Promise<string | null> {
+  if (!erinnerungenVerfuegbar()) return 'Erinnerungen sind verfügbar, sobald Google verbunden ist.';
+  if (!istKalenderSimuliert() && !hatBerechtigung(KALENDER_SCOPE)) {
+    // Schrittweise Berechtigung: Drive bleibt, der Kalender kommt dazu. Die Seite springt zu Google
+    // und macht nach der Rückkehr hier weiter (siehe starteAbgleichDienst).
+    setzeMerker(VORHABEN_ERINNERUNGEN, true);
+    starteWeiterleitung(false, [DRIVE_SCOPE, KALENDER_SCOPE]);
+    return null;
+  }
+  try {
+    const { id } = await sichereKalender();
+    sichereEinstellungen({ ...leseZustand().einstellungen, erinnerungen: true, kalender_id: id, geaendert: jetztStempel() });
+    setze(status.zustand, status.meldung, { kalenderHinweis: null });
+    await gleicheAb('hand');
+    return null;
+  } catch (fehler) {
+    return `Die Erinnerungen ließen sich nicht aktivieren: ${fehlertext(fehler)}`;
+  }
+}
+
+/**
+ * Schaltet die Erinnerungen aus. Auf Wunsch wird der Kalender „Gedankenwelt“ samt Terminen gelöscht;
+ * sonst bleibt er mit den bisherigen Terminen stehen und wird nur nicht mehr gepflegt.
+ */
+export async function deaktiviereErinnerungen(kalenderLoeschen: boolean): Promise<string | null> {
+  const e = leseZustand().einstellungen;
+  try {
+    if (kalenderLoeschen && e.kalender_id) await kalender.loescheKalender(e.kalender_id);
+  } catch (fehler) {
+    return `Der Kalender ließ sich nicht löschen: ${fehlertext(fehler)}`;
+  }
+  if (kalenderLoeschen) {
+    // Die Termine gibt es nicht mehr: ihre IDs aus den Notizen nehmen.
+    const mitTermin = [...leseZustand().notizen.values()].filter((n) => n.aufgabe?.kalender_event_id);
+    sichereNotizen(mitTermin.map((n) => mitTerminId(n, null)));
+  }
+  sichereEinstellungen({
+    ...e,
+    erinnerungen: false,
+    // „undefined“ statt null: Der Eintrag verschwindet dann ganz aus der Meta-Datei.
+    kalender_id: kalenderLoeschen ? undefined : e.kalender_id,
+    geaendert: jetztStempel(),
+  });
+  setze(status.zustand, status.meldung, { kalenderHinweis: null });
+  void gleicheAb('hand');
+  return null;
+}
+
+/** „Erinnerungen neu aufbauen“: gleicht alle offenen Aufgaben mit dem Kalender ab und räumt verwaiste Termine auf. */
+export async function baueErinnerungenNeuAuf(): Promise<string> {
+  if (!erinnerungenAktiv()) return 'Die Erinnerungen sind nicht aktiviert.';
+  if (!kalenderNutzbar()) return 'Auf diesem Gerät fehlt die Kalender-Berechtigung. Aktiviere die Erinnerungen hier erneut.';
+  try {
+    await sichereKalender();
+    await kalenderRunde(true);
+    setze(status.zustand, status.meldung, { kalenderHinweis: null });
+    void gleicheAb('hand');
+    const offen = [...leseZustand().notizen.values()].filter((n) => n.aufgabe?.kalender_event_id && !n.geloescht).length;
+    return `Fertig. Im Kalender ${offen === 1 ? 'steht 1 Termin' : `stehen ${offen} Termine`} für deine offenen Aufgaben mit Uhrzeit.`;
+  } catch (fehler) {
+    return `Das hat nicht geklappt: ${fehlertext(fehler)}`;
+  }
+}
+
+/**
+ * Kalender-Selbsttest (Einstellungen → Diagnose): legt den Kalender an (falls nötig), erstellt
+ * einen Testtermin, ändert ihn, prüft ihn und löscht ihn wieder. Jeder Schritt wird gemeldet.
+ */
+export async function kalenderSelbsttest(melde: (zeile: string) => void): Promise<boolean> {
+  let schritt = 'Vorbereitung';
+  try {
+    if (!istKalenderSimuliert()) {
+      if (!istVerbunden()) {
+        melde('Nicht möglich: Google ist auf diesem Gerät noch nicht verbunden.');
+        return false;
+      }
+      if (!hatBerechtigung(KALENDER_SCOPE)) {
+        melde('Nicht möglich: Die Kalender-Berechtigung fehlt noch. Tippe zuerst auf „Erinnerungen aktivieren“.');
+        return false;
+      }
+    } else {
+      melde('Hinweis: Dieser Test läuft gegen den simulierten Kalender, nicht gegen Google.');
+    }
+
+    schritt = 'Kalender finden oder anlegen';
+    const { id, neu } = await sichereKalender();
+    melde(neu ? '1. Der Kalender „Gedankenwelt“ wurde neu angelegt.' : '1. Der Kalender „Gedankenwelt“ wurde gefunden.');
+
+    const morgen = verschiebeDatum(lokalesDatum(), 1);
+    const daten: TerminDaten = {
+      notiz_id: 'selbsttest',
+      titel: 'Gedankenwelt – Selbsttest',
+      beginn: `${morgen}T12:00`,
+      erinnerung: 15,
+      beschreibung: 'Dieser Termin gehört zum Kalender-Selbsttest der App und wird gleich wieder gelöscht.',
+    };
+
+    schritt = 'Testtermin anlegen';
+    const termin = await kalender.erstelleTermin(id, daten);
+    melde('2. Ein Testtermin für morgen 12:00 wurde angelegt.');
+
+    schritt = 'Testtermin ändern';
+    await kalender.aendereTermin(id, termin.id, { ...daten, beginn: `${morgen}T12:30`, erinnerung: 30 });
+    melde('3. Der Testtermin wurde auf 12:30 verschoben, die Erinnerung auf 30 Minuten vorher gestellt.');
+
+    schritt = 'Testtermin wiederfinden';
+    const gefunden = (await kalender.termine(id)).find((t) => t.id === termin.id);
+    if (!gefunden) throw new Error('Der Testtermin wurde im Kalender nicht wiedergefunden.');
+    if (gefunden.beginn !== `${morgen}T12:30` || gefunden.erinnerung !== 30) {
+      throw new Error(`Der Kalender zeigt ${gefunden.beginn} mit Erinnerung ${gefunden.erinnerung} statt ${morgen}T12:30 mit 30.`);
+    }
+    melde('4. Der Testtermin wurde im Kalender wiedergefunden. Uhrzeit und Erinnerung stimmen.');
+
+    schritt = 'Testtermin löschen';
+    await kalender.loescheTermin(id, termin.id);
+    melde('5. Der Testtermin wurde wieder gelöscht.');
+
+    melde('Alles in Ordnung: Die App kann den Kalender anlegen und Termine erstellen, ändern und löschen.');
+    return true;
+  } catch (fehler) {
+    melde(`Fehlgeschlagen beim Schritt „${schritt}“: ${fehlertext(fehler)}`);
+    return false;
+  }
 }

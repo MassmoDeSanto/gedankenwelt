@@ -29,6 +29,8 @@ interface Anmeldung {
   token: string;
   /** Zeitpunkt in Millisekunden, ab dem der Schlüssel nicht mehr gilt */
   laeuftAb: number;
+  /** Berechtigungen, die Google für diesen Schlüssel erteilt hat (durch Leerzeichen getrennt) */
+  scopes?: string;
 }
 
 interface Vorgang {
@@ -116,8 +118,13 @@ export function gueltigesToken(): string | null {
   return anmeldung && anmeldung.laeuftAb - 60_000 > Date.now() ? anmeldung.token : null;
 }
 
-function uebernimmToken(token: string, sekunden: number): void {
-  merke(SCHLUESSEL, { token, laeuftAb: Date.now() + sekunden * 1000 } satisfies Anmeldung);
+/** Umfasst der aktuelle Zugang diese Berechtigung? (Auch nach Ablauf: Sie bleibt beim Erneuern erhalten.) */
+export function hatBerechtigung(scope: string): boolean {
+  return (lies<Anmeldung>(SCHLUESSEL)?.scopes ?? '').split(' ').includes(scope);
+}
+
+function uebernimmToken(token: string, sekunden: number, scopes: string | null): void {
+  merke(SCHLUESSEL, { token, laeuftAb: Date.now() + sekunden * 1000, scopes: scopes ?? '' } satisfies Anmeldung);
   merke(STILL_GESCHEITERT, null);
   melde();
   void ladeKonto(token);
@@ -140,9 +147,17 @@ async function ladeKonto(token: string): Promise<void> {
   }
 }
 
+/** Was beim Erneuern wieder angefragt wird: Drive und alles, was schon erteilt wurde (z. B. Kalender). */
+function erteilteBerechtigungen(): string[] {
+  const erteilt = (lies<Anmeldung>(SCHLUESSEL)?.scopes ?? '').split(' ').filter((s) => s.startsWith('https://'));
+  return [...new Set([DRIVE_SCOPE, ...erteilt])];
+}
+
 /** Der Schlüssel wurde von Google abgelehnt (z. B. Zugriff entzogen): wegwerfen. */
 export function verwirfToken(): void {
-  merke(SCHLUESSEL, null);
+  // Die Liste der Berechtigungen bleibt stehen, damit das Erneuern sie wieder anfragt.
+  const bisher = lies<Anmeldung>(SCHLUESSEL);
+  merke(SCHLUESSEL, bisher ? { token: '', laeuftAb: 0, scopes: bisher.scopes } : null);
   melde();
 }
 
@@ -188,7 +203,7 @@ export function weiterleitungsAdresse(): string {
  * `scopes`: Berechtigungen. Spätere Phasen (Kalender) fragen hier einfach mehr an;
  * bereits erteilte bleiben dank „include_granted_scopes“ erhalten.
  */
-export function starteWeiterleitung(still: boolean, scopes: string[] = [DRIVE_SCOPE]): void {
+export function starteWeiterleitung(still: boolean, scopes: string[] = erteilteBerechtigungen()): void {
   if (!GOOGLE_CLIENT_ID) return;
   protokolliere(still ? 'Stilles Erneuern gestartet (Weiterleitung) …' : 'Anmeldung gestartet (Weiterleitung) …');
   const kennung = crypto.randomUUID();
@@ -260,7 +275,7 @@ function werteRueckkehrAus(): Rueckkehr | null {
 
   const token = antwort.get('access_token');
   if (token) {
-    uebernimmToken(token, Number(antwort.get('expires_in')) || 3600);
+    uebernimmToken(token, Number(antwort.get('expires_in')) || 3600, antwort.get('scope'));
     return { erfolg: true, still: vorgang.still, meldung: vorgang.still ? 'Still erneuert – ohne Eingabe.' : 'Angemeldet.' };
   }
 
@@ -276,6 +291,7 @@ function werteRueckkehrAus(): Rueckkehr | null {
 
 interface TokenAntwort {
   access_token?: string;
+  scope?: string;
   expires_in?: string | number;
   error?: string;
 }
@@ -318,7 +334,7 @@ function ladeBibliothek(): Promise<GoogleBibliothek> {
  * Meldet per Pop-up an. Muss direkt aus einem Klick oder Tipp heraus aufgerufen werden,
  * sonst blockiert der Browser das Fenster.
  */
-export async function anmeldenPerPopup(scopes: string[] = [DRIVE_SCOPE]): Promise<string> {
+export async function anmeldenPerPopup(scopes: string[] = erteilteBerechtigungen()): Promise<string> {
   if (!GOOGLE_CLIENT_ID) throw new Error('Es ist noch keine Client-ID eingetragen.');
   const google = await ladeBibliothek();
   return new Promise((fertig, fehler) => {
@@ -330,7 +346,7 @@ export async function anmeldenPerPopup(scopes: string[] = [DRIVE_SCOPE]): Promis
       include_granted_scopes: true,
       callback: (antwort) => {
         if (antwort.access_token) {
-          uebernimmToken(antwort.access_token, Number(antwort.expires_in) || 3600);
+          uebernimmToken(antwort.access_token, Number(antwort.expires_in) || 3600, antwort.scope ?? null);
           fertig('Per Pop-up angemeldet.');
         } else {
           fehler(new Error(FEHLERTEXTE[antwort.error ?? ''] ?? `Google meldet: ${antwort.error ?? 'unbekannt'}`));
