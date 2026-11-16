@@ -2,7 +2,7 @@
 
 Persönliche Notiz-App für kurze Gedanken, Aufgaben und längere Texte. Sie läuft als Web-App im Browser.
 
-**Stand: Phase 2 in Arbeit.** Phase 1 (Kern am Laptop) ist fertig. Der Abgleich mit Google Drive ist gebaut und an die App angeschlossen, aber **noch nie gegen das echte Google Drive gelaufen** – dafür fehlt die Client-ID aus deiner Google Cloud. Bis du die App verbindest, liegen alle Daten nur in deinem Browser. Was du einrichten musst, steht in Abschnitt 7.
+**Stand: Phase 3 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Dafür fehlt die Einrichtung in der Google Cloud. Alles, was du dafür später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
 
 ---
 
@@ -76,7 +76,7 @@ Tests sind kleine Programme, die automatisch prüfen, ob die wichtigen Regeln no
 npm test
 ```
 
-Am Ende sollte stehen: `Test Files  9 passed (9)` und `Tests  111 passed (111)`.
+Am Ende sollte stehen: `Test Files  12 passed (12)` und `Tests  189 passed (189)`.
 
 **Typen prüfen.** Kontrolliert, ob im Code alles zusammenpasst, ohne ihn auszuführen. Keine Ausgabe heißt: alles in Ordnung.
 
@@ -115,6 +115,8 @@ npm run preview
 
 Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen rechts unter dem Text kleine Knöpfe: Tag einfügen, Aufgabe an/aus, Fälligkeit, Verschieben nach …, Papierkorb. Links erscheint ein Griff aus sechs Punkten zum Umsortieren per Ziehen.
 
+**Aufgaben:** Unter jeder Aufgabe steht ein kleiner Knopf: „Termin“ (wenn noch kein Datum gesetzt ist) oder die Fälligkeit. Er öffnet das Aufgaben-Menü mit Datum, Uhrzeit, Erinnerung und Wiederholung. Hakst du eine wiederkehrende Aufgabe ab, springt sie auf ihre nächste Fälligkeit; unten erscheint für einige Sekunden „Nächstes Mal: …“ mit „Rückgängig“.
+
 **Listen:** In einer geöffneten Liste oben rechts auf `…` klicken: Unterliste anlegen, umbenennen, verschieben, anheften, „Gedanke des Tages“ an/aus/erben, löschen.
 
 **Suche:** Suchfeld auf der Startseite. Das Trichter-Symbol öffnet die Filter (Liste, Tags, Datum, Aufgaben). Ein Klick auf einen Treffer springt zur Notiz.
@@ -141,7 +143,7 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 - Beispieldaten
 - PWA-Grundgerüst (Offline-Zwischenspeicher wird beim Bauen erzeugt)
 - Markdown light in der Anzeige: `**fett**`, `*kursiv*`, `` `Code` ``, Links und Aufzählungen mit `-`. Beim Bearbeiten sieht man den Rohtext.
-- 111 automatische Tests
+- 189 automatische Tests (Phase 1 bis 3)
 
 ### Geprüft und nicht geprüft
 
@@ -150,8 +152,7 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 
 ### Bewusst offen
 
-- Google-Anmeldung, Drive-Abgleich, GitHub Pages, iPhone – Phase 2
-- Wiederkehrende Aufgaben, Google Kalender – Phase 3 (im Fälligkeits-Menü steht „Wiederholung“ schon ausgegraut)
+- Google Drive, iPhone, wiederkehrende Aufgaben und Erinnerungen sind inzwischen gebaut: siehe Abschnitte 7 und 8
 - Import aus Apple Notizen – Phase 4
 - `[[ ]]`-Links und KI – später
 - Listen lassen sich noch nicht per Ziehen umsortieren (nur Notizen). Neue Listen kommen ans Ende.
@@ -197,7 +198,7 @@ Phase 2 kann `src/logik/markdown.ts` unverändert für Google Drive benutzen: Es
 
 ---
 
-## 7. Phase 2: Google Drive und iPhone (in Arbeit)
+## 7. Phase 2: Google Drive und iPhone
 
 ### Was schon da ist
 
@@ -228,19 +229,23 @@ In beiden Fällen arbeitet die App offline weiter. Es geht nichts verloren.
 
 Ob das stille Erneuern auf deinem iPhone in der installierten App funktioniert, ist **nicht geprüft**. Erfahrungsberichte dazu sind uneinheitlich. Deshalb gibt es die Testseite.
 
-### Google Cloud einrichten (machst du selbst, einmalig)
+### Google Cloud einrichten (machst du selbst, einmalig – für Drive und Kalender zusammen)
 
 Diese Schritte stammen aus Googles Anleitungen ([Zustimmungsbildschirm](https://developers.google.com/workspace/guides/configure-oauth-consent), [Zugangsdaten](https://developers.google.com/workspace/guides/create-credentials), Stand 15. Nov 2026). Ich konnte sie nicht selbst durchklicken. Die Menüs können auf Deutsch etwas anders heißen.
 
 1. **Projekt anlegen.** Öffne <https://console.cloud.google.com> und melde dich mit dem Google-Konto an, in dessen Drive die Notizen liegen sollen. Oben in der Leiste auf die Projektauswahl klicken → **Neues Projekt** → Name `Gedankenwelt` → **Erstellen**. Danach dieses Projekt auswählen.
-2. **Google Drive API einschalten.** Menü → **APIs & Dienste** → **Bibliothek** → nach `Google Drive API` suchen → **Aktivieren**.
+2. **Beide Schnittstellen einschalten.** Menü → **APIs & Dienste** → **Bibliothek** → nach `Google Drive API` suchen → **Aktivieren**. Danach genauso `Google Calendar API` suchen → **Aktivieren**. (Drive für den Abgleich, Calendar für die Erinnerungen.)
 3. **Zustimmungsbildschirm einrichten.** Menü → **Google Auth Platform** → **Branding** → **Erste Schritte** (Get started).
    - App-Name: `Gedankenwelt`, Support-E-Mail: deine Adresse → **Weiter**
    - Zielgruppe (Audience): **Extern** → **Weiter**
    - Kontakt-E-Mail: deine Adresse → **Weiter**
    - Richtlinie bestätigen → **Weiter** → **Erstellen**
 4. **Dich selbst als Testnutzer eintragen.** **Google Auth Platform** → **Zielgruppe** (Audience) → unter **Testnutzer** auf **Nutzer hinzufügen** → deine Google-Adresse → **Speichern**. Damit bist du der einzige, der die App benutzen darf.
-5. **Berechtigung festlegen.** **Google Auth Platform** → **Datenzugriff** (Data Access) → **Bereiche hinzufügen oder entfernen** → `…/auth/drive.file` ankreuzen → **Speichern**. Diese Berechtigung erlaubt der App nur Dateien, die sie selbst angelegt hat. Deinen übrigen Drive sieht sie nicht.
+5. **Beide Berechtigungen festlegen.** **Google Auth Platform** → **Datenzugriff** (Data Access) → **Bereiche hinzufügen oder entfernen** → diese zwei ankreuzen → **Speichern**:
+   - `…/auth/drive.file` – nur Dateien, die die App selbst angelegt hat. Deinen übrigen Drive sieht sie nicht.
+   - `…/auth/calendar.app.created` – nur Kalender, die die App selbst angelegt hat, und deren Termine. Deine übrigen Kalender kann sie weder lesen noch ändern.
+
+   Findest du die zweite nicht in der Liste, trage sie unten im Feld für manuelle Bereiche vollständig ein: `https://www.googleapis.com/auth/calendar.app.created`. Die Kalender-Berechtigung fragt die App erst an, wenn du „Erinnerungen aktivieren“ tippst.
 6. **Client anlegen.** **Google Auth Platform** → **Clients** → **Client erstellen** → Anwendungstyp **Webanwendung**, Name `Gedankenwelt Web`.
    - Unter **Autorisierte JavaScript-Quellen** zwei Einträge:
      `http://localhost:5173` und `https://massmodesanto.github.io`
@@ -370,3 +375,183 @@ Was die App **nie** tut: Dateien in Drive löschen oder leeren, wenn sie den Sta
 - **Zwischen „nachsehen, ob sich die Datei geändert hat“ und „schreiben“ liegt ein Sekundenbruchteil.** Schreiben beide Geräte exakt gleichzeitig, gewinnt das spätere; die andere Fassung liegt dann im Versionsverlauf von Google Drive. Beim nächsten Abgleich wird trotzdem wieder zusammengeführt.
 - **„Neuere Fassung gewinnt“ vertraut den Uhren der Geräte.**
 - **Leere Ordner räumt die App weg.** Hast du von Hand eine eigene Datei in einen Listen-Ordner gelegt, sieht die App sie nicht und könnte den Ordner in den Drive-Papierkorb legen (dort 30 Tage wiederherstellbar).
+
+---
+
+## 8. Phase 3: Wiederkehrende Aufgaben und Erinnerungen
+
+### Was fertig ist
+
+- **Wiederkehrende Aufgaben** (rein lokal, vollständig gebaut und geprüft): täglich, wöchentlich an einem oder mehreren Wochentagen, monatlich an einem Tag oder an einem Wochentag (z. B. erster Montag, letzter Freitag), jährlich – jeweils auch „alle n“. Zählweise „nach Kalender“ oder „ab Erledigung“. Ende: nie, an einem Datum oder nach n Mal.
+- **Aufgaben-Menü** mit Datum, Uhrzeit, Erinnerung und Wiederholung (Schnellwerte und „Benutzerdefiniert …“ mit Vorschau der nächsten Termine).
+- **Abhaken mit Rückmeldung** „Nächstes Mal: …“ und „Rückgängig“.
+- **Anzeige:** Wiederholungs-Symbol mit Kurztext („jeden So“, „1. im Monat“), heute Fälliges in Bernstein, Überfälliges ruhig in Rot.
+- **Erinnerungen über den Kalender:** ein Termin je offener Aufgabe mit Uhrzeit, in einem eigenen Kalender „Gedankenwelt“. Aktivieren, Deaktivieren, „Erinnerungen neu aufbauen“, Kalender-Selbsttest.
+- **Anbindung an den echten Google Kalender** (`src/db/googleKalender.ts`).
+
+### Geprüft und nicht geprüft
+
+- **Geprüft mit Tests:** alle Wiederholungsregeln (38 Tests, u. a. der 31. in kurzen Monaten, 29. Februar, erster/letzter Wochentag, Überspringen verpasster Termine, Enddatum, „nach n Mal“, Zeitumstellung), das Dateiformat hin und zurück, der Kalender-Abgleich gegen den simulierten Kalender (19 Tests, u. a. Abbruch an jeder Stelle, zwei Geräte, im Kalender gelöschter Termin).
+- **Geprüft im Browser** (lokale Entwicklungsversion, simulierter Kalender), wie im Auftrag verlangt:
+  - „Wochenplanung“, jeden Sonntag 18:00: Nach dem Aktivieren steht der Termin im simulierten Kalender.
+  - Abhaken: Die Aufgabe springt auf den nächsten Sonntag, derselbe Termin wandert mit.
+  - Offline abhaken: Der Termin bleibt zunächst stehen. Sobald das Netz zurück ist, ist er verschoben – ein Termin, kein doppelter. (Offline habe ich im Browser per Skript nachgestellt, nicht über die Entwicklerwerkzeuge.)
+  - Aufgabe mit Uhrzeit löschen: Termin verschwindet. Aus dem Papierkorb holen: Termin ist wieder da.
+  - Zwei vor dem Aktivieren angelegte Aufgaben mit Uhrzeit wurden beim Aktivieren nachgetragen, die ohne Uhrzeit nicht.
+  - Gebaute Version ohne Google-Verbindung: „Verfügbar, sobald Google verbunden ist“, Knopf gesperrt, kein Fehler. Der simulierte Kalender steckt nicht im veröffentlichten Paket.
+  - Kalender-Selbsttest läuft gegen den simulierten Kalender durch.
+  - Menü, Dialog und Aufgaben-Zeilen in der auf Handy-Breite verkleinerten Vorschau.
+- **Nur mit nachgebauten Google-Antworten geprüft (17 Tests), nie gegen das echte Google:** die Anbindung an den Google Kalender. Geprüft ist, dass Anfragen richtig aufgebaut sind und Fehlerantworten richtig behandelt werden. Ob Google wirklich so antwortet wie dokumentiert, zeigt erst der Selbsttest nach der Einrichtung.
+- **Gar nicht geprüft:** die Anfrage der Kalender-Berechtigung bei Google, Benachrichtigungen auf iPhone und Laptop, alles am echten iPhone.
+
+### Format der Wiederholungsregeln
+
+Regel, Erinnerung und Verlauf stehen im Metadaten-Kommentar unter der Aufgabe. Die Regel ist ein einziges Wort ohne Leerzeichen: erst die Art, dann Angaben mit `;` getrennt.
+
+```
+[ ] Wochenplanung
+<!-- id:01… erstellt:… geaendert:… pos:2 faellig:2026-11-22T18:00 wiederholung:woechentlich;tage=SO;ab=faellig erinnerung:15 verlauf:2026-11-08T17:10:00Z,2026-11-15T17:55:12Z kalender:abc123 -->
+```
+
+| Regel | Schreibweise |
+|---|---|
+| keine Wiederholung | `wiederholung:keine` |
+| täglich | `taeglich;ab=faellig` |
+| alle 3 Tage | `taeglich;alle=3;ab=faellig` |
+| jeden Montag und Donnerstag | `woechentlich;tage=MO,DO;ab=faellig` |
+| alle 2 Wochen am Montag | `woechentlich;tage=MO;alle=2;ab=faellig` |
+| werktags | `woechentlich;tage=MO,DI,MI,DO,FR;ab=faellig` |
+| am 15. jedes Monats | `monatlich;tag=15;ab=faellig` |
+| jeden Monatsersten | `monatlich;tag=1;ab=faellig` |
+| erster Montag im Monat | `monatlich;am=1.MO;ab=faellig` |
+| letzter Freitag im Monat | `monatlich;am=letzter.FR;ab=faellig` |
+| jährlich am 15. März | `jaehrlich;datum=03-15;ab=faellig` |
+| 3 Tage nach dem letzten Abhaken | `taeglich;alle=3;ab=erledigung` |
+| … endet am 31. Januar 2027 | `…;ende=2027-01-31` |
+| … noch 3 Mal | `…;noch=3` |
+
+Weitere Angaben im Kommentar:
+
+- `faellig:2026-11-22T18:00` – Ortszeit, ohne Uhrzeit nur das Datum.
+- `erinnerung:15` – Minuten vor der Fälligkeit. Fehlt die Angabe, gilt „zur Uhrzeit“.
+- `verlauf:…` – wann die Aufgabe abgehakt wurde (die letzten 12 Male, in Weltzeit, mit Komma getrennt).
+- `kalender:…` – ID des Termins im Kalender.
+
+Wochentage: `MO DI MI DO FR SA SO`. Gibt es einen Tag nicht (31. im Februar, 29. Februar außerhalb von Schaltjahren), gilt der letzte Tag des Monats.
+
+### So verhalten sich Wiederholungen
+
+- **Nach Kalender** (`ab=faellig`, Standard): Die Termine folgen dem Kalender, egal wann du abhakst. „Jeden Montag“ bleibt jeden Montag.
+- **Ab Erledigung** (`ab=erledigung`): Der Abstand zählt ab dem Tag des Abhakens. Wochentage und Monatstage spielen dann keine Rolle, nur „alle n Tage, Wochen, Monate oder Jahre“.
+- **Verpasste Termine werden übersprungen.** War „täglich“ einen Monat liegen geblieben, springt die Aufgabe beim Abhaken auf morgen, nicht auf gestern vor vier Wochen. Bei „alle 2 Wochen“ bleibt der Zwei-Wochen-Rhythmus erhalten.
+- **Vorzeitig abgehakt** (vor der Fälligkeit): Es folgt der Termin nach der eigentlichen Fälligkeit.
+- **Ende erreicht:** Die Aufgabe wird normal erledigt.
+- **Uhrzeiten sind Ortszeit.** 9:00 bleibt nach der Zeitumstellung 9:00.
+
+### So verhalten sich Erinnerungen
+
+- Jede **offene Aufgabe mit Uhrzeit** hat genau einen Termin im Kalender „Gedankenwelt“: Titel = erste Zeile der Aufgabe ohne Tags, Dauer 15 Minuten, Zeitzone Europe/Berlin, Benachrichtigung laut Einstellung an der Aufgabe. In der Beschreibung stehen der Pfad und ein Link, der die App bei dieser Aufgabe öffnet.
+- Aufgaben ohne Uhrzeit bekommen keinen Termin.
+- **Wiederkehrende Aufgaben** sind keine Serie im Kalender, sondern immer nur der eine Termin der nächsten Fälligkeit. Nach dem Abhaken wandert er weiter.
+- Abhaken, Löschen oder Uhrzeit entfernen löscht den Termin. Wiederherstellen aus dem Papierkorb legt ihn neu an, wenn er noch in der Zukunft liegt.
+- **Die App ist die einzige Wahrheit – es gibt keinen Abgleich zurück.** Änderst du einen Termin direkt im Kalender, überschreibt die App ihn beim nächsten Abgleich wieder. Löschst du ihn dort, legt die App ihn neu an, solange die Aufgabe offen ist und in der Zukunft liegt. Eigene Termine, die du von Hand in den Kalender „Gedankenwelt“ einträgst, lässt die App in Ruhe.
+- **Die Erinnerung lässt sich schon vorher einstellen.** Solange die Erinnerungen nicht aktiviert sind, steht im Menü „Erinnerungen sind noch nicht aktiviert“. Beim Aktivieren werden alle offenen Aufgaben mit Uhrzeit nachgetragen.
+- Kalender-Änderungen laufen über dieselbe Warteschlange wie der Drive-Abgleich und werden nach einer Offline-Phase nachgeholt. Vorgemerkt wird nur, wenn Drive verbunden ist oder die Erinnerungen aktiv sind.
+
+### Entscheidungen in Phase 3
+
+| Entscheidung | Grund |
+|---|---|
+| Berechtigung `calendar.app.created` | Die schmalste, die reicht: eigene Kalender anlegen und deren Termine verwalten. Geprüft in Googles Dokumentation am 16. Nov 2026: Sie gilt für Kalender anlegen, prüfen, löschen und für Termine – aber nicht für die Liste aller Kalender ([Übersicht](https://developers.google.com/workspace/calendar/api/auth), [Kalender anlegen](https://developers.google.com/workspace/calendar/api/v3/reference/calendars/insert), [Termine](https://developers.google.com/workspace/calendar/api/v3/reference/events/list), [Kalenderliste](https://developers.google.com/workspace/calendar/api/v3/reference/calendarList/list)). |
+| Die App findet ihren Kalender nur über die gemerkte ID | Folge der schmalen Berechtigung: Sie darf die Liste deiner Kalender nicht lesen. Die ID steht in `_meta.json`. Geht sie verloren, legt die App einen neuen Kalender an. |
+| Kalender-Abgleich vergleicht „soll“ und „ist“, statt Änderungen nachzuspielen | Wie beim Drive-Abgleich: Ein unterbrochener Abgleich muss nichts nachholen, die nächste Runde stellt dasselbe Ziel her. |
+| Bei doppelten Terminen bleibt der mit der kleineren Termin-ID | So entscheiden sich Laptop und iPhone immer für denselben, egal wer zuerst abgleicht. |
+| Die Termin-ID wird mit einem um eine Sekunde erhöhten Zeitstempel in die Notiz eingetragen | Sie soll über Drive auf dem anderen Gerät ankommen, darf aber nie eine echte Bearbeitung verdrängen, die dort inzwischen gemacht wurde. |
+| Verwaiste Termine räumt nur „Erinnerungen neu aufbauen“ auf | Im normalen Abgleich könnte ein Gerät sonst den Termin einer Aufgabe löschen, die das andere Gerät gerade erst angelegt hat. |
+| Termine in der Vergangenheit werden nicht neu angelegt | Eine Erinnerung käme ohnehin nicht mehr. Vorhandene bleiben, solange die Aufgabe offen ist. |
+| „Nach n Mal“ wird als „noch n Mal“ gespeichert und zählt herunter | So steht in der Datei immer, wie oft die Aufgabe noch kommt, ohne den Verlauf auszählen zu müssen. |
+| Der Abhak-Verlauf behält die letzten 12 Zeitpunkte | Der Kommentar in der Drive-Datei soll lesbar bleiben. |
+| Ohne Fälligkeit keine Wiederholung | Wer eine Wiederholung ohne Datum setzt, bekommt den ersten Termin der Regel als Datum. „Fälligkeit entfernen“ entfernt auch die Wiederholung. |
+| „Ab Erledigung“ kennt nur Abstände | „3 Tage nach dem letzten Mal“ und „jeden Montag“ widersprechen sich; darum gibt es dort keine Wochentage. |
+| Termine zählen im Kalender nicht als „beschäftigt“ | Sie sind Erinnerungen, keine Termine mit Dauer. |
+| Die Einstellung „Erinnerungen aktiv“ wandert über Drive auf alle Geräte | Du aktivierst einmal. Jedes Gerät pflegt den Kalender dann mit. |
+| Am Handy erscheint das Aufgaben-Menü unten über die ganze Breite | Gut mit dem Daumen erreichbar; nichts ragt aus dem Bildschirm. |
+
+### Einschränkungen
+
+- **Gleichen Laptop und iPhone in denselben Sekunden ab, kann ein Termin kurz hin- und herspringen** (z. B. alter und neuer Titel), bis beide den Stand aus Drive haben. Danach stimmt er.
+- **Uhren:** Wie beim Drive-Abgleich gewinnt die zuletzt geänderte Fassung.
+- **Die Zeitzone ist fest Europe/Berlin.** Auf Reisen in eine andere Zeitzone erinnert der Kalender zur deutschen Uhrzeit.
+- **„Kalender behalten“ beim Deaktivieren** lässt die bisherigen Termine stehen. Sie erinnern weiter, werden aber nicht mehr gepflegt.
+- **`[x] ` am Zeilenanfang tippen** erledigt eine Aufgabe sofort, auch eine wiederkehrende. Die Wiederholung greift nur beim Abhaken über das Kästchen.
+
+---
+
+## 9. Später erledigen
+
+Alles, was noch offen ist und was nur du tun kannst – in einer Reihenfolge, damit du die Google-Einrichtung nur einmal machen musst.
+
+### 1. Google Cloud einrichten
+
+Folge Abschnitt 7, „Google Cloud einrichten“. Er deckt Drive und Kalender zusammen ab: ein Projekt, **Google Drive API und Google Calendar API** aktivieren, Zustimmungsbildschirm, **beide Berechtigungen** eintragen, Client vom Typ Webanwendung mit den erlaubten Adressen.
+
+### 2. Client-ID schicken
+
+Schick mir (Claude) die Client-ID oder trage sie in `src/konfig.ts` bei `GOOGLE_CLIENT_ID` ein, committe und pushe. **Kein Client-Secret.** Danach wird die App automatisch neu veröffentlicht.
+
+### 3. Laptop verbinden
+
+1. <https://massmodesanto.github.io/gedankenwelt/> in Chrome öffnen.
+2. Zahnrad → **Google Drive** → **Mit Google verbinden**. Beim Hinweis „App nicht überprüft“: **Erweitert** → **Weiter zu Gedankenwelt** (Erklärung in Abschnitt 7).
+3. **Abgleich einschalten** und warten, bis die Wolke oben rechts einen Haken zeigt.
+4. In Google Drive nachsehen: Es gibt den Ordner „Gedankenwelt“ mit lesbaren Markdown-Dateien.
+5. Unter **Diagnose: Anmeldung testen** einmal **Still erneuern** ausprobieren (siehe Abschnitt 7, „Anmeldung testen“).
+
+### 4. Erinnerungen aktivieren und Selbsttest
+
+1. Zahnrad → **Erinnerungen** → **Aktivieren**. Die App springt kurz zu Google und fragt die Kalender-Berechtigung an. Zustimmen.
+2. Zurück in der App: **Diagnose: Kalender-Selbsttest** aufklappen → **Kalender-Selbsttest starten**. Er meldet fünf Schritte und am Ende „Alles in Ordnung“.
+3. Im Google Kalender nachsehen: Links gibt es den Kalender „Gedankenwelt“, deine übrigen Kalender sind unverändert.
+4. Eine Aufgabe „Wochenplanung“, jeden Sonntag 18:00, anlegen → nach wenigen Sekunden steht sie im Kalender „Gedankenwelt“.
+
+Meldet der Selbsttest einen Fehler, schick mir den Wortlaut. Das ist die Stelle, an der sich zeigt, ob die Anbindung an das echte Google stimmt.
+
+### 5. iPhone
+
+1. App installieren und verbinden: Abschnitt 7, „iPhone“. Danach **Abgleich einschalten**.
+2. Die Prüfliste aus Abschnitt 7 durchgehen (Start ohne Browserleiste, Schreiben mit zweimal Enter, Tastatur, Tag-Dropdown, Flugmodus).
+3. **Benachrichtigungen einrichten – empfohlen: die Google-Kalender-App.**
+   - „Google Kalender“ aus dem App Store installieren und mit demselben Google-Konto anmelden.
+   - Beim ersten Start **Mitteilungen erlauben**. Falls übersprungen: iPhone-Einstellungen → Mitteilungen → Google Kalender → Mitteilungen erlauben.
+   - In der App: Menü (drei Striche) → prüfen, dass bei **Gedankenwelt** ein Haken sitzt. Ist der Kalender nicht zu sehen: nach unten ziehen zum Aktualisieren.
+   - Fokus-Modi („Nicht stören“, „Schlafen“) lassen Mitteilungen nur durch, wenn Google Kalender dort erlaubt ist.
+4. Zum Testen eine Aufgabe mit Uhrzeit in fünf Minuten anlegen, Erinnerung „Zur Uhrzeit“.
+
+**Warum die Google-App und nicht Apples Kalender?** Einen belastbaren Vergleich habe ich nicht gefunden (Stand 16. Nov 2026), nur Erfahrungsberichte. Die sprechen für die Google-App: Apples Kalender holt Google-Termine in Abständen ab und nicht sofort; Nutzer und ein Entwickler berichten von 30 Sekunden bis mehreren Minuten Verzögerung und von langsamem Abgleich ([Apple-Entwicklerforum](https://developer.apple.com/forums/thread/766375), [Apple-Forum](https://discussions.apple.com/thread/255205067)). Bei einer Aufgabe, die du kurz vor ihrer Uhrzeit anlegst oder verschiebst, käme die Erinnerung dann zu spät oder gar nicht. Das ist eine Einschätzung aus Berichten, keine Messung.
+
+**Wenn du trotzdem Apples Kalender nutzen willst:** iPhone-Einstellungen → Kalender → Accounts → Google-Konto hinzufügen, „Kalender“ einschalten. Zusätzliche Kalender wie „Gedankenwelt“ gibst du für Apple-Geräte unter <https://calendar.google.com/calendar/syncselect> frei (Haken bei „Gedankenwelt“ setzen, speichern). Diesen Weg kenne ich aus früheren Google-Anleitungen; ich habe ihn für diese README nicht neu nachgeprüft.
+
+### 6. Laptop: Benachrichtigungen in Chrome unter Ubuntu
+
+Quelle: [Google-Hilfe „Fehlende Kalender-Benachrichtigungen“](https://support.google.com/calendar/answer/12200012), Stand 16. Nov 2026.
+
+1. <https://calendar.google.com> in Chrome öffnen → Zahnrad → **Einstellungen** → links unter **Allgemein** → **Benachrichtigungseinstellungen** → **Desktop-Benachrichtigungen** wählen.
+2. Fragt Chrome, ob calendar.google.com Benachrichtigungen zeigen darf: **Zulassen**. Nachträglich: Schloss-Symbol links neben der Adresse → Benachrichtigungen → Zulassen.
+3. **Der Kalender muss in einem Tab offen sein**, sonst erscheint am Laptop nichts. Am einfachsten: den Tab anpinnen (Rechtsklick auf den Tab → „Anpinnen“).
+4. Kommt trotzdem nichts: In die Adresszeile `chrome://flags/#enable-system-notifications` eingeben, die Einstellung umschalten, Chrome neu starten. Google nennt das ausdrücklich für Linux. Prüfe außerdem in den Ubuntu-Einstellungen → Benachrichtigungen, dass Chrome erlaubt ist und „Nicht stören“ aus ist.
+
+Unter Ubuntu selbst habe ich das nicht ausprobiert.
+
+### 7. Wenn etwas nicht klappt
+
+**Der Abgleich:** Abschnitt 7, „Wenn etwas nicht abgleicht“.
+
+**Eine Erinnerung kommt nicht:**
+
+1. Hat die Aufgabe eine **Uhrzeit**? Ohne Uhrzeit gibt es keinen Termin.
+2. Steht der Termin im Google Kalender unter „Gedankenwelt“? Wenn nein: In der App die Wolke antippen → „Jetzt abgleichen“. Steht dort ein bernsteinfarbener Hinweis zu den Erinnerungen, sagt er, was fehlt.
+3. Fehlt auf einem Gerät die Kalender-Berechtigung: Zahnrad → Erinnerungen → erneut aktivieren.
+4. Der Termin steht im Kalender, aber es kommt keine Mitteilung: Das liegt dann am Gerät – Mitteilungen der Kalender-App, Fokus-Modus, am Laptop der offene Kalender-Tab (Schritte 5 und 6).
+5. Stimmt im Kalender etwas nicht (doppelt, veraltet, verwaist): Zahnrad → Erinnerungen → **Erinnerungen neu aufbauen**.
+6. Den Kalender „Gedankenwelt“ versehentlich im Google Kalender gelöscht: Die App legt ihn beim nächsten Abgleich neu an und trägt alle offenen Aufgaben mit Uhrzeit wieder ein.
+7. Hilft nichts: **Kalender-Selbsttest** starten und mir die Meldungen schicken.

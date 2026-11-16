@@ -4,7 +4,7 @@
 Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgaben und längere Texte, in Listen sortiert, mit schneller fehlertoleranter Suche. Läuft als installierbare Web-App (PWA) am Ubuntu-Laptop und später am iPhone.
 
 - Konzept und Aufträge: `~/Dokumente/Claude/ideen/Gedankenwelt/KONZEPT.md` und `PHASE-1.md` (liegen bewusst **nicht** in diesem Repo, weil `ideen/` nie in ein Git-Repo kopiert wird). Vor größeren Änderungen dort nachlesen.
-- Aktueller Stand: Phase 2 in Arbeit (Google Drive und iPhone). Auftrag: `~/Downloads/PHASE-2.md`
+- Aktueller Stand: Phase 3 gebaut (wiederkehrende Aufgaben, Erinnerungen über Google Kalender). Phase 2 und 3 sind noch nie gegen das echte Google gelaufen – offene Schritte stehen in der README, Abschnitt 9 „Später erledigen“. Aufträge: `~/Downloads/PHASE-2.md`, `~/Downloads/PHASE-3.md`
 
 ## Technik
 - Plattform: Web (PWA), Chrome am Laptop, später Safari am iPhone
@@ -24,6 +24,8 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - `src/modell/`: Datentypen (Notiz, Liste) und ID-Erzeugung
 - `src/logik/`: reine Logik ohne Oberfläche und ohne Datenbank (Absatz-Zerlegung, Markdown-Format, Suche, Gedanke des Tages). Hier liegen die Tests (`*.test.ts`).
 - `src/logik/abgleich/`: Abgleich mit Google Drive (Zusammenführen, Abgleich-Runde, simuliertes Drive für Tests)
+- `src/logik/kalender/`: Erinnerungen (Kalender-Schnittstelle, Abgleich Aufgaben → Termine, simulierter Kalender)
+- `src/logik/wiederholung.ts`: Regeln für wiederkehrende Aufgaben
 - `src/db/`: Speicherung (IndexedDB), alle Änderungen an Daten, ZIP-Export/-Import, Beispieldaten
 - `src/ui/`: Oberfläche (React-Komponenten und CSS)
 - `public/`: Symbol der App
