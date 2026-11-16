@@ -217,6 +217,19 @@ export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; he
 
 // ───────────────────────── Ein einzelner Notiz-Block ─────────────────────────
 
+/**
+ * Am Handy: Steht der Cursor am Ende einer Notiz und rutscht sie hinter die Bildschirmtastatur,
+ * wird die Seite so weit geschoben, dass man wieder sieht, was man tippt.
+ */
+function haltSichtbar(el: HTMLTextAreaElement): void {
+  const sicht = window.visualViewport;
+  if (!sicht || !window.matchMedia('(pointer: coarse)').matches) return;
+  if (el.selectionStart !== el.value.length) return;
+  const unten = sicht.offsetTop + sicht.height;
+  const rand = el.getBoundingClientRect().bottom;
+  if (rand > unten - 20) window.scrollBy({ top: rand - unten + 64 });
+}
+
 /** „#“ und der bisher getippte Tag-Anfang direkt vor dem Cursor. */
 const TAG_VOR_CURSOR = /(?:^|[\s(])#([\p{L}\p{N}_-]*)$/u;
 const TAG_IM_TEXT = /(^|[\s(])(#[\p{L}\p{N}_][\p{L}\p{N}_-]*)/gu;
@@ -516,12 +529,19 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
             value={roh}
             placeholder={platzhalter}
             aria-label={notiz ? 'Notiz' : 'Neue Notiz'}
-            onChange={(e) => uebernimm(e.target.value, e.target.selectionStart)}
+            onChange={(e) => {
+              const el = e.target;
+              uebernimm(el.value, el.selectionStart);
+              requestAnimationFrame(() => haltSichtbar(el));
+            }}
             onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
             onKeyDown={beiTaste}
-            onFocus={() => {
+            onFocus={(e) => {
               textBeiFokus.current = notiz?.text;
               steuerung.setzeAktiv(id, true);
+              // warten, bis die Tastatur ausgefahren ist
+              const el = e.currentTarget;
+              setTimeout(() => haltSichtbar(el), 350);
             }}
             onBlur={(e) => beiVerlassen(e.target.value)}
           />

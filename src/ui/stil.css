@@ -25,6 +25,10 @@
   --treffer: rgba(169, 156, 240, 0.26);
   --schleier: rgba(6, 7, 11, 0.62);
 
+  /* Ränder, die das Gerät freihalten will: Notch bzw. Statusleiste oben, Home-Leiste unten */
+  --rand-oben: env(safe-area-inset-top, 0px);
+  --rand-unten: env(safe-area-inset-bottom, 0px);
+
   --schrift: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
   --kurz: 120ms;
@@ -66,6 +70,20 @@
 html {
   background: var(--hintergrund);
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Als installierte App liegt die Seite hinter der Statusleiste. Ein dunkler Streifen sorgt dafür,
+   dass Uhrzeit und Akku dort immer lesbar sind – auch im hellen Farbschema. */
+@media (display-mode: standalone) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: var(--rand-oben);
+    background: #0f1117;
+    z-index: 40;
+  }
 }
 
 body {
@@ -134,7 +152,7 @@ textarea:focus-visible,
 .seite {
   max-width: 760px;
   margin: 0 auto;
-  padding: 22px 22px 120px;
+  padding: calc(22px + var(--rand-oben)) 22px calc(120px + var(--rand-unten));
   padding-left: max(22px, env(safe-area-inset-left));
   padding-right: max(22px, env(safe-area-inset-right));
 }
@@ -783,6 +801,7 @@ a.kachel:hover,
   justify-content: center;
   color: var(--meta);
   opacity: 0;
+  pointer-events: none;
   cursor: grab;
   touch-action: none;
   transition: opacity var(--kurz);
@@ -792,6 +811,7 @@ a.kachel:hover,
 .notiz.aktiv .griff,
 .notiz.zieht .griff {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .kaestchen {
@@ -931,8 +951,10 @@ a.kachel:hover,
 
 .notiz-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 4px 10px;
+  white-space: nowrap;
   min-height: 22px;
   margin-top: 2px;
   font-family: var(--mono);
@@ -963,6 +985,8 @@ a.kachel:hover,
   align-items: center;
   gap: 2px;
   opacity: 0;
+  /* Unsichtbar heißt auch: nicht antippbar. Sonst löscht ein Tipp ins Leere eine Notiz. */
+  pointer-events: none;
   transition: opacity var(--kurz);
 }
 
@@ -970,6 +994,7 @@ a.kachel:hover,
 .notiz.aktiv .notiz-aktionen,
 .notiz-aktionen:focus-within {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .notiz-aktionen button {
@@ -1147,7 +1172,7 @@ a.kachel:hover,
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 14vh 16px 16px;
+  padding: calc(14vh + var(--rand-oben)) 16px 16px;
   background: var(--schleier);
 }
 
@@ -1384,7 +1409,7 @@ details.diagnose > summary {
 
 @media (max-width: 560px) {
   .seite {
-    padding-top: 16px;
+    padding-top: calc(16px + var(--rand-oben));
   }
 
   .filter-zeile {
@@ -1399,6 +1424,78 @@ details.diagnose > summary {
   /* Ohne Maus gibt es kein „Darüberfahren“: Aktionen der aktiven Notiz bleiben sichtbar. */
   .einstellung {
     flex-wrap: wrap;
+  }
+}
+
+/* ───────── Bedienung mit dem Finger ───────── */
+
+@media (pointer: coarse) {
+  /* Am Handy gibt es kein „Darüberfahren“: Knöpfe zeigt nur die Notiz, in der der Cursor steht. */
+  .notiz:not(.aktiv) .notiz-aktionen {
+    display: none;
+  }
+
+  .notiz:not(.aktiv):hover .griff {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .notiz-meta {
+    min-height: 32px;
+  }
+
+  .notiz-aktionen {
+    gap: 6px;
+  }
+
+  .notiz-aktionen button {
+    width: 40px;
+    height: 32px;
+    font-size: 17px;
+  }
+
+  .griff {
+    left: -14px;
+    top: 6px;
+    width: 28px;
+    height: 34px;
+  }
+
+  .kaestchen {
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+  }
+
+  .symbolknopf {
+    width: 42px;
+    height: 42px;
+  }
+
+  /* Tag-Dropdown: Zeilen so hoch, dass man sie sicher trifft */
+  .tag-auswahl button {
+    align-items: center;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .menue-zeile,
+  .listenwahl-zeile {
+    min-height: 44px;
+  }
+
+  /* Unter 16 px vergrößert iOS beim Antippen die ganze Seite. */
+  select,
+  input[type='date'],
+  input[type='time'],
+  .aufgabe-neu {
+    font-size: 16px;
+    min-height: 40px;
+  }
+
+  /* Platz unter der letzten Notiz, damit sie sich über die Tastatur schieben lässt */
+  .schreibbereich {
+    padding-bottom: 42vh;
   }
 }
 
