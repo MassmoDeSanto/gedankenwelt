@@ -607,6 +607,47 @@ describe('Sicherheit: bei unklarem Zustand wird nichts gelöscht', () => {
   });
 });
 
+describe('Termin-ID aus dem Kalender', () => {
+  /** Trägt – wie der Kalender-Abgleich – eine Termin-ID ein, ohne den Zeitstempel der Notiz zu ändern. */
+  function trageTerminEin(geraet: TestGeraet, id: string, terminId: string): void {
+    geraet.lokal = {
+      ...geraet.lokal,
+      notizen: geraet.lokal.notizen.map((n) =>
+        n.id === id && n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, kalender_event_id: terminId } } : n,
+      ),
+    };
+  }
+
+  it('wandert über Drive zum anderen Gerät, ohne dessen Bearbeitung zu verdrängen', async () => {
+    const { reise } = await grundaufbau();
+    const aufgabe = a.schreibe(reise.id, '[ ] Wochenplanung', um('09:20'));
+    await alleAbgleichen(um('09:30'));
+
+    // B bearbeitet den Text; danach trägt A (ohne von der Bearbeitung zu wissen) die Termin-ID ein.
+    b.bearbeite(aufgabe.id, 'Wochenplanung mit Tee', um('10:00'));
+    trageTerminEin(a, aufgabe.id, 'termin-0001');
+    await alleAbgleichen(um('11:00'));
+
+    expect(a.notiz(aufgabe.id).text).toBe('Wochenplanung mit Tee');
+    expect(b.notiz(aufgabe.id).text).toBe('Wochenplanung mit Tee');
+    erwarteGleichstand();
+  });
+
+  it('kommt beim anderen Gerät an, wenn dort nichts geändert wurde', async () => {
+    const { reise } = await grundaufbau();
+    const aufgabe = a.schreibe(reise.id, '[ ] Wochenplanung', um('09:20'));
+    await alleAbgleichen(um('09:30'));
+
+    trageTerminEin(a, aufgabe.id, 'termin-0001');
+    await alleAbgleichen(um('11:00'));
+
+    expect(b.notiz(aufgabe.id).aufgabe?.kalender_event_id).toBe('termin-0001');
+    // der Zeitstempel der Notiz ist dabei unverändert geblieben
+    expect(b.notiz(aufgabe.id).geaendert).toBe(um('09:20'));
+    erwarteGleichstand();
+  });
+});
+
 describe('Einstellungen und Gedanke des Tages', () => {
   it('die zuletzt geänderte Einstellung gilt überall, der Verlauf wird vereinigt', async () => {
     const { n1, n2 } = await grundaufbau();
