@@ -19,6 +19,8 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Tests: `npm test`
 - Code prüfen (Typen): `npm run pruefen`
 - Fertige Version bauen: `npm run build`
+- Wichtig für Claude: Node.js ist über `nvm` installiert und in Claudes Befehlen nicht automatisch im Pfad. Jedem `npm`-, `npx`- oder `node`-Befehl `. ~/.nvm/nvm.sh && ` voranstellen. (In Massimos eigenem Terminal ist das nicht nötig.)
+- Vorschau im Browser: Startbefehle stehen in `.claude/launch.json` (`gedankenwelt` = Entwicklungsversion auf Port 5173, `gedankenwelt-gebaut` = gebaute Version auf Port 4173). Läuft Massimos eigenes `npm run dev` schon, ist Port 5173 belegt – dann einfach `http://localhost:5173` öffnen statt einen zweiten Server zu starten.
 
 ## Ordnerstruktur
 - `src/modell/`: Datentypen (Notiz, Liste) und ID-Erzeugung
@@ -36,7 +38,11 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Oberflächentexte, Bezeichner im Datenmodell und Kommentare auf Deutsch.
 - Logik in `src/logik/` bleibt frei von Browser- und Datenbank-Zugriffen, damit sie testbar ist und Phase 2 (Drive) sie wiederverwenden kann.
 - Keine echten Notizen von Massimo ins Repo (auch nicht als Testdaten oder Beispieldaten).
-- Das GitHub-Repository ist öffentlich (GitHub Pages): nichts Privates committen, keine echten Notizen, keine Zugangsschlüssel. Die Google-Client-ID in `src/konfig.ts` ist öffentlich und darf drinstehen.
+- Das GitHub-Repository ist öffentlich (GitHub Pages): nichts Privates committen, keine echten Notizen, keine Zugangsschlüssel. Die Google-Client-ID in `src/konfig.ts` ist öffentlich und darf drinstehen. Ein Client-Secret gehört nie ins Repo.
+- Absender der Commits: In diesem Repo ist `user.email` bewusst auf Massimos anonyme GitHub-Adresse (`…@users.noreply.github.com`) gestellt, weil seine private E-Mail-Adresse nicht öffentlich sichtbar sein soll. Nicht zurückstellen. Vor jedem Push bei Zweifel prüfen: `git log --format='%ae' | sort -u` darf nur die noreply-Adresse zeigen.
+- Jeder Push auf `main` veröffentlicht automatisch (GitHub Actions lässt vorher die Tests laufen). Also nur pushen, wenn `npm test` und `npm run pruefen` bestehen.
+- Massimo macht die Google-Cloud-Einrichtung später. Bis dahin: nichts von ihm verlangen, wofür er etwas einrichten, freigeben oder am iPhone testen müsste. Neues gegen simuliertes Drive/simulierten Kalender bauen und prüfen; was er später tun muss, in der README im Abschnitt „Später erledigen“ sammeln.
 
 ## Offene Punkte
-- Siehe `README.md`, Abschnitt „Stand“.
+- Siehe `README.md`: Abschnitt 5 (Stand Phase 1), 7 (Phase 2), 8 (Phase 3) und 9 („Später erledigen“ – alles, was nur Massimo tun kann).
+- Phase 4 (Import aus Apple Notizen) steht noch aus.
