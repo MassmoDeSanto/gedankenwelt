@@ -14,6 +14,7 @@ import {
   EINGANG_ID,
   STANDARD_EINSTELLUNGEN,
   eingangsListe,
+  ergaenzeAufgabe,
   type Datenbestand,
   type Einstellungen,
   type Liste,
@@ -200,7 +201,9 @@ function raeumePapierkorbAuf(): void {
 
 /** Beim Start: alles aus der Browser-Datenbank in den Arbeitsspeicher holen. */
 export async function ladeAlles(): Promise<void> {
-  const [notizen, listen, meta] = await Promise.all([db.notizen.toArray(), db.listen.toArray(), db.meta.toArray()]);
+  const [gespeichert, listen, meta] = await Promise.all([db.notizen.toArray(), db.listen.toArray(), db.meta.toArray()]);
+  // Aufgaben aus älteren Versionen der App bekommen die später hinzugekommenen Felder.
+  const notizen = gespeichert.map((n) => (n.aufgabe ? { ...n, aufgabe: ergaenzeAufgabe(n.aufgabe) } : n));
   const einstellungen = meta.find((m) => m.schluessel === 'einstellungen')?.wert as Einstellungen | undefined;
   const verlauf = meta.find((m) => m.schluessel === 'tagesgedanke_verlauf')?.wert as VerlaufEintrag[] | undefined;
 

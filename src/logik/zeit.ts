@@ -65,3 +65,8 @@ export function formatFaellig(faellig: Faelligkeit, heute: string = lokalesDatum
   else tag = formatOrtsdatum(datum, heute);
   return uhrzeit ? `${tag} ${uhrzeit}` : tag;
 }
+
+/** Ortszeit als Text "2026-11-16T10:30" – so, wie auch Fälligkeiten mit Uhrzeit gespeichert sind. */
+export function lokalJetzt(d: Date = new Date()): string {
+  return `${lokalesDatum(d)}T${zwei(d.getHours())}:${zwei(d.getMinutes())}`;
+}

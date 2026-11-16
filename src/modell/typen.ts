@@ -14,18 +14,49 @@ export type Zeitstempel = string;
  */
 export type Faelligkeit = string;
 
-/** Wiederholung einer Aufgabe (wird erst in Phase 3 benutzt). */
-export type Wiederholung =
+export type Wochentag = 'MO' | 'DI' | 'MI' | 'DO' | 'FR' | 'SA' | 'SO';
+
+/** Wann eine Wiederholung aufhört. Bei „anzahl“ steht, wie oft die Aufgabe noch fällig wird. */
+export type WiederholungsEnde =
+  | { art: 'nie' }
+  | { art: 'datum'; datum: string }
+  | { art: 'anzahl'; anzahl: number };
+
+/**
+ * Wiederholung einer Aufgabe (PHASE-3.md, Abschnitt 2). Die Rechenregeln dazu stehen in
+ * src/logik/wiederholung.ts.
+ */
+export type Wiederholung = {
+  /** alle n Tage / Wochen / Monate / Jahre (mindestens 1) */
+  intervall: number;
+  /**
+   * „faellig“: Die nächste Fälligkeit folgt dem Kalender („jeden Montag“).
+   * „erledigung“: Sie zählt ab dem Abhaken („3 Tage nach dem letzten Mal“).
+   */
+  ab: 'faellig' | 'erledigung';
+  ende: WiederholungsEnde;
+} & (
   | { art: 'taeglich' }
-  | { art: 'woechentlich'; wochentag: number } // 1 = Montag … 7 = Sonntag
-  | { art: 'monatlich'; tag: number }; // 1 = „jeden Monatsersten“
+  /** an diesen Wochentagen; leer = am Wochentag der Fälligkeit */
+  | { art: 'woechentlich'; tage: Wochentag[] }
+  /** am `tag`. des Monats; gibt es ihn nicht (31. im Februar), gilt der letzte Tag des Monats */
+  | { art: 'monatlich'; tag: number }
+  /** am `woche`. Wochentag des Monats: 1–4, oder −1 für den letzten (z. B. letzter Freitag) */
+  | { art: 'monatlich-wochentag'; woche: number; wochentag: Wochentag }
+  | { art: 'jaehrlich'; monat: number; tag: number }
+);
 
 export interface Aufgabe {
   erledigt: boolean;
   erledigt_am: Zeitstempel | null;
   faellig: Faelligkeit | null;
   wiederholung: Wiederholung | null;
+  /** ID des zugehörigen Termins im Google Kalender (nur bei Aufgaben mit Uhrzeit) */
   kalender_event_id: string | null;
+  /** Erinnerung so viele Minuten vor der Fälligkeit (0 = zur Uhrzeit). Wirkt nur mit Uhrzeit. */
+  erinnerung: number;
+  /** Wann eine wiederkehrende Aufgabe abgehakt wurde (die neuesten Zeitpunkte) */
+  erledigt_verlauf: Zeitstempel[];
 }
 
 /** Die kleinste Einheit: ein Textblock. */
@@ -69,6 +100,10 @@ export interface Einstellungen {
   thema: 'dunkel' | 'hell';
   /** Wann die Einstellungen zuletzt geändert wurden (für den Abgleich: die neuere Fassung gewinnt). */
   geaendert?: Zeitstempel;
+  /** Sind die Erinnerungen über den Google Kalender eingeschaltet? */
+  erinnerungen?: boolean;
+  /** ID des Kalenders „Gedankenwelt“ im Google Kalender */
+  kalender_id?: string | null;
 }
 
 /** Welche Notiz an welchem Kalendertag „Gedanke des Tages“ war. */
@@ -95,7 +130,16 @@ export function neueAufgabe(erledigt = false, erledigt_am: Zeitstempel | null = 
     faellig: null,
     wiederholung: null,
     kalender_event_id: null,
+    erinnerung: 0,
+    erledigt_verlauf: [],
   };
+}
+
+/** Füllt bei Aufgaben aus älteren Versionen der App die später hinzugekommenen Felder auf. */
+export function ergaenzeAufgabe(aufgabe: Aufgabe): Aufgabe {
+  const alt = aufgabe as Partial<Aufgabe> & Aufgabe;
+  if (typeof alt.erinnerung === 'number' && Array.isArray(alt.erledigt_verlauf)) return aufgabe;
+  return { ...aufgabe, erinnerung: alt.erinnerung ?? 0, erledigt_verlauf: alt.erledigt_verlauf ?? [] };
 }
 
 /**

@@ -45,6 +45,8 @@ function beispiel(): Datenbestand {
           faellig: '2026-11-20T18:00',
           wiederholung: null,
           kalender_event_id: null,
+          erinnerung: 0,
+          erledigt_verlauf: [],
         },
       }),
       baueNotiz({
@@ -62,9 +64,47 @@ function beispiel(): Datenbestand {
           faellig: '2026-11-13',
           wiederholung: null,
           kalender_event_id: null,
+          erinnerung: 0,
+          erledigt_verlauf: [],
         },
       }),
       baueNotiz({ text: 'In der wilden Liste', liste_id: wild.id }),
+      baueNotiz({
+        id: '01N0T1Z00000000000000000B1',
+        text: 'Wochenplanung',
+        liste_id: wild.id,
+        position: 2,
+        aufgabe: {
+          erledigt: false,
+          erledigt_am: null,
+          faellig: '2026-11-22T18:00',
+          wiederholung: { art: 'woechentlich', tage: ['SO'], intervall: 1, ab: 'faellig', ende: { art: 'nie' } },
+          kalender_event_id: 'abc123 /?',
+          erinnerung: 15,
+          erledigt_verlauf: ['2026-11-08T17:10:00Z', '2026-11-15T17:55:12Z'],
+        },
+      }),
+      baueNotiz({
+        text: 'Filter wechseln',
+        liste_id: wild.id,
+        position: 3,
+        aufgabe: {
+          erledigt: false,
+          erledigt_am: null,
+          faellig: '2026-12-01',
+          wiederholung: {
+            art: 'monatlich-wochentag',
+            woche: -1,
+            wochentag: 'FR',
+            intervall: 3,
+            ab: 'erledigung',
+            ende: { art: 'anzahl', anzahl: 4 },
+          },
+          kalender_event_id: null,
+          erinnerung: 0,
+          erledigt_verlauf: [],
+        },
+      }),
       baueNotiz({ text: 'Erste Doppelte', liste_id: doppelt1.id }),
       baueNotiz({ text: 'Zweite Doppelte', liste_id: doppelt2.id }),
       baueNotiz({ text: 'Einzeln gelöscht #weg', liste_id: reise.id, geloescht: '2026-11-10T12:00:00Z' }),
@@ -73,10 +113,10 @@ function beispiel(): Datenbestand {
         text: 'Gelöschte Aufgabe',
         liste_id: EINGANG_ID,
         geloescht: '2026-11-11T12:00:00Z',
-        aufgabe: { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null },
+        aufgabe: { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [] },
       }),
     ],
-    einstellungen: { thema: 'hell' },
+    einstellungen: { thema: 'hell', geaendert: '2026-11-15T10:00:00Z', erinnerungen: true, kalender_id: 'kal-1@group.calendar.google.com' },
     tagesgedanke_verlauf: [{ datum: '2026-11-14', notiz_id: '01N0T1Z00000000000000000A1' }],
   };
 }
@@ -141,6 +181,41 @@ describe('Markdown-Format', () => {
     );
   });
 
+  it('Wiederholung, Erinnerung und Verlauf stehen lesbar im Kommentar', () => {
+    const inhalt = zuDateien(beispiel()).get('Ideen- -wild- - neu.md')!;
+    expect(inhalt).toContain(
+      [
+        '[ ] Wochenplanung',
+        '<!-- id:01N0T1Z00000000000000000B1 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:2 ' +
+          'faellig:2026-11-22T18:00 wiederholung:woechentlich;tage=SO;ab=faellig erinnerung:15 ' +
+          'verlauf:2026-11-08T17:10:00Z,2026-11-15T17:55:12Z kalender:abc123%20%2F%3F -->',
+      ].join('\n'),
+    );
+    expect(inhalt).toContain('wiederholung:monatlich;am=letzter.FR;alle=3;ab=erledigung;noch=4 -->');
+  });
+
+  it('Wiederholungsregeln und Verlauf überstehen die Hin- und Rückumwandlung exakt', () => {
+    const zurueck = ausDateien(zuDateien(beispiel()), testUmgebung());
+    const wochenplanung = zurueck.notizen.find((n) => n.text === 'Wochenplanung')!;
+    expect(wochenplanung.aufgabe).toEqual({
+      erledigt: false,
+      erledigt_am: null,
+      faellig: '2026-11-22T18:00',
+      wiederholung: { art: 'woechentlich', tage: ['SO'], intervall: 1, ab: 'faellig', ende: { art: 'nie' } },
+      kalender_event_id: 'abc123 /?',
+      erinnerung: 15,
+      erledigt_verlauf: ['2026-11-08T17:10:00Z', '2026-11-15T17:55:12Z'],
+    });
+    expect(zurueck.notizen.find((n) => n.text === 'Filter wechseln')!.aufgabe?.wiederholung).toEqual({
+      art: 'monatlich-wochentag',
+      woche: -1,
+      wochentag: 'FR',
+      intervall: 3,
+      ab: 'erledigung',
+      ende: { art: 'anzahl', anzahl: 4 },
+    });
+  });
+
   it('gelöschte Notizen stehen nur im Papierkorb, gelöschte Listen in der Meta-Datei', () => {
     const dateien = zuDateien(beispiel());
     const papierkorb = dateien.get('_papierkorb.md')!;
@@ -152,7 +227,7 @@ describe('Markdown-Format', () => {
 
     const meta = JSON.parse(dateien.get('_meta.json')!);
     expect(meta.geloeschte_listen.map((l: { name: string }) => l.name)).toEqual(['Alt']);
-    expect(meta.einstellungen).toEqual({ thema: 'hell' });
+    expect(meta.einstellungen).toMatchObject({ thema: 'hell', erinnerungen: true });
     expect(meta.tagesgedanke_verlauf).toHaveLength(1);
   });
 

@@ -23,10 +23,10 @@ import {
   type Notiz,
   type TagesgedankeSchalter,
   type VerlaufEintrag,
-  type Wiederholung,
 } from '../modell/typen';
 import { leseAufgabenPraefix, mitAufgabenPraefix, type Umgebung } from './absatz';
 import { leseTags } from './tags';
+import { leseRegel, schreibeRegel } from './wiederholung';
 
 /** Pfad → Inhalt. Pfade sind relativ zum Ordner „Gedankenwelt/“ und nutzen „/“. */
 export type Dateien = Map<string, string>;
@@ -88,13 +88,6 @@ function schreibeKopf(liste: Liste): string {
   ].join('\n');
 }
 
-function schreibeWiederholung(w: Wiederholung | null): string {
-  if (!w) return 'keine';
-  if (w.art === 'woechentlich') return `woechentlich-${w.wochentag}`;
-  if (w.art === 'monatlich') return `monatlich-${w.tag}`;
-  return 'taeglich';
-}
-
 /** Eine Notiz: Text, darunter die Metadaten als HTML-Kommentar. */
 function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
   const meta = [
@@ -106,7 +99,9 @@ function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
   const a = notiz.aufgabe;
   if (a) {
     if (a.faellig) meta.push(`faellig:${a.faellig}`);
-    meta.push(`wiederholung:${schreibeWiederholung(a.wiederholung)}`);
+    meta.push(`wiederholung:${schreibeRegel(a.wiederholung)}`);
+    if (a.erinnerung > 0) meta.push(`erinnerung:${a.erinnerung}`);
+    if (a.erledigt_verlauf.length > 0) meta.push(`verlauf:${a.erledigt_verlauf.join(',')}`);
     if (a.erledigt_am) meta.push(`erledigt_am:${a.erledigt_am}`);
     if (a.kalender_event_id) meta.push(`kalender:${encodeURIComponent(a.kalender_event_id)}`);
   }
@@ -255,16 +250,6 @@ function leseRumpf(rumpf: string): RohNotiz[] {
   return ergebnis;
 }
 
-function leseWiederholung(wert: string | undefined): Wiederholung | null {
-  if (!wert || wert === 'keine') return null;
-  if (wert === 'taeglich') return { art: 'taeglich' };
-  const [art, zahl] = wert.split('-');
-  const n = Number(zahl);
-  if (art === 'woechentlich' && n >= 1 && n <= 7) return { art, wochentag: n };
-  if (art === 'monatlich' && n >= 1 && n <= 31) return { art, tag: n };
-  return null;
-}
-
 /** Baut die Notizen einer Datei. `liste_id` null = Papierkorb-Datei (Liste steht dann im Kommentar). */
 function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Notiz[] {
   const roh = leseRumpf(rumpf);
@@ -286,8 +271,10 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
           erledigt: zustand === 'erledigt',
           erledigt_am: meta.get('erledigt_am') ?? null,
           faellig: meta.get('faellig') ?? null,
-          wiederholung: leseWiederholung(meta.get('wiederholung')),
+          wiederholung: leseRegel(meta.get('wiederholung')),
           kalender_event_id: kalender ? decodeURIComponent(kalender) : null,
+          erinnerung: Math.max(0, Number(meta.get('erinnerung')) || 0),
+          erledigt_verlauf: (meta.get('verlauf') ?? '').split(',').filter(Boolean),
         }
       : null;
     const erstellt = meta.get('erstellt') ?? umg.jetzt;
@@ -431,6 +418,8 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
       if (meta.einstellungen?.thema === 'hell' || meta.einstellungen?.thema === 'dunkel') {
         einstellungen = { thema: meta.einstellungen.thema };
         if (typeof meta.einstellungen.geaendert === 'string') einstellungen.geaendert = meta.einstellungen.geaendert;
+        if (typeof meta.einstellungen.erinnerungen === 'boolean') einstellungen.erinnerungen = meta.einstellungen.erinnerungen;
+        if (typeof meta.einstellungen.kalender_id === 'string') einstellungen.kalender_id = meta.einstellungen.kalender_id;
       }
       if (Array.isArray(meta.tagesgedanke_verlauf)) {
         tagesgedanke_verlauf = meta.tagesgedanke_verlauf
