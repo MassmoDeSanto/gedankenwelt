@@ -2,7 +2,7 @@
  * Erfundene Beispieldaten zum Ausprobieren: Listen, Unterlisten, Tags und Aufgaben.
  * Enthält bewusst keine echten Notizen.
  */
-import { erzeugeNotizen } from '../logik/absatz';
+import { erzeugeNotizen, leseAufgabenPraefix } from '../logik/absatz';
 import { jetztStempel, lokalesDatum, verschiebeDatum } from '../logik/zeit';
 import { EINGANG_ID, type Liste, type Notiz, type TagesgedankeSchalter } from '../modell/typen';
 
@@ -185,4 +185,53 @@ export function beispieldaten(
   fuegeNotizenEin(EINGANG_ID, EINGANG, eingangPosition);
 
   return { listen, notizen };
+}
+
+/**
+ * Findet die Beispieldaten wieder – für die Frage beim ersten Verbinden mit Drive,
+ * ob sie gelöscht werden sollen. Erkannt wird am genauen Wortlaut:
+ *  - Notizen, deren Text exakt einer Beispielnotiz entspricht
+ *  - Listen mit dem Namen einer Beispielliste, die nur Beispielnotizen und Beispiel-Unterlisten
+ *    enthalten (und mindestens eines davon). Wer in eine Beispielliste Eigenes geschrieben hat,
+ *    behält die Liste; nur die Beispielnotizen darin werden gefunden.
+ */
+export function findeBeispieldaten(
+  listen: Iterable<Liste>,
+  notizen: Iterable<Notiz>,
+): { listenIds: string[]; notizIds: string[] } {
+  const texte = new Set<string>();
+  const namen = new Set<string>();
+  const sammle = (vorlage: BeispielListe) => {
+    namen.add(vorlage.name);
+    for (const n of vorlage.notizen) texte.add(leseAufgabenPraefix(n.text).text);
+    for (const u of vorlage.unterlisten ?? []) sammle(u);
+  };
+  LISTEN.forEach(sammle);
+  for (const n of EINGANG) texte.add(leseAufgabenPraefix(n.text).text);
+
+  const alleNotizen = [...notizen];
+  const alleListen = [...listen];
+  const beispielNotizen = new Set(alleNotizen.filter((n) => texte.has(n.text)).map((n) => n.id));
+
+  // Zuerst alle Listen mit passendem Namen und ohne eigene Notizen; dann so lange aussieben,
+  // bis jede übrige Liste nur noch Beispiel-Unterlisten hat.
+  const kandidaten = new Set(
+    alleListen
+      .filter((l) => l.id !== EINGANG_ID && namen.has(l.name))
+      .filter((l) => alleNotizen.every((n) => n.liste_id !== l.id || beispielNotizen.has(n.id)))
+      .map((l) => l.id),
+  );
+  for (let geaendert = true; geaendert; ) {
+    geaendert = false;
+    for (const liste of alleListen) {
+      if (!kandidaten.has(liste.id)) continue;
+      const kinder = alleListen.filter((k) => k.eltern_id === liste.id);
+      const hatInhalt = kinder.length > 0 || alleNotizen.some((n) => n.liste_id === liste.id);
+      if (!hatInhalt || kinder.some((k) => !kandidaten.has(k.id))) {
+        kandidaten.delete(liste.id);
+        geaendert = true;
+      }
+    }
+  }
+  return { listenIds: [...kandidaten], notizIds: [...beispielNotizen] };
 }

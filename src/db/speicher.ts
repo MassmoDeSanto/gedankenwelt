@@ -10,7 +10,6 @@
 import { useSyncExternalStore } from 'react';
 import { abgelaufen } from '../logik/papierkorb';
 import { Suchindex } from '../logik/suche';
-import { jetztStempel } from '../logik/zeit';
 import {
   EINGANG_ID,
   STANDARD_EINSTELLUNGEN,
@@ -63,6 +62,19 @@ export function useZustand(): Zustand {
   return useSyncExternalStore(abonniere, leseZustand);
 }
 
+/**
+ * Wird nach jeder Änderung durch den Nutzer aufgerufen. Der Abgleich-Dienst hängt sich
+ * hier ein, um die Änderung in die Warteschlange einzutragen und bald hochzuladen.
+ */
+let nachAenderung: ((ids: string[]) => void) | null = null;
+/** Wird aufgerufen, wenn der ganze Bestand ersetzt wurde (Import, „Alles löschen“). */
+let nachErsetzen: (() => void) | null = null;
+
+export function setzeAbgleichHaken(aenderung: ((ids: string[]) => void) | null, ersetzen: (() => void) | null): void {
+  nachAenderung = aenderung;
+  nachErsetzen = ersetzen;
+}
+
 function meldeFehler(fehler: unknown): void {
   console.error('Speichern in der Browser-Datenbank ist fehlgeschlagen:', fehler);
 }
@@ -76,6 +88,7 @@ export function sichereNotizen(notizen: Notiz[]): void {
     suchindex.aktualisiere(n);
   }
   db.notizen.bulkPut(notizen).catch(meldeFehler);
+  nachAenderung?.(notizen.map((n) => n.id));
   melde();
 }
 
@@ -83,6 +96,7 @@ export function sichereListen(listen: Liste[]): void {
   if (listen.length === 0) return;
   for (const l of listen) zustand.listen.set(l.id, l);
   db.listen.bulkPut(listen).catch(meldeFehler);
+  nachAenderung?.(listen.map((l) => l.id));
   melde();
 }
 
@@ -96,11 +110,13 @@ export function entferneEndgueltig(notizIds: string[], listenIds: string[]): voi
   for (const id of listenIds) zustand.listen.delete(id);
   db.notizen.bulkDelete(notizIds).catch(meldeFehler);
   db.listen.bulkDelete(listenIds).catch(meldeFehler);
+  nachAenderung?.([...notizIds, ...listenIds]);
   melde();
 }
 
 export function sichereEinstellungen(einstellungen: Einstellungen): void {
   db.meta.put({ schluessel: 'einstellungen', wert: einstellungen }).catch(meldeFehler);
+  nachAenderung?.(['_einstellungen']);
   melde({ einstellungen });
 }
 
@@ -108,6 +124,68 @@ export function sichereEinstellungen(einstellungen: Einstellungen): void {
 export function sichereVerlauf(verlauf: VerlaufEintrag[]): void {
   zustand.verlauf = verlauf;
   db.meta.put({ schluessel: 'tagesgedanke_verlauf', wert: verlauf }).catch(meldeFehler);
+  nachAenderung?.(['_verlauf']);
+}
+
+// ───────────────────────── Ergebnis eines Abgleichs übernehmen ─────────────────────────
+
+function gleicheNotiz(a: Notiz, b: Notiz): boolean {
+  return (
+    a === b ||
+    (a.geaendert === b.geaendert &&
+      a.text === b.text &&
+      a.liste_id === b.liste_id &&
+      a.position === b.position &&
+      a.geloescht === b.geloescht &&
+      JSON.stringify(a.aufgabe) === JSON.stringify(b.aufgabe))
+  );
+}
+
+/**
+ * Übernimmt den zusammengeführten Stand aus dem Abgleich. Es wird nur geschrieben, was sich
+ * wirklich unterscheidet. Diese Änderungen kommen aus Drive und wandern darum NICHT wieder
+ * in die Warteschlange.
+ */
+export function uebernimmAbgleich(bestand: Datenbestand): void {
+  const sollNotizen = new Map(bestand.notizen.map((n) => [n.id, n]));
+  const sollListen = new Map(bestand.listen.map((l) => [l.id, l]));
+
+  const neueNotizen = bestand.notizen.filter((n) => {
+    const alt = zustand.notizen.get(n.id);
+    return !alt || !gleicheNotiz(alt, n);
+  });
+  const neueListen = bestand.listen.filter((l) => {
+    const alt = zustand.listen.get(l.id);
+    return !alt || JSON.stringify(alt) !== JSON.stringify(l);
+  });
+  const wegNotizen = [...zustand.notizen.keys()].filter((id) => !sollNotizen.has(id));
+  const wegListen = [...zustand.listen.keys()].filter((id) => !sollListen.has(id));
+
+  for (const n of neueNotizen) {
+    zustand.notizen.set(n.id, n);
+    suchindex.aktualisiere(n);
+  }
+  for (const id of wegNotizen) {
+    zustand.notizen.delete(id);
+    suchindex.entferne(id);
+  }
+  for (const l of neueListen) zustand.listen.set(l.id, l);
+  for (const id of wegListen) zustand.listen.delete(id);
+
+  if (neueNotizen.length > 0) db.notizen.bulkPut(neueNotizen).catch(meldeFehler);
+  if (neueListen.length > 0) db.listen.bulkPut(neueListen).catch(meldeFehler);
+  if (wegNotizen.length > 0) db.notizen.bulkDelete(wegNotizen).catch(meldeFehler);
+  if (wegListen.length > 0) db.listen.bulkDelete(wegListen).catch(meldeFehler);
+
+  const einstellungenNeu = JSON.stringify(zustand.einstellungen) !== JSON.stringify(bestand.einstellungen);
+  if (einstellungenNeu) db.meta.put({ schluessel: 'einstellungen', wert: bestand.einstellungen }).catch(meldeFehler);
+  if (JSON.stringify(zustand.verlauf) !== JSON.stringify(bestand.tagesgedanke_verlauf)) {
+    zustand.verlauf = bestand.tagesgedanke_verlauf;
+    db.meta.put({ schluessel: 'tagesgedanke_verlauf', wert: bestand.tagesgedanke_verlauf }).catch(meldeFehler);
+  }
+
+  const geaendert = neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 || einstellungenNeu;
+  if (geaendert) melde(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {});
 }
 
 // ───────────────────────── Laden und Ersetzen ─────────────────────────
@@ -135,7 +213,7 @@ export async function ladeAlles(): Promise<void> {
   };
   suchindex.setzeAlle(notizen);
 
-  if (!zustand.listen.has(EINGANG_ID)) sichereListen([eingangsListe(jetztStempel())]);
+  if (!zustand.listen.has(EINGANG_ID)) sichereListen([eingangsListe()]);
   raeumePapierkorbAuf();
   melde();
 }
@@ -153,7 +231,7 @@ export function alsBestand(): Datenbestand {
 /** Ersetzt alles durch einen anderen Datenbestand (Import oder „Alles löschen“). */
 export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
   const listen = [...bestand.listen];
-  if (!listen.some((l) => l.id === EINGANG_ID)) listen.push(eingangsListe(jetztStempel()));
+  if (!listen.some((l) => l.id === EINGANG_ID)) listen.push(eingangsListe());
 
   await db.transaction('rw', db.notizen, db.listen, db.meta, async () => {
     await Promise.all([db.notizen.clear(), db.listen.clear(), db.meta.clear()]);
@@ -174,5 +252,6 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
   };
   suchindex.setzeAlle(bestand.notizen);
   raeumePapierkorbAuf();
+  nachErsetzen?.();
   melde();
 }

@@ -98,7 +98,13 @@ export function neueAufgabe(erledigt = false, erledigt_am: Zeitstempel | null = 
   };
 }
 
-export function eingangsListe(jetzt: Zeitstempel): Liste {
+/**
+ * Zeitstempel für automatisch Angelegtes. Weil er älter ist als jede echte Änderung, verdrängt
+ * z. B. der leere Eingang eines neu eingerichteten Geräts nie den Eingang aus Google Drive.
+ */
+export const URZEIT: Zeitstempel = '1970-01-01T00:00:00Z';
+
+export function eingangsListe(jetzt: Zeitstempel = URZEIT): Liste {
   return {
     id: EINGANG_ID,
     name: EINGANG_NAME,

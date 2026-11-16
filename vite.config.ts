@@ -11,7 +11,8 @@ export default defineConfig({
     react(),
     // PWA-Grundgerüst: macht die App installierbar und offlinefähig.
     VitePWA({
-      registerType: 'autoUpdate',
+      // „prompt“: Eine neue Version wartet, bis die App sie selbst übernimmt (siehe src/main.tsx).
+      registerType: 'prompt',
       includeAssets: ['symbol.svg'],
       manifest: {
         name: 'Gedankenwelt',

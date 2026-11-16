@@ -10,10 +10,24 @@ export interface MetaEintrag {
   wert: unknown;
 }
 
+/**
+ * Eine noch nicht hochgeladene Änderung: welche Notiz oder Liste betroffen ist und wann.
+ * Die Warteschlange übersteht Neuladen und Neustart. Wird dieselbe Notiz mehrmals geändert,
+ * bleibt es bei einem Eintrag (mit der Zeit der letzten Änderung).
+ */
+export interface WarteschlangenEintrag {
+  id: string;
+  /** Zeitpunkt der Änderung in Millisekunden */
+  stand: number;
+}
+
 class Datenbank extends Dexie {
   notizen!: Table<Notiz, string>;
   listen!: Table<Liste, string>;
   meta!: Table<MetaEintrag, string>;
+  warteschlange!: Table<WarteschlangenEintrag, string>;
+  /** Was der Abgleich sich merkt: letzter gemeinsamer Stand, Stand der Drive-Dateien, Sicherung */
+  abgleich!: Table<MetaEintrag, string>;
 
   constructor() {
     super('gedankenwelt');
@@ -22,6 +36,11 @@ class Datenbank extends Dexie {
       notizen: 'id, liste_id',
       listen: 'id',
       meta: 'schluessel',
+    });
+    // Phase 2: Tabellen für den Abgleich mit Google Drive. Vorhandene Daten bleiben unberührt.
+    this.version(3).stores({
+      warteschlange: 'id, stand',
+      abgleich: 'schluessel',
     });
   }
 }

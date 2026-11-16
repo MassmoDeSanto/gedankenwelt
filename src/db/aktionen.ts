@@ -323,7 +323,7 @@ export function ladeBeispieldaten(): void {
 /** Löscht wirklich alles (auch den Papierkorb) und beginnt mit einem leeren Eingang. */
 export async function loescheAlles(): Promise<void> {
   await ersetzeAlles({
-    listen: [eingangsListe(jetztStempel())],
+    listen: [eingangsListe()],
     notizen: [],
     einstellungen: { ...STANDARD_EINSTELLUNGEN, thema: leseZustand().einstellungen.thema },
     tagesgedanke_verlauf: [],
