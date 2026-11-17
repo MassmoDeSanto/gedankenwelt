@@ -2,7 +2,7 @@
 
 Persönliche Notiz-App für kurze Gedanken, Aufgaben und längere Texte. Sie läuft als Web-App im Browser.
 
-**Stand: Phase 4 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Der Import aus Apple Notizen (Phase 4) ist gebaut und mit **erfundenen** Testdateien geprüft, aber noch nie mit echten Exportdateien. Alles, was du später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
+**Stand: Phase 4 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Die Google Cloud ist seit dem 17. Nov 2026 eingerichtet; als Nächstes kommt Schritt 3 in Abschnitt 9 (Laptop verbinden). Der Import aus Apple Notizen (Phase 4) ist gebaut und mit **erfundenen** Testdateien geprüft, aber noch nie mit echten Exportdateien. Alles, was du später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
 
 ---
 
@@ -492,13 +492,15 @@ Wochentage: `MO DI MI DO FR SA SO`. Gibt es einen Tag nicht (31. im Februar, 29.
 
 Alles, was noch offen ist und was nur du tun kannst – in einer Reihenfolge, damit du die Google-Einrichtung nur einmal machen musst.
 
-### 1. Google Cloud einrichten
+### 1. Google Cloud einrichten – erledigt am 17. Nov 2026
 
 Folge Abschnitt 7, „Google Cloud einrichten“. Er deckt Drive und Kalender zusammen ab: ein Projekt, **Google Drive API und Google Calendar API** aktivieren, Zustimmungsbildschirm, **beide Berechtigungen** eintragen, Client vom Typ Webanwendung mit den erlaubten Adressen.
 
-### 2. Client-ID schicken
+### 2. Client-ID schicken – erledigt am 17. Nov 2026
 
 Schick mir (Claude) die Client-ID oder trage sie in `src/konfig.ts` bei `GOOGLE_CLIENT_ID` ein, committe und pushe. **Kein Client-Secret.** Danach wird die App automatisch neu veröffentlicht.
+
+Stand 17. Nov 2026: Die Client-ID steht in `src/konfig.ts` und ist veröffentlicht. Ohne Anmeldung geprüft: Ein Klick auf „Mit Google verbinden“ in der veröffentlichten App führt zur Anmeldeseite von Google („Weiter zu massmodesanto.github.io“) und nicht zu einer Fehlermeldung. Client-ID und die Adresse der veröffentlichten App sind also richtig eingetragen. Die Adresse `http://localhost:5173` habe ich so nicht geprüft. Ab hier (Schritt 3) geht es nur mit deiner Anmeldung weiter.
 
 ### 3. Laptop verbinden
 
