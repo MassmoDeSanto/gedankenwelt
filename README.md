@@ -2,7 +2,7 @@
 
 Persönliche Notiz-App für kurze Gedanken, Aufgaben und längere Texte. Sie läuft als Web-App im Browser.
 
-**Stand: Phase 3 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Dafür fehlt die Einrichtung in der Google Cloud. Alles, was du dafür später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
+**Stand: Phase 4 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Der Import aus Apple Notizen (Phase 4) ist gebaut und mit **erfundenen** Testdateien geprüft, aber noch nie mit echten Exportdateien. Alles, was du später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
 
 ---
 
@@ -76,7 +76,7 @@ Tests sind kleine Programme, die automatisch prüfen, ob die wichtigen Regeln no
 npm test
 ```
 
-Am Ende sollte stehen: `Test Files  12 passed (12)` und `Tests  189 passed (189)`.
+Am Ende sollte stehen: `Test Files  14 passed (14)` und `Tests  292 passed (292)`.
 
 **Typen prüfen.** Kontrolliert, ob im Code alles zusammenpasst, ohne ihn auszuführen. Keine Ausgabe heißt: alles in Ordnung.
 
@@ -143,7 +143,7 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 - Beispieldaten
 - PWA-Grundgerüst (Offline-Zwischenspeicher wird beim Bauen erzeugt)
 - Markdown light in der Anzeige: `**fett**`, `*kursiv*`, `` `Code` ``, Links und Aufzählungen mit `-`. Beim Bearbeiten sieht man den Rohtext.
-- 189 automatische Tests (Phase 1 bis 3)
+- 292 automatische Tests (Phase 1 bis 4)
 
 ### Geprüft und nicht geprüft
 
@@ -153,8 +153,8 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 ### Bewusst offen
 
 - Google Drive, iPhone, wiederkehrende Aufgaben und Erinnerungen sind inzwischen gebaut: siehe Abschnitte 7 und 8
-- Import aus Apple Notizen – Phase 4
-- `[[ ]]`-Links und KI – später
+- Import aus Apple Notizen ist inzwischen gebaut: siehe Abschnitt 10
+- `[[ ]]`-Links – Phase 5; KI – später
 - Listen lassen sich noch nicht per Ziehen umsortieren (nur Notizen). Neue Listen kommen ans Ende.
 - Das App-Symbol gibt es nur als SVG. Das iPhone braucht zusätzlich PNG-Dateien – Phase 2.
 - Nach 30 Tagen wird Gelöschtes wirklich entfernt. Für den Drive-Abgleich muss Phase 2 klären, wie ein zweites Gerät davon erfährt.
@@ -189,6 +189,7 @@ Fährst du mit der Maus über eine Notiz (oder klickst hinein), erscheinen recht
 |---|---|
 | `src/modell/` | Datentypen (Notiz, Liste) und ID-Erzeugung |
 | `src/logik/` | Regeln ohne Oberfläche und ohne Datenbank, mit Tests (`*.test.ts`) |
+| `src/logik/import/` | Import aus Apple Notizen: Kopf lesen, bereinigen, zerlegen, Marker-Tabelle, erfundene Testdateien |
 | `src/db/` | Speicherung im Browser, alle Daten-Änderungen, Beispieldaten |
 | `src/ui/` | Oberfläche (React-Komponenten) und `stil.css` |
 | `public/` | Symbole der App und Startbilder fürs iPhone |
@@ -542,9 +543,29 @@ Quelle: [Google-Hilfe „Fehlende Kalender-Benachrichtigungen“](https://suppor
 
 Unter Ubuntu selbst habe ich das nicht ausprobiert.
 
-### 7. Wenn etwas nicht klappt
+### 7. Import aus Apple Notizen
+
+Erst **nach** der Google-Einrichtung (Schritte 1 bis 5), damit die importierten Notizen gleich in deinem Drive gesichert sind. Die Anleitungen stehen in Abschnitt 10.
+
+1. **Kurzbefehl bauen** nach Abschnitt 10, „Weg A: Kurzbefehl“. Die Anleitung ist noch nicht am Gerät geprüft; rechne damit, dass eine Aktion etwas anders heißt.
+2. **Zwei bis drei echte Notizen exportieren** – eine mit Checkliste, eine mit Überschriften, eine lange. Jede auf beiden Wegen: einmal über „Teilen“ → „Als Markdown exportieren“ und einmal mit dem Kurzbefehl.
+3. **Die Dateien auf den Laptop bringen** und in den Ordner `~/Dokumente/Claude/gedankenwelt/import-beispiele/` legen (anlegen, falls er fehlt). Der Ordner steht in `.gitignore` und wird nie hochgeladen. Am einfachsten: am iPhone in der Dateien-App nach Google Drive sichern und am Laptop herunterladen.
+4. **Mir (Claude) Bescheid geben.** Ich vergleiche die echten Dateien mit dem, was der Import erwartet, und passe die Marker-Tabelle und die Automatik an. Das ist die Stelle, an der sich zeigt, wie Apple Checklisten wirklich schreibt.
+5. **Am iPhone die Dateiauswahl prüfen:** In der App Zahnrad → „Import aus Apple Notizen“ → „Dateien auswählen“. Lassen sich `.md`- und `.txt`-Dateien antippen, oder sind sie ausgegraut? Lassen sich mehrere auf einmal wählen? Das konnte ich ohne iPhone nicht prüfen.
+6. **Erst dann alles importieren.** Die Vorschau zeigt, was entsteht. Danach in der Gedankenwelt stichprobenartig nachsehen und einmal suchen.
+7. **Die Apple-Notizen erst löschen, wenn alles stimmt** – und der Abgleich mit Drive einen Haken zeigt.
+
+### 8. Wenn etwas nicht klappt
 
 **Der Abgleich:** Abschnitt 7, „Wenn etwas nicht abgleicht“.
+
+**Der Import:**
+
+1. Eine Datei lässt sich am iPhone nicht auswählen (ausgegraut): Weg C benutzen (Text kopieren und einfügen) und mir Bescheid geben.
+2. Checklisten kommen als normale Notizen an, oder Aufzählungspunkte als Aufgaben: nicht importieren, sondern mir eine Beispieldatei geben. Das behebt eine Zeile in der Marker-Tabelle.
+3. Zu viele oder zu wenige Notizen: in der Vorschau unter „Zuordnung und Zerlegung“ den Trennmodus umstellen.
+4. Schon importiert und es stimmt nicht: Zahnrad → „Import aus Apple Notizen“ → **Rückgängig**. Alles aus diesem Import liegt dann 30 Tage im Papierkorb.
+5. Letzter Ausweg: „Sicherung vor dem letzten Import“ herunterladen und über „Import aus ZIP“ einspielen. Das ersetzt den ganzen Stand der App durch den von vor dem Import.
 
 **Eine Erinnerung kommt nicht:**
 
@@ -555,3 +576,241 @@ Unter Ubuntu selbst habe ich das nicht ausprobiert.
 5. Stimmt im Kalender etwas nicht (doppelt, veraltet, verwaist): Zahnrad → Erinnerungen → **Erinnerungen neu aufbauen**.
 6. Den Kalender „Gedankenwelt“ versehentlich im Google Kalender gelöscht: Die App legt ihn beim nächsten Abgleich neu an und trägt alle offenen Aufgaben mit Uhrzeit wieder ein.
 7. Hilft nichts: **Kalender-Selbsttest** starten und mir die Meldungen schicken.
+
+---
+
+## 10. Phase 4: Import aus Apple Notizen
+
+Ein **einmaliger Umzug**, kein laufender Abgleich. Du findest ihn unter Zahnrad → **Import aus Apple Notizen**.
+
+### Was fertig ist
+
+- **Drei Wege** herein: Kurzbefehl-Dateien (A), Markdown-Export (B), Text einfügen (C). A und B lassen sich mischen.
+- **Dateiauswahl** über die normale Dateiauswahl des Geräts (mehrere Dateien), am Laptop zusätzlich Ziehen und Ablegen, auch ganzer Ordner. Bilder und andere Anhänge werden übergangen.
+- **Vorschau** mit allen Zahlen, Hinweisen und Einstellungen je Datei, bevor irgendetwas gespeichert wird.
+- **Sicherheit:** automatische ZIP-Sicherung vor jedem Import, Import-Verlauf, „Rückgängig“ je Import, Erkennung schon importierter Dateien.
+- **Marker-Tabelle** für Checklisten und Aufzählungen an einer einzigen Stelle im Code (`src/logik/import/marker.ts`).
+
+### Geprüft und nicht geprüft
+
+- **Geprüft mit Tests (103 neue):** Kopf vollständig, unvollständig und fehlend; Zeitzonen; alle Marker der Tabelle; die Automatik bei Text mit, ohne und mit gemischten Leerzeilen; beide festen Trennmodi; Aufzählungen mit Unterpunkten; Überschriften in beiden Modi; Links, fett und kursiv, Tabellen, Bildverweise, Tags, Windows-Zeilenenden, Sonderzeichen; Kombination A + B; Dubletten; Rückgängig mit und ohne nachträglich Bearbeitetes; Sicherung vor dem Schreiben; Warnung ohne Google; importierte Daten → Drive-Markdown → identische Daten; eine Notiz mit 1.000 Zeilen wird in unter 100 Millisekunden zerlegt.
+- **Geprüft im Browser** (Entwicklungsversion im eingebauten Browser der Claude-App, mit den erfundenen Testdateien aus `src/logik/import/testdaten/`):
+  - Weg A und B zusammen: sechs Dateien und ein Bild gewählt → fünf Apple-Notizen in der Vorschau, das Bild als „nicht gelesen“ gezählt, die doppelt vorhandene Notiz kombiniert.
+  - Umschalten: Trennmodus, Aufzählungspunkte, Überschriften, Kombination trennen und wieder zusammenführen, einzelne Notiz ausschließen – die Zahlen ändern sich jeweils sofort.
+  - Ziel-Liste für zwei markierte Dateien auf einmal; Datum von Hand gesetzt.
+  - Warnung ohne Google-Verbindung, dann „Trotzdem importieren“: 38 Notizen in 17 Listen, 11 Aufgaben, davon 7 offen.
+  - Danach: Suche mit Tippfehler („Pfandflashen“) findet den importierten Absatz mit Pfad und Datum; die sieben offenen Aufgaben stehen in der To-do-Box; eine importierte Notiz erscheint als Gedanke des Tages; die Tabelle steht als eine Notiz in ihrer Unterliste.
+  - Erneuter Import derselben Dateien (eine davon umbenannt): alle als „schon importiert“ erkannt und zum Überspringen vorgewählt.
+  - Weg C: Titel und Text eingetippt, Kästchen-Zeichen werden Aufgaben, der doppelte Titel fällt weg.
+  - Rückgängig: zwei Notizen vorher bearbeitet und eine eigene ergänzt → die App nennt beide Zahlen, legt 38 Notizen und 14 Listen in den Papierkorb und lässt die drei Listen stehen, in denen die eigene Notiz liegt.
+  - Handy-Breite (375 Pixel): alle Bildschirme ohne seitliches Scrollen. Die Dateien habe ich dabei per Skript in die Dateiauswahl gelegt – das Auswahlfenster des Geräts selbst lässt sich so nicht bedienen.
+- **Geprüft mit der WebKit-Engine** (WebKitGTK 4.1, das ist auf dem Laptop schon installiert; gleiche Engine-Familie wie Safari): Die gebaute App liest dort `.md`- und `.txt`-Dateien aus der Dateiauswahl und zeigt dieselbe Vorschau wie in Chrome.
+- **Nicht geprüft:** das Auswahlfenster am echten iPhone (ob Dateien ausgegraut sind), echte Exportdateien aus Apple Notizen, der Kurzbefehl, der Weg der importierten Notizen ins echte Google Drive. Einen Safari-nahen Testbrowser (Playwright WebKit) konnte ich nicht starten: Er braucht zwei Systembibliotheken, für die Admin-Rechte nötig wären.
+
+### Die drei Wege im Überblick
+
+| | Weg A: Kurzbefehl | Weg B: Markdown | Weg C: Einfügen |
+|---|---|---|---|
+| Wie viele auf einmal | alle Notizen | am iPhone eine nach der anderen | eine |
+| Datum und Ordner | ja, aus dem Kopf | nein, in der Vorschau festlegen | Datum im Formular |
+| Formatierung, Links | gehen verloren | bleiben erhalten | gehen verloren |
+| Checklisten | unsicher | vermutlich als `- [ ]` | je nach Kopie |
+| Aufwand | Kurzbefehl einmal bauen | pro Notiz ein paar Tipper | pro Notiz kopieren |
+
+Bei rund 20 Notizen lohnt sich **beides zusammen**: der Kurzbefehl für Datum und Ordner, der Markdown-Export für den Inhalt (siehe „Kombination A + B“).
+
+### Weg A: Kurzbefehl
+
+**Noch nicht am Gerät geprüft.** Die Aktionen kenne ich aus englischen Anleitungen ([MacMost](https://macmost.com/how-to-back-up-your-apple-notes.html), [AppleToolBox](https://appletoolbox.com/use-this-trick-to-sync-apple-notes-and-microsoft-word/), [Automators-Forum](https://talk.automators.fm/t/batch-export-share-of-ios-notes-possible/11891), Stand 17. Nov 2026). Eine Anleitung mit den deutschen Bezeichnungen habe ich nicht gefunden; die Namen unten sind meine Übersetzung und können leicht abweichen.
+
+Jede Datei soll so beginnen:
+
+```
+---
+quelle: apple-notizen
+titel: Reise-App Ideen
+ordner: Projekte/Reise-App
+erstellt: 2024-03-12T21:04:00+01:00
+geaendert: 2026-10-02T08:15:00+02:00
+---
+<Text der Notiz>
+```
+
+So baust du den Kurzbefehl in der App **Kurzbefehle**:
+
+1. Unten **Kurzbefehle** → oben rechts **+** → Name „Notizen exportieren“.
+2. Aktion **Notizen suchen** hinzufügen. Den Schalter **Beschränken** (Limit) ausschalten, damit alle Notizen kommen. Zum Ausprobieren zuerst einen Filter setzen: **Filter hinzufügen** → „Ordner“ „ist“ → ein kleiner Ordner.
+3. Aktion **Wiederholen mit jedem** hinzufügen. Sie zeigt von selbst auf „Notizen“ aus Schritt 2.
+4. **In** die Wiederholung (zwischen „Wiederholen“ und „Wiederholung beenden“) die Aktion **Text** ziehen und dies eintragen. Die Wörter in eckigen Klammern sind Variablen: Über der Tastatur **Wiederholungsobjekt** antippen, dann das eingefügte Feld antippen und die Eigenschaft wählen.
+
+   ```
+   ---
+   quelle: apple-notizen
+   titel: [Wiederholungsobjekt → Name]
+   ordner: [Wiederholungsobjekt → Ordner]
+   erstellt: [Wiederholungsobjekt → Erstellungsdatum]
+   geaendert: [Wiederholungsobjekt → Änderungsdatum]
+   ---
+   [Wiederholungsobjekt → Text]
+   ```
+
+   Bei den beiden Datumsfeldern: Feld antippen → **Datumsformat** → **ISO 8601** → **Zeit einbeziehen** einschalten.
+5. Darunter, noch in der Wiederholung, die Aktion **Datei sichern**:
+   - **Nachfragen, wo gesichert werden soll** ausschalten (sonst fragt sie bei jeder Notiz).
+   - Als Ort einen Ordner wählen, z. B. „Auf meinem iPhone“ → neuer Ordner „Notizen-Export“.
+   - **Unterpfad:** `[Wiederholungsobjekt → Name].txt`
+   - **Überschreiben, falls Datei existiert** einschalten.
+6. Oben auf **Fertig**, dann den Kurzbefehl antippen. Beim ersten Lauf fragt iOS, ob er auf die Notizen zugreifen darf: **Immer erlauben**.
+
+Worauf du achten solltest:
+
+- **Viele Notizen:** Bricht der Kurzbefehl ab, in den iPhone-Einstellungen → Kurzbefehle → Erweitert das Teilen großer Datenmengen erlauben (so beschreibt es eine englische Anleitung; den deutschen Namen des Schalters habe ich nicht nachgeprüft).
+- **Zahl prüfen:** Ein älterer Forenbeitrag berichtet, „Notizen suchen“ habe höchstens 26 Notizen geliefert ([Automators-Forum](https://talk.automators.fm/t/batch-export-share-of-ios-notes-possible/11891)). Ob das noch gilt, weiß ich nicht. Zähl die Dateien im Zielordner nach.
+- **Gesperrte Notizen** kommen laut einer Anleitung als leere Datei mit nur dem Titel an. Die App zeigt sie in der Vorschau als „leer“ und importiert sie nicht.
+- **Ordner:** Vermutlich liefert die Eigenschaft nur den Namen des direkten Ordners, nicht den ganzen Pfad. Verschachtelte Ordner kannst du in der Vorschau über die Ziel-Liste nachbilden.
+- **Bekannte Schwäche:** Kurzbefehle liefern reinen Text. Formatierung und Links gehen verloren, Checklisten möglicherweise auch.
+
+Die App ist beim Kopf nachsichtig: Fehlen Zeilen, fehlt die abschließende `---`-Zeile oder steht das Datum in deutscher Schreibweise (`12.03.2024, 21:04`), liest sie, was da ist, und sagt in der Vorschau, was fehlt. Fehlt der Kopf ganz, gilt der Dateiname als Titel.
+
+### Weg B: Als Markdown exportieren
+
+Seit iOS 26 ([MacRumors](https://www.macrumors.com/how-to/ios-import-export-markdown-apple-notes/), [La De Du](https://ladedu.com/how-to-export-notes-as-markdown-files-from-apple-notes/), Stand 17. Nov 2026). Die deutschen Menünamen stammen aus dem Auftrag und sind nicht am Gerät geprüft.
+
+1. Die Notiz öffnen.
+2. Oben rechts auf **Teilen**.
+3. **Als Markdown exportieren** wählen. Fehlt der Eintrag, zuerst „Mehr anzeigen“.
+4. **In Dateien sichern** → Ordner wählen → **Sichern**.
+
+Was dabei entsteht:
+
+- Eine Datei mit der Endung `.md`, benannt nach der ersten Zeile der Notiz (nach etwa 75 Zeichen abgeschnitten).
+- Hat die Notiz Bilder oder Anhänge, legt Apple einen **Ordner** an: die `.md`-Datei und daneben die Anhänge. Wähle einfach alles aus oder zieh am Laptop den ganzen Ordner in die App – sie nimmt nur die `.md`-Datei und zählt, was sie liegen lässt.
+- Erstelldatum und Ordner stehen **nicht** in der Datei. Beides legst du in der Vorschau fest.
+
+**Mehrere Notizen auf einmal** geht am iPhone und iPad nicht, nur am Mac (mehrere markieren → Ablage → Exportieren als → Markdown). So steht es bei La De Du; Apples eigene Seite dazu konnte ich nicht lesen.
+
+Wie Apple Checklisten in die Datei schreibt, habe ich nirgends belegt gefunden. Die App erkennt deshalb eine breite Auswahl (siehe „Marker-Tabelle“).
+
+### Weg C: Text in die App kopieren
+
+Die Notlösung, wenn eine Datei nicht will.
+
+1. In Apple Notizen den Text der Notiz markieren und kopieren.
+2. In der App: Zahnrad → **Import aus Apple Notizen** → **Text einfügen**.
+3. **Titel** eintragen (wird der Name der neuen Liste), **Ziel-Liste** wählen, auf Wunsch ein **Datum** setzen, den Text ins große Feld einfügen.
+4. **Zur Vorschau** – ab hier geht es weiter wie bei den Dateien.
+
+Steht der Titel im eingefügten Text noch einmal als erste Zeile, lässt die App ihn weg.
+
+### Kombination A + B
+
+Liegt dieselbe Notiz in beiden Formen vor (gleicher Titel, Groß- und Kleinschreibung egal), fasst die Vorschau sie zu einem Eintrag zusammen: **Inhalt aus Markdown, Datum und Ordner aus der Kurzbefehl-Datei.** Mit „Getrennt lassen“ nimmst du das zurück; dann stehen beide einzeln da und du schließt eine aus. Kommt ein Titel öfter als einmal je Form vor, kombiniert die App nicht – sie könnte nicht wissen, was zusammengehört.
+
+### Dateien in die App holen
+
+- **iPhone:** „Dateien auswählen“ öffnet die Dateien-App. Dort den Ordner öffnen, oben rechts auf die drei Punkte → **Auswählen**, alle Dateien antippen, **Öffnen**.
+- **Laptop:** „Dateien auswählen“ oder Dateien und Ordner auf die Seite ziehen.
+
+Die Dateiauswahl hat bewusst **keinen Filter für Dateitypen**. Der Grund: iOS graut Dateien aus, deren Typ es dem Filter nicht zuordnen kann, und Safari kommt mit Dateiendungen im Filter schlecht zurecht ([caniuse](https://www.caniuse.com/input-file-accept), [Bericht von WriteFreely](https://writefreely.org/issues/334), [WebKit-Fehler 229456](https://bugs.webkit.org/show_bug.cgi?id=229456), Stand 17. Nov 2026). Ohne Filter ist alles auswählbar; was keine `.md`- oder `.txt`-Datei ist, sortiert die App selbst aus. Der Preis: Am iPhone erscheint vor der Dateien-App möglicherweise ein kleines Menü („Fotomediathek“, „Foto aufnehmen“, „Dateien auswählen“). Ob das am echten iPhone so klappt, steht auf der Liste „Später erledigen“.
+
+### Wie aus einer Apple-Notiz Listen und Notizen werden
+
+- **Apple-Ordner → Liste**, verschachtelte Ordner → verschachtelte Listen. Gibt es an der Stelle schon eine gleichnamige Liste, wird sie benutzt.
+- **Apple-Notiz → neue Unterliste** mit dem Titel als Namen. Der Titel wird nicht zusätzlich als Notiz übernommen.
+- **Text → Notizen.** Trennmodus je Datei:
+  - **Automatisch:** Betrachtet werden nur gewöhnliche Textzeilen (keine Aufzählungen, Überschriften, Tabellen). Steht mehr als die Hälfte von ihnen direkt – ohne Leerzeile – bei einer anderen Textzeile, wird jede Zeile eine Notiz. Sonst trennt die Leerzeile, wie überall in der App. Die Vorschau sagt, wofür sich die Automatik entschieden hat.
+  - **Leerzeilen** oder **Jede Zeile** erzwingen das eine oder das andere.
+- **Aufzählungspunkte** (`-`, `*`, `+`, `•`, `‣`, `▪`, `–`, `1.`, `1)`) werden einzelne Notizen. Eingerückte Unterpunkte bleiben als `- Unterpunkt` beim Elternpunkt. Abschaltbar: Dann bleibt die Aufzählung zusammen.
+- **Checklisten → Aufgaben**, abgehakte als erledigt. Jeder Eintrag wird eine eigene Aufgabe, auch ein eingerückter.
+- **Überschriften → weitere Unterlisten**, verschachtelt nach ihrer Ebene (`##` unter `#`). Gleichnamige Überschriften an derselben Stelle füllen dieselbe Unterliste. Umschaltbar: Dann bleibt die Überschrift als fett geschriebene Notiz stehen.
+- **Tags** wie `#reise` werden erkannt und stehen danach im Tag-Dropdown.
+- **Formatierung:** `**fett**`, `*kursiv*`, `` `Code` `` und Links bleiben. `__fett__` und `_kursiv_` werden in die Schreibweise der App umgeschrieben, maskierte Zeichen wie `\.` aufgelöst.
+- **Tabellen und Code-Blöcke** bleiben jeweils eine Notiz.
+- **Bilder, Zeichnungen, Anhänge** werden nicht übernommen. Die Vorschau nennt die Zahl je Datei.
+- **Datum:** Alle Notizen einer Apple-Notiz bekommen deren Erstell- und Änderungsdatum. Ist es unbekannt, gilt das Importdatum – oder das Datum, das du in der Vorschau setzt. Ein Datum in der Zukunft wird auf „jetzt“ gekürzt.
+- **Bereinigt** werden Zeilenenden (`\r\n`), Leerzeichen am Zeilenende, Sonder-Leerzeichen und unsichtbare Zeichen.
+- **Importierte Aufgaben** haben keine Fälligkeit und erzeugen deshalb keine Kalendertermine.
+
+### Vorschau und Import
+
+1. **Oben** steht, was insgesamt entsteht („38 Notizen in 17 Listen, 11 Aufgaben, davon 7 offen“).
+2. **Je Apple-Notiz eine Karte:** Pfad, Zahlen, Datum, Weg und Hinweise („1 Bild oder Anhang wird nicht übernommen“, „Datum unbekannt“, „schon am … importiert“).
+3. **„Zuordnung und Zerlegung“** klappt die Einstellungen auf: Ziel-Liste, Trennmodus, Aufzählungspunkte, Überschriften, Datum.
+4. **„Erste Notizen ansehen“** zeigt je entstehender Liste die ersten drei Notizen.
+5. **Mehrere auf einmal:** Kästchen an den Karten ankreuzen, dann oben „Ziel-Liste …“, „Nicht importieren“ oder „Importieren“.
+6. **Schalter „Importierte Listen für den Gedanken des Tages freigeben“** – standardmäßig an.
+7. **Importieren.** Bist du nicht mit Google verbunden, fragt die App einmal nach. Danach die Zusammenfassung mit dem Knopf zur Gedankenwelt.
+
+Verlässt du die Seite zwischendurch (etwa um erst Google zu verbinden), bleibt die Auswahl erhalten, bis du die App neu lädst.
+
+### Sicherung, Verlauf, Rückgängig
+
+Alles unter Zahnrad → **Import aus Apple Notizen**:
+
+- **Sicherung vor dem letzten Import:** Die App sichert vor jedem Import den ganzen Stand als ZIP in der Browser-Datenbank. Schlägt das fehl, wird nichts importiert. Aufgehoben wird immer nur die jüngste Sicherung; herunterladen kannst du sie dort.
+- **Import-Verlauf:** Datum und Uhrzeit, Weg, Zahl der Dateien, Listen und Notizen.
+- **Rückgängig je Import:** Alles aus diesem Import wandert in den Papierkorb und bleibt dort 30 Tage wiederherstellbar. Hast du seitdem etwas davon bearbeitet, nennt die App die Zahl. Listen, in denen inzwischen eigene Notizen oder eigene Unterlisten liegen, bleiben stehen – sonst verschwände dein Eigenes mit.
+- **Keine Dubletten:** Jede Datei bekommt einen Fingerabdruck aus ihrem Inhalt (unabhängig vom Dateinamen). Wählst du dieselbe Datei noch einmal, ist „überspringen“ vorgewählt. Nach einem „Rückgängig“ gilt die Datei wieder als neu.
+
+Der Import läuft offline. Die neuen Listen und Notizen gehen danach über dieselbe Warteschlange nach Drive wie jede andere Änderung, eine Datei je Liste.
+
+### So steht es in den Dateien
+
+Importiertes trägt eine `import_id`. Sie steht unauffällig am Ende des Metadaten-Kommentars und im Dateikopf der Liste:
+
+```
+---
+id: 01…
+name: Wocheneinkauf
+…
+import: 01KA…
+---
+
+[ ] Haferflocken
+<!-- id:01… erstellt:2026-09-01T05:30:00Z geaendert:2026-11-14T17:45:10Z pos:1 wiederholung:keine imp:01KA… -->
+```
+
+Der Import-Verlauf steht in `_meta.json` unter `importe` und wandert so auf alle Geräte. Ohne Import ändert sich an den Dateien nichts.
+
+### Marker-Tabelle
+
+Alle Zeichen, an denen der Import Checklisten und Aufzählungen erkennt, stehen in `src/logik/import/marker.ts` – und nur dort. Ein neues Zeichen ist eine neue Zeile; die Tests prüfen jede Zeile der Tabelle von selbst mit.
+
+| Zeichen am Zeilenanfang | Bedeutung |
+|---|---|
+| `[ ]`, `[]`, `☐`, `○`, `◦`, `◯` | offene Aufgabe |
+| `[x]`, `[X]`, `☑`, `☒`, `✅`, `✓`, `✔` | erledigte Aufgabe |
+| `-`, `*`, `+`, `•`, `‣`, `▪`, `–`, `1.`, `1)` | Aufzählungspunkt |
+
+Vor einem Aufgaben-Zeichen darf ein Aufzählungszeichen stehen (`- [ ] Milch`, `* ☐ Milch`). Die Kreise `○ ◦ ◯` gelten nur als Aufgabe, wenn sie nicht eingerückt unter einem Aufzählungspunkt stehen – dort sind sie das übliche Zeichen für Unterpunkte.
+
+### Entscheidungen in Phase 4
+
+| Entscheidung | Grund |
+|---|---|
+| Dateien kommen über die Dateiauswahl, nicht aus `Gedankenwelt/_import/` in Drive | Mit der Berechtigung `drive.file` sieht die App nur Dateien, die sie selbst angelegt hat. So steht es im Auftrag; `KONZEPT.md`, Abschnitt 9, ist angepasst. |
+| Dateiauswahl ohne Filter für Dateitypen | Am iPhone darf keine `.md`- oder `.txt`-Datei ausgegraut sein. Aussortiert wird in der App. |
+| Jede Apple-Notiz wird eine **neue** Unterliste, auch wenn es eine gleichnamige schon gibt | So lässt sich ein Import sauber rückgängig machen, ohne Vorhandenes anzufassen. Nur Ordner-Listen werden wiederverwendet, wie im Auftrag verlangt. |
+| Checklisten-Einträge werden immer einzelne Aufgaben, auch bei „Aufzählungspunkte zusammen“ | Eine Aufgabe ist in der App eine Notiz. Mehrere Kästchen in einer Notiz gibt es nicht. |
+| Automatik zählt Zeilen in Blöcken statt Leerzeilen | „Kaum Leerzeilen, aber viele Zeilen“ wird so zu einer festen Regel mit einer Schwelle (mehr als die Hälfte), die sich in einem Satz erklären lässt. |
+| Titel aus der ersten Überschrift, nicht aus dem Dateinamen | Apple kürzt Dateinamen nach etwa 75 Zeichen. |
+| Zeile, die nur aus einem Anhang besteht, fällt ganz weg | Sonst bliebe eine Notiz stehen, die nur „Vertrag.pdf“ heißt. |
+| Fingerabdruck aus dem bereinigten Inhalt, mit einer einfachen Streufunktion (cyrb53) | Soll nur auffallen lassen, wenn dieselbe Datei zweimal gewählt wird. Läuft ohne Wartezeit und ohne Browser-Funktionen, also auch in den Tests. |
+| Import-Verlauf in `_meta.json` statt nur auf dem Gerät | „Rückgängig“ und die Dubletten-Erkennung sollen auch auf dem zweiten Gerät funktionieren und einen Neuaufbau aus Drive überstehen. |
+| „Rückgängig gemacht“ lässt sich nicht zurücknehmen | Beim Zusammenführen zweier Geräte gewinnt immer der rückgängig gemachte Eintrag. Zurückholen geht über den Papierkorb. |
+| „Bearbeitet seit dem Import“ = `geaendert` liegt nach dem Zeitpunkt des Imports | Importierte Notizen tragen das alte Apple-Datum oder das Importdatum, nie ein späteres. |
+| Listen mit eigenem Inhalt bleiben beim Rückgängig stehen | Der Abgleich holt eine gelöschte Liste ohnehin zurück, solange eine lebende Notiz darin liegt. So ist es von Anfang an eindeutig. |
+| Importierte Notizen bekommen das Änderungsdatum der Apple-Notiz | So verlangt es der Auftrag. Für den Abgleich ist das unkritisch: Die Notizen sind neu, es gibt keine ältere Fassung, gegen die sie verlieren könnten. |
+| Nur die jüngste Import-Sicherung wird aufgehoben | Bei 20 Notizen in ein bis zwei Durchgängen reicht das; mehrere ZIPs würden den Browser-Speicher am iPhone unnötig füllen. |
+| Die Vorschau zeigt den Rohtext der Notizen | Man sieht genau, was gespeichert wird – auch Zeichen, die später als Formatierung verschwinden. |
+
+### Einschränkungen
+
+- **Die Erkennung beruht auf Annahmen.** Kein echtes Exportbeispiel lag vor. Besonders unsicher: wie Apple Checklisten schreibt, im Markdown-Export wie im reinen Text.
+- **Kreise sind zweideutig.** Benutzt Apple `◦` im reinen Text nur für Unterpunkte und verliert der Kurzbefehl die Einrückung, würden Unterpunkte zu offenen Aufgaben. Das zeigt sich an den echten Dateien und ist dann eine Zeile in der Marker-Tabelle.
+- **Überschriften erkennt der Import nur in Markdown** (`# …`). Im reinen Text des Kurzbefehls sind sie normale Zeilen.
+- **Unterstrichen, durchgestrichen, hervorgehoben** kennt die App nicht. `<u>` wird entfernt, der Rest bleibt als Zeichen im Text stehen.
+- **Links ohne Web-Adresse** (z. B. auf andere Notizen) bleiben als Text in eckigen Klammern stehen.
+- **Zwei Apple-Notizen mit gleichem Titel** im selben Ordner werden zwei gleichnamige Listen.
+- **Kein Import in eine vorhandene Liste hinein:** Es entsteht immer eine Unterliste. Verschieben kannst du die Notizen danach in der App.
+- **Die Sicherung liegt nur in diesem Browser.** Wer sie aufheben will, lädt sie herunter.
