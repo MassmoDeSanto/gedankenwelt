@@ -2,7 +2,7 @@
 
 Persönliche Notiz-App für kurze Gedanken, Aufgaben und längere Texte. Sie läuft als Web-App im Browser.
 
-**Stand: Phase 4 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Die Google Cloud ist seit dem 17. Nov 2026 eingerichtet; als Nächstes kommt Schritt 3 in Abschnitt 9 (Laptop verbinden). Der Import aus Apple Notizen (Phase 4) ist gebaut und mit **erfundenen** Testdateien geprüft, aber noch nie mit echten Exportdateien. Alles, was du später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
+**Stand: Phase 4 gebaut.** Wiederkehrende Aufgaben sind fertig und geprüft. Der Abgleich mit Google Drive (Phase 2) und die Erinnerungen über den Google Kalender (Phase 3) sind gebaut und mit simuliertem Drive und simuliertem Kalender geprüft, aber **noch nie gegen das echte Google gelaufen** und nicht am iPhone getestet. Stand 17. Nov 2026: Google Cloud eingerichtet, Laptop verbunden, Drive-Abgleich und Kalender-Selbsttest laufen gegen das echte Google. Offen sind die Probe mit einer echten Aufgabe im Kalender, das iPhone und der Import (Abschnitt 9). Als Nächstes geplant: ein überarbeitetes To-do-Feld (Abschnitt 11). Der Import aus Apple Notizen (Phase 4) ist gebaut und mit **erfundenen** Testdateien geprüft, aber noch nie mit echten Exportdateien. Alles, was du später tun musst, steht in einer einzigen Reihenfolge in Abschnitt 9, „Später erledigen“.
 
 ---
 
@@ -502,7 +502,10 @@ Schick mir (Claude) die Client-ID oder trage sie in `src/konfig.ts` bei `GOOGLE_
 
 Stand 17. Nov 2026: Die Client-ID steht in `src/konfig.ts` und ist veröffentlicht. Ohne Anmeldung geprüft: Ein Klick auf „Mit Google verbinden“ in der veröffentlichten App führt zur Anmeldeseite von Google („Weiter zu massmodesanto.github.io“) und nicht zu einer Fehlermeldung. Client-ID und die Adresse der veröffentlichten App sind also richtig eingetragen. Die Adresse `http://localhost:5173` habe ich so nicht geprüft. Ab hier (Schritt 3) geht es nur mit deiner Anmeldung weiter.
 
-### 3. Laptop verbinden
+### 3. Laptop verbinden – erledigt am 17. Nov 2026
+
+Ergebnis: Anmeldung geklappt, die Wolke zeigt einen Haken, in Google Drive liegt der Ordner „Gedankenwelt“ mit lesbaren Markdown-Dateien. Damit ist der Drive-Abgleich zum ersten Mal gegen das echte Google gelaufen. Noch nicht berichtet: ob „Still erneuern“ (Punkt 5) klappt.
+
 
 1. <https://massmodesanto.github.io/gedankenwelt/> in Chrome öffnen.
 2. Zahnrad → **Google Drive** → **Mit Google verbinden**. Beim Hinweis „App nicht überprüft“: **Erweitert** → **Weiter zu Gedankenwelt** (Erklärung in Abschnitt 7).
@@ -510,7 +513,10 @@ Stand 17. Nov 2026: Die Client-ID steht in `src/konfig.ts` und ist veröffentlic
 4. In Google Drive nachsehen: Es gibt den Ordner „Gedankenwelt“ mit lesbaren Markdown-Dateien.
 5. Unter **Diagnose: Anmeldung testen** einmal **Still erneuern** ausprobieren (siehe Abschnitt 7, „Anmeldung testen“).
 
-### 4. Erinnerungen aktivieren und Selbsttest
+### 4. Erinnerungen aktivieren und Selbsttest – teilweise erledigt am 17. Nov 2026
+
+Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. **Noch offen: Punkt 4** (Aufgabe „Wochenplanung“ anlegen und im Kalender nachsehen) – zurückgestellt, bis das To-do-Feld überarbeitet ist (Abschnitt 11).
+
 
 1. Zahnrad → **Erinnerungen** → **Aktivieren**. Die App springt kurz zu Google und fragt die Kalender-Berechtigung an. Zustimmen.
 2. Zurück in der App: **Diagnose: Kalender-Selbsttest** aufklappen → **Kalender-Selbsttest starten**. Er meldet fünf Schritte und am Ende „Alles in Ordnung“.
@@ -816,3 +822,25 @@ Vor einem Aufgaben-Zeichen darf ein Aufzählungszeichen stehen (`- [ ] Milch`, `
 - **Zwei Apple-Notizen mit gleichem Titel** im selben Ordner werden zwei gleichnamige Listen.
 - **Kein Import in eine vorhandene Liste hinein:** Es entsteht immer eine Unterliste. Verschieben kannst du die Notizen danach in der App.
 - **Die Sicherung liegt nur in diesem Browser.** Wer sie aufheben will, lädt sie herunter.
+
+---
+
+## 11. Als Nächstes: To-do-Feld überarbeiten
+
+Wunsch von Massimo vom 17. Nov 2026, **noch nicht begonnen**. Er ist mit dem To-do-Feld noch nicht zufrieden und will:
+
+- **Deadline-Datum** angeben können.
+- **Priorität** eintragen können.
+- **Stand** des To-dos eintragen können (z. B. offen, in Arbeit, wartet – genaue Stufen noch offen).
+- To-dos **kategorisieren** können.
+
+Vor dem Bauen mit ihm klären:
+
+- **Deadline und Fälligkeit:** Aufgaben haben schon eine Fälligkeit mit Datum und optionaler Uhrzeit (Knopf „Termin“ unter der Aufgabe, Aufgaben-Menü). Ist die Deadline etwas anderes (z. B. „spätestens bis“ neben „anfangen am“), oder war die Fälligkeit nur schwer zu finden?
+- **Priorität:** wie viele Stufen, und sortiert sie die To-do-Box und die Sammelansicht?
+- **Stand:** welche Stufen, und was passiert beim Abhaken?
+- **Kategorie:** eigenes Feld, oder reichen Tags (`#arbeit`) bzw. Listen? Tags gibt es schon samt Filter in der Suche.
+- **Kalender:** Sollen Priorität oder Stand im Termin stehen, und bekommt die Deadline eine eigene Erinnerung?
+- **Dateiformat:** Neue Felder müssen in den Metadaten-Kommentar der Drive-Dateien (wie `faellig:`), damit sie zwischen Laptop und iPhone abgleichen. Ältere Dateien ohne die Felder müssen weiter lesbar bleiben.
+
+Danach erst den Kalender-Test aus Abschnitt 9, Schritt 4, Punkt 4 nachholen.
