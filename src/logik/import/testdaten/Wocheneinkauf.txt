@@ -1,0 +1,14 @@
+---
+quelle: apple-notizen
+titel: Wocheneinkauf
+ordner: Haushalt/Listen
+erstellt: 2026-09-01T07:30:00+02:00
+geaendert: 2026-11-14T18:45:10+01:00
+---
+Wocheneinkauf
+◦ Haferflocken
+◦ Äpfel
+✓ Kaffee
+✓ Spülmittel
+◦ Brot vom Bäcker am Markt
+Nicht vergessen: Pfandflaschen mitnehmen
