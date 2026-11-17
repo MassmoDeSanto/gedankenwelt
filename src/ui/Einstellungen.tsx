@@ -1,4 +1,4 @@
-/** Einstellungen: Hell/Dunkel, Papierkorb, Export/Import als ZIP, Beispieldaten. */
+/** Einstellungen: Hell/Dunkel, Google Drive, Erinnerungen, Import, Papierkorb, Export/Import als ZIP, Beispieldaten. */
 import { useRef, useState } from 'react';
 import { exportiereZip, importiereZip, ladeBeispieldaten, loescheAlles, setzeThema } from '../db/aktionen';
 import { useAbgleichStatus } from '../db/abgleichDienst';
@@ -7,6 +7,7 @@ import { lokalesDatum } from '../logik/zeit';
 import { BestaetigungsDialog, Kopfzeile, Segment } from './Bausteine';
 import { DriveBereich } from './DriveBereich';
 import { ErinnerungenBereich } from './ErinnerungenBereich';
+import { ImportBereich } from './ImportBereich';
 import { adresse } from './router';
 
 export function Einstellungen() {
@@ -61,6 +62,7 @@ export function Einstellungen() {
 
       <DriveBereich />
       <ErinnerungenBereich />
+      <ImportBereich />
 
       <section className="karte">
         <div className="etikett">Papierkorb</div>
@@ -141,8 +143,7 @@ export function Einstellungen() {
       <p className="hinweis klein mitte">
         {verbunden
           ? 'Deine Notizen liegen auf diesem Gerät und als Markdown-Dateien in deinem Google Drive.'
-          : 'Ohne Google Drive liegen alle Daten nur in diesem Browser.'}{' '}
-        Erinnerungen und der Import aus Apple Notizen folgen in den nächsten Phasen.
+          : 'Ohne Google Drive liegen alle Daten nur in diesem Browser.'}
       </p>
 
       {importDatei && (

@@ -1560,6 +1560,204 @@ details.diagnose > summary {
   margin-bottom: 10px;
 }
 
+/* ───────── Import aus Apple Notizen ───────── */
+
+.import-weg p {
+  margin: 0 0 12px;
+  color: var(--gedaempft);
+}
+
+.import-weg .knopfreihe,
+.import-fertig .knopfreihe,
+.import-formular .knopfreihe {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.import-summe {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.import-fertig .hinweis {
+  margin: 8px 0 16px;
+}
+
+.import-leiste {
+  align-items: center;
+  margin: 12px 0 0;
+}
+
+.import-haken {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--gedaempft);
+  min-height: 34px;
+}
+
+.import-eintrag input[type='checkbox'],
+.import-haken input[type='checkbox'],
+.import-schalter input[type='checkbox'] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--violett);
+}
+
+.import-eintrag.aus > :not(.import-kopf) {
+  opacity: 0.5;
+}
+
+.import-kopf {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.import-kopf input[type='checkbox'] {
+  margin-top: 3px;
+}
+
+.import-kopf .textknopf {
+  flex: none;
+  padding-top: 1px;
+}
+
+.import-titel {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.import-titel .pfad {
+  color: var(--gedaempft);
+}
+
+.import-zahlen {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.import-hinweise {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13.5px;
+  color: var(--bernstein);
+}
+
+.import-kombi {
+  margin: 8px 0 0;
+}
+
+.import-kombi .textknopf {
+  color: var(--violett);
+}
+
+.import-optionen {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 10px 16px;
+  font-size: 14px;
+}
+
+.import-optionen > :nth-child(even) {
+  justify-self: end;
+}
+
+.import-optionen .hinweis {
+  display: block;
+}
+
+.import-optionen input[type='date'].eingabe {
+  width: auto;
+  height: 34px;
+  font-size: 14px;
+}
+
+.import-datum {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.import-vorschau {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-abschnitt {
+  font-size: 13.5px;
+  color: var(--violett);
+  margin-bottom: 4px;
+}
+
+.import-notiz {
+  margin: 0;
+  padding: 5px 0;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-top: 1px solid var(--linie);
+}
+
+.import-schalter {
+  cursor: pointer;
+}
+
+.import-start {
+  margin: 14px 0 8px;
+}
+
+.knopf.gross {
+  height: 44px;
+  padding: 0 20px;
+  font-size: 15px;
+}
+
+.import-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-formular label {
+  display: block;
+}
+
+.import-text {
+  display: block;
+  height: 42vh;
+  min-height: 180px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+  color: inherit;
+}
+
+.import-verlauf-titel {
+  margin-top: 14px;
+  margin-bottom: 2px;
+}
+
+.etikett.tuerkis {
+  color: var(--tuerkis);
+}
+
+/* Beim Ziehen von Dateien über die Seite: haarfeiner Rahmen als Zeichen „hier ablegen“ */
+.seite.ablage {
+  outline: 1px dashed var(--violett);
+  outline-offset: 6px;
+  border-radius: 14px;
+}
+
 /* ───────── Schmale Bildschirme (Handy) ───────── */
 
 @media (max-width: 560px) {
@@ -1616,6 +1814,31 @@ details.diagnose > summary {
   /* Ohne Maus gibt es kein „Darüberfahren“: Aktionen der aktiven Notiz bleiben sichtbar. */
   .einstellung {
     flex-wrap: wrap;
+  }
+
+  /* Import: Bezeichnung über dem Schalter statt daneben */
+  .import-optionen {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .import-optionen > :nth-child(even) {
+    justify-self: start;
+    margin-bottom: 10px;
+  }
+
+  /* Die Umschalter dürfen nie breiter werden als die Karte */
+  .import-optionen .segment button {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .import-kopf {
+    flex-wrap: wrap;
+  }
+
+  .import-kopf .textknopf {
+    width: 100%;
   }
 }
 

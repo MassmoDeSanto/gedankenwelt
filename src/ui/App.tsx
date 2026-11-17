@@ -4,6 +4,7 @@ import { useZustand } from '../db/speicher';
 import { AufgabenSeite } from './AufgabenSeite';
 import { Einstellungen } from './Einstellungen';
 import { Gedankenwelt } from './Gedankenwelt';
+import { ImportSeite } from './ImportSeite';
 import { Listenansicht } from './Listenansicht';
 import { Papierkorb } from './Papierkorb';
 import { Meldungsleiste } from './Meldungsleiste';
@@ -50,6 +51,8 @@ function seite(route: Route) {
       return <Einstellungen />;
     case 'papierkorb':
       return <Papierkorb />;
+    case 'import':
+      return <ImportSeite />;
     default:
       return <Start />;
   }
