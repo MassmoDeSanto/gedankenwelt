@@ -21,3 +21,6 @@ key.properties
 
 # Claude-Einstellungen, die nur für diesen Laptop gelten
 .claude/settings.local.json
+
+# Echte Beispieldateien aus Apple Notizen für den Import (PHASE-4.md) – nie ins Repository
+import-beispiele/

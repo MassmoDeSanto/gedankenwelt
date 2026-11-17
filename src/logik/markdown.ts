@@ -19,6 +19,7 @@ import {
   type Aufgabe,
   type Datenbestand,
   type Einstellungen,
+  type ImportEintrag,
   type Liste,
   type Notiz,
   type TagesgedankeSchalter,
@@ -83,6 +84,8 @@ function schreibeKopf(liste: Liste): string {
     `position: ${liste.position}`,
     `erstellt: ${liste.erstellt}`,
     `geaendert: ${liste.geaendert}`,
+    // Nur bei Listen aus einem Import (PHASE-4.md, Abschnitt 6)
+    ...(liste.import_id ? [`import: ${liste.import_id}`] : []),
     '---',
     '',
   ].join('\n');
@@ -105,6 +108,8 @@ function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
     if (a.erledigt_am) meta.push(`erledigt_am:${a.erledigt_am}`);
     if (a.kalender_event_id) meta.push(`kalender:${encodeURIComponent(a.kalender_event_id)}`);
   }
+  // Nur bei importierten Notizen: unauffällig am Ende des Kommentars
+  if (notiz.import_id) meta.push(`imp:${notiz.import_id}`);
   if (imPapierkorb) {
     meta.push(`liste:${notiz.liste_id}`);
     if (notiz.geloescht) meta.push(`geloescht:${notiz.geloescht}`);
@@ -173,6 +178,8 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
     tagesgedanke_verlauf: bestand.tagesgedanke_verlauf,
     listen: verzeichnis.sort(nachId),
     geloeschte_listen: bestand.listen.filter((l) => l.geloescht).sort(nachId),
+    // Der Import-Verlauf steht nur in der Datei, wenn es einen gibt.
+    ...(bestand.importe?.length ? { importe: [...bestand.importe].sort(nachId) } : {}),
   };
   dateien.set(META_DATEI, JSON.stringify(meta, null, 2) + '\n');
 
@@ -282,7 +289,7 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
     let geloescht: string | null = null;
     if (liste_id === null) geloescht = r.meta ? (meta.get('geloescht') ?? null) : umg.jetzt;
 
-    return {
+    const notiz: Notiz = {
       id: meta.get('id') ?? umg.neueId(hinweis(r.text)),
       text,
       liste_id: liste_id ?? meta.get('liste') ?? EINGANG_ID,
@@ -294,6 +301,9 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
       geloescht,
       verweise: [],
     };
+    const importId = meta.get('imp');
+    if (importId) notiz.import_id = importId;
+    return notiz;
   });
 }
 
@@ -348,6 +358,8 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
       geaendert: felder.get('geaendert') ?? erstellt,
       geloescht: null,
     };
+    const importId = felder.get('import');
+    if (importId) liste.import_id = importId;
     listen.push(liste);
     protokoll?.listeJePfad.set(pfad, liste.id);
     const eltern = felder.get('eltern');
@@ -411,6 +423,7 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
   // Meta: Einstellungen, Verlauf, gelöschte Listen
   let einstellungen: Einstellungen = { ...STANDARD_EINSTELLUNGEN };
   let tagesgedanke_verlauf: VerlaufEintrag[] = [];
+  let importe: ImportEintrag[] = [];
   const metaText = dateien.get(META_DATEI);
   if (metaText) {
     try {
@@ -432,6 +445,22 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
           if (typeof l?.id === 'string' && !vorhanden.has(l.id)) listen.push({ ...l });
         }
       }
+      if (Array.isArray(meta.importe)) {
+        importe = (meta.importe as ImportEintrag[])
+          .filter((e) => typeof e?.id === 'string' && typeof e?.datum === 'string')
+          .map((e) => ({
+            id: e.id,
+            datum: e.datum,
+            weg: e.weg ?? 'gemischt',
+            dateien: Number(e.dateien) || 0,
+            listen: Number(e.listen) || 0,
+            notizen: Number(e.notizen) || 0,
+            aufgaben: Number(e.aufgaben) || 0,
+            offen: Number(e.offen) || 0,
+            fingerabdruecke: Array.isArray(e.fingerabdruecke) ? e.fingerabdruecke.filter((f) => typeof f === 'string') : [],
+            rueckgaengig: typeof e.rueckgaengig === 'string' ? e.rueckgaengig : null,
+          }));
+      }
     } catch {
       // beschädigte Meta-Datei: mit Standardwerten weitermachen, Notizen sind trotzdem da
     }
@@ -444,5 +473,6 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
     notizen: notizen.sort(nachId),
     einstellungen,
     tagesgedanke_verlauf,
+    ...(importe.length > 0 ? { importe: importe.sort(nachId) } : {}),
   };
 }

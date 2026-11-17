@@ -18,6 +18,7 @@ import {
   eingangsListe,
   type Datenbestand,
   type Einstellungen,
+  type ImportEintrag,
   type Liste,
   type Notiz,
   type VerlaufEintrag,
@@ -177,6 +178,19 @@ function verschmelzeVerlauf(lokal: VerlaufEintrag[], fern: VerlaufEintrag[]): Ve
   return [...jeTag.values()].sort((a, b) => (a.datum < b.datum ? -1 : a.datum > b.datum ? 1 : 0)).slice(-400);
 }
 
+/**
+ * Import-Verlauf: Einträge beider Seiten werden vereinigt. Ein Import, der irgendwo rückgängig
+ * gemacht wurde, bleibt rückgängig gemacht – das lässt sich nicht zurücknehmen.
+ */
+function verschmelzeImporte(lokal: ImportEintrag[], fern: ImportEintrag[]): ImportEintrag[] {
+  const jeId = new Map<string, ImportEintrag>();
+  for (const e of [...lokal, ...fern]) {
+    const alt = jeId.get(e.id);
+    jeId.set(e.id, alt && alt.rueckgaengig && !e.rueckgaengig ? alt : e);
+  }
+  return [...jeId.values()].sort(nachId);
+}
+
 export interface VerschmelzOptionen {
   /**
    * Gab es in Drive eine Meta-Datei? Wenn nicht, ist Drive leer oder der Zustand unklar:
@@ -207,7 +221,12 @@ export function verschmelze(
   const stichtag = new Date(jetzt);
   const bleibt = (e: Eintrag) => !e.geloescht || !abgelaufen(e.geloescht, stichtag);
 
+  const importe = optionen.fernHatMeta
+    ? verschmelzeImporte(lokal.importe ?? [], fern.importe ?? [])
+    : (lokal.importe ?? []);
+
   return {
+    ...(importe.length > 0 ? { importe } : {}),
     listen: repariert.listen.filter(bleibt).sort(nachId),
     notizen: repariert.notizen.filter(bleibt).sort(nachId),
     einstellungen: optionen.fernHatMeta

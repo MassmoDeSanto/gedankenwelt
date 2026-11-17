@@ -76,6 +76,8 @@ export interface Notiz {
   geloescht: Zeitstempel | null;
   /** Für später: IDs verlinkter Notizen. */
   verweise: string[];
+  /** Nur bei importierten Notizen: zu welchem Import sie gehört (für „Rückgängig“). */
+  import_id?: string;
 }
 
 export type TagesgedankeSchalter = 'an' | 'aus' | 'erben';
@@ -90,6 +92,29 @@ export interface Liste {
   erstellt: Zeitstempel;
   geaendert: Zeitstempel;
   geloescht: Zeitstempel | null;
+  /** Nur bei Listen, die ein Import angelegt hat: zu welchem Import sie gehört. */
+  import_id?: string;
+}
+
+/** Auf welchem Weg ein Import hereinkam (PHASE-4.md, Abschnitt 3). */
+export type ImportWeg = 'kurzbefehl' | 'markdown' | 'text' | 'kombiniert' | 'gemischt';
+
+/** Ein Eintrag im Import-Verlauf. Wandert über `_meta.json` auf alle Geräte. */
+export interface ImportEintrag {
+  /** Dieselbe ID tragen alle Listen und Notizen dieses Imports als `import_id`. */
+  id: string;
+  datum: Zeitstempel;
+  weg: ImportWeg;
+  dateien: number;
+  listen: number;
+  notizen: number;
+  aufgaben: number;
+  /** davon offen */
+  offen: number;
+  /** Inhalts-Fingerabdrücke der eingelesenen Dateien (gegen doppeltes Importieren) */
+  fingerabdruecke: string[];
+  /** null = gültig, sonst der Zeitpunkt, zu dem der Import rückgängig gemacht wurde */
+  rueckgaengig: Zeitstempel | null;
 }
 
 /** Feste ID der Liste „Eingang“. Auf jedem Gerät gleich, damit der Abgleich später einfach bleibt. */
@@ -119,6 +144,8 @@ export interface Datenbestand {
   notizen: Notiz[];
   einstellungen: Einstellungen;
   tagesgedanke_verlauf: VerlaufEintrag[];
+  /** Import-Verlauf. Fehlt, solange nie etwas importiert wurde. */
+  importe?: ImportEintrag[];
 }
 
 export const STANDARD_EINSTELLUNGEN: Einstellungen = { thema: 'dunkel' };

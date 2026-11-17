@@ -17,6 +17,7 @@ import {
   ergaenzeAufgabe,
   type Datenbestand,
   type Einstellungen,
+  type ImportEintrag,
   type Liste,
   type Notiz,
   type VerlaufEintrag,
@@ -29,6 +30,8 @@ export interface Zustand {
   listen: Map<string, Liste>;
   einstellungen: Einstellungen;
   verlauf: VerlaufEintrag[];
+  /** Import-Verlauf (PHASE-4.md, Abschnitt 6) */
+  importe: ImportEintrag[];
 }
 
 let zustand: Zustand = {
@@ -37,6 +40,7 @@ let zustand: Zustand = {
   listen: new Map(),
   einstellungen: { ...STANDARD_EINSTELLUNGEN },
   verlauf: [],
+  importe: [],
 };
 
 export const suchindex = new Suchindex();
@@ -128,6 +132,13 @@ export function sichereVerlauf(verlauf: VerlaufEintrag[]): void {
   nachAenderung?.(['_verlauf']);
 }
 
+/** Import-Verlauf speichern. Er wandert wie die Einstellungen über `_meta.json` nach Drive. */
+export function sichereImporte(importe: ImportEintrag[]): void {
+  db.meta.put({ schluessel: 'importe', wert: importe }).catch(meldeFehler);
+  nachAenderung?.(['_importe']);
+  melde({ importe });
+}
+
 // ───────────────────────── Ergebnis eines Abgleichs übernehmen ─────────────────────────
 
 function gleicheNotiz(a: Notiz, b: Notiz): boolean {
@@ -185,8 +196,15 @@ export function uebernimmAbgleich(bestand: Datenbestand): void {
     db.meta.put({ schluessel: 'tagesgedanke_verlauf', wert: bestand.tagesgedanke_verlauf }).catch(meldeFehler);
   }
 
-  const geaendert = neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 || einstellungenNeu;
-  if (geaendert) melde(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {});
+  const importe = bestand.importe ?? [];
+  const importeNeu = JSON.stringify(zustand.importe) !== JSON.stringify(importe);
+  if (importeNeu) db.meta.put({ schluessel: 'importe', wert: importe }).catch(meldeFehler);
+
+  const geaendert =
+    neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 || einstellungenNeu || importeNeu;
+  if (geaendert) {
+    melde({ ...(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {}), ...(importeNeu ? { importe } : {}) });
+  }
 }
 
 // ───────────────────────── Laden und Ersetzen ─────────────────────────
@@ -206,6 +224,7 @@ export async function ladeAlles(): Promise<void> {
   const notizen = gespeichert.map((n) => (n.aufgabe ? { ...n, aufgabe: ergaenzeAufgabe(n.aufgabe) } : n));
   const einstellungen = meta.find((m) => m.schluessel === 'einstellungen')?.wert as Einstellungen | undefined;
   const verlauf = meta.find((m) => m.schluessel === 'tagesgedanke_verlauf')?.wert as VerlaufEintrag[] | undefined;
+  const importe = meta.find((m) => m.schluessel === 'importe')?.wert as ImportEintrag[] | undefined;
 
   zustand = {
     geladen: true,
@@ -213,6 +232,7 @@ export async function ladeAlles(): Promise<void> {
     listen: new Map(listen.map((l) => [l.id, l])),
     einstellungen: { ...STANDARD_EINSTELLUNGEN, ...einstellungen },
     verlauf: verlauf ?? [],
+    importe: importe ?? [],
   };
   suchindex.setzeAlle(notizen);
 
@@ -228,6 +248,7 @@ export function alsBestand(): Datenbestand {
     notizen: [...zustand.notizen.values()],
     einstellungen: zustand.einstellungen,
     tagesgedanke_verlauf: zustand.verlauf,
+    ...(zustand.importe.length > 0 ? { importe: zustand.importe } : {}),
   };
 }
 
@@ -243,6 +264,7 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
     await db.meta.bulkPut([
       { schluessel: 'einstellungen', wert: bestand.einstellungen },
       { schluessel: 'tagesgedanke_verlauf', wert: bestand.tagesgedanke_verlauf },
+      { schluessel: 'importe', wert: bestand.importe ?? [] },
     ]);
   });
 
@@ -252,6 +274,7 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
     listen: new Map(listen.map((l) => [l.id, l])),
     einstellungen: bestand.einstellungen,
     verlauf: bestand.tagesgedanke_verlauf,
+    importe: bestand.importe ?? [],
   };
   suchindex.setzeAlle(bestand.notizen);
   raeumePapierkorbAuf();
