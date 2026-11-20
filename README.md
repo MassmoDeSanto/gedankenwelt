@@ -513,9 +513,9 @@ Ergebnis: Anmeldung geklappt, die Wolke zeigt einen Haken, in Google Drive liegt
 4. In Google Drive nachsehen: Es gibt den Ordner „Gedankenwelt“ mit lesbaren Markdown-Dateien.
 5. Unter **Diagnose: Anmeldung testen** einmal **Still erneuern** ausprobieren (siehe Abschnitt 7, „Anmeldung testen“).
 
-### 4. Erinnerungen aktivieren und Selbsttest – teilweise erledigt am 17. Nov 2026
+### 4. Erinnerungen aktivieren und Selbsttest – erledigt am 20. Nov 2026
 
-Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. **Noch offen: Punkt 4** (Aufgabe „Wochenplanung“ anlegen und im Kalender nachsehen). Das To-do-Feld ist seit 20. Nov 2026 überarbeitet (Abschnitt 11), der Test kann jetzt nachgeholt werden. Gib der Aufgabe dabei ruhig eine Priorität – im Kalender-Termin taucht sie absichtlich nicht auf.
+Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. Punkt 4 am 20. Nov 2026 nachgeholt: Die Aufgabe „Wochenplanung“ steht im Kalender „Gedankenwelt“, und zwar einmal – wie vorgesehen nur der nächste Sonntag, keine Serie. Noch nicht beobachtet: dass der Termin nach dem Abhaken auf den folgenden Sonntag wandert.
 
 
 1. Zahnrad → **Erinnerungen** → **Aktivieren**. Die App springt kurz zu Google und fragt die Kalender-Berechtigung an. Zustimmen.
@@ -861,4 +861,4 @@ Vor dem Bauen mit ihm klären:
 - **Kalender:** Sollen Priorität oder Stand im Termin stehen, und bekommt die Deadline eine eigene Erinnerung?
 - **Dateiformat:** Neue Felder müssen in den Metadaten-Kommentar der Drive-Dateien (wie `faellig:`), damit sie zwischen Laptop und iPhone abgleichen. Ältere Dateien ohne die Felder müssen weiter lesbar bleiben.
 
-Jetzt den Kalender-Test aus Abschnitt 9, Schritt 4, Punkt 4 nachholen.
+Der Kalender-Test aus Abschnitt 9, Schritt 4, Punkt 4 ist am 20. Nov 2026 nachgeholt.
