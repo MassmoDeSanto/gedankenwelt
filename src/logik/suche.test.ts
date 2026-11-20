@@ -8,7 +8,7 @@ const geld = baueListe({ name: 'Monetarisierung', eltern_id: reise.id });
 const kochen = baueListe({ name: 'Kochen' });
 const listen = alsKarte([reise, geld, kochen]);
 
-const offen = { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [] };
+const offen = { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [], prioritaet: null, stand: 'offen' as const };
 
 const n1 = baueNotiz({
   text: 'Affiliate-Links für Hotels als Einnahmequelle. #geschäftsmodell',

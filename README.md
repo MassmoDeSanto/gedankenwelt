@@ -515,7 +515,7 @@ Ergebnis: Anmeldung geklappt, die Wolke zeigt einen Haken, in Google Drive liegt
 
 ### 4. Erinnerungen aktivieren und Selbsttest – teilweise erledigt am 17. Nov 2026
 
-Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. **Noch offen: Punkt 4** (Aufgabe „Wochenplanung“ anlegen und im Kalender nachsehen) – zurückgestellt, bis das To-do-Feld überarbeitet ist (Abschnitt 11).
+Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. **Noch offen: Punkt 4** (Aufgabe „Wochenplanung“ anlegen und im Kalender nachsehen). Das To-do-Feld ist seit 20. Nov 2026 überarbeitet (Abschnitt 11), der Test kann jetzt nachgeholt werden. Gib der Aufgabe dabei ruhig eine Priorität – im Kalender-Termin taucht sie absichtlich nicht auf.
 
 
 1. Zahnrad → **Erinnerungen** → **Aktivieren**. Die App springt kurz zu Google und fragt die Kalender-Berechtigung an. Zustimmen.
@@ -825,9 +825,27 @@ Vor einem Aufgaben-Zeichen darf ein Aufzählungszeichen stehen (`- [ ] Milch`, `
 
 ---
 
-## 11. Als Nächstes: To-do-Feld überarbeiten
+## 11. To-do-Feld: Priorität und Stand
 
-Wunsch von Massimo vom 17. Nov 2026, **noch nicht begonnen**. Er ist mit dem To-do-Feld noch nicht zufrieden und will:
+Gebaut am 20. Nov 2026. Unter jeder Aufgabe stehen neben „Termin“ zwei kleine Knöpfe: **Prio** (ein Tipp: keine → hoch → mittel → niedrig → keine) und **offen / in Arbeit**. Solange nichts gesetzt ist, erscheinen sie nur beim Bearbeiten oder wenn die Maus über der Aufgabe ist. In der To-do-Box und der Sammelansicht zeigt `!!!`, `!!` oder `!` die Priorität, dazu „in Arbeit“.
+
+Geprüft: Tests (Dateiformat, Sortierung, Wiederholung) und im Browser mit simuliertem Drive, auch in Handy-Breite. Nicht geprüft: am iPhone und der Abgleich über das echte Google Drive.
+
+Wunsch von Massimo vom 17. Nov 2026. Die Fragen unten sind am 20. Nov 2026 geklärt:
+
+| Thema | Entscheidung |
+|---|---|
+| Deadline | Kein neues Feld. Die vorhandene Fälligkeit reicht, Name bleibt. |
+| Priorität | Drei Stufen: hoch, mittel, niedrig – dazu „keine“. |
+| Stand | Offen oder in Arbeit. Abhaken heißt „erledigt“. |
+| Kategorie | Kein neues Feld, Tags (`#arbeit`) reichen. |
+| Sortierung | To-do-Box: erst Priorität, dann Fälligkeit. Sammelansicht: Gruppen (überfällig, heute, demnächst, ohne Datum) bleiben, innerhalb jeder Gruppe erst Priorität, dann Fälligkeit. |
+| Kalender | Unverändert, Priorität und Stand stehen nicht im Termin. |
+| Bedienung | Kleine Knöpfe neben dem „Termin“-Knopf unter der Aufgabe; ein Tipp schaltet weiter. |
+| Wiederholung | Die nächste Wiederholung behält die Priorität, der Stand springt auf „offen“. |
+| Dateiformat | `prio:hoch` und `stand:in_arbeit` im Metadaten-Kommentar, nur wenn gesetzt. Alte Dateien bleiben lesbar. |
+
+Ursprünglicher Wunsch: Er ist mit dem To-do-Feld noch nicht zufrieden und will:
 
 - **Deadline-Datum** angeben können.
 - **Priorität** eintragen können.
@@ -843,4 +861,4 @@ Vor dem Bauen mit ihm klären:
 - **Kalender:** Sollen Priorität oder Stand im Termin stehen, und bekommt die Deadline eine eigene Erinnerung?
 - **Dateiformat:** Neue Felder müssen in den Metadaten-Kommentar der Drive-Dateien (wie `faellig:`), damit sie zwischen Laptop und iPhone abgleichen. Ältere Dateien ohne die Felder müssen weiter lesbar bleiben.
 
-Danach erst den Kalender-Test aus Abschnitt 9, Schritt 4, Punkt 4 nachholen.
+Jetzt den Kalender-Test aus Abschnitt 9, Schritt 4, Punkt 4 nachholen.

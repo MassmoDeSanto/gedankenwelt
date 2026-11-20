@@ -22,6 +22,7 @@ import {
   type ImportEintrag,
   type Liste,
   type Notiz,
+  type Prioritaet,
   type TagesgedankeSchalter,
   type VerlaufEintrag,
 } from '../modell/typen';
@@ -92,6 +93,11 @@ function schreibeKopf(liste: Liste): string {
 }
 
 /** Eine Notiz: Text, darunter die Metadaten als HTML-Kommentar. */
+/** Liest `prio:` aus dem Metadaten-Kommentar. Unbekannte Werte gelten als „keine Priorität“. */
+function lesePrioritaet(wert: string | undefined): Prioritaet | null {
+  return wert === 'hoch' || wert === 'mittel' || wert === 'niedrig' ? wert : null;
+}
+
 function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
   const meta = [
     `id:${notiz.id}`,
@@ -107,6 +113,8 @@ function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
     if (a.erledigt_verlauf.length > 0) meta.push(`verlauf:${a.erledigt_verlauf.join(',')}`);
     if (a.erledigt_am) meta.push(`erledigt_am:${a.erledigt_am}`);
     if (a.kalender_event_id) meta.push(`kalender:${encodeURIComponent(a.kalender_event_id)}`);
+    if (a.prioritaet) meta.push(`prio:${a.prioritaet}`);
+    if (a.stand !== 'offen') meta.push(`stand:${a.stand}`);
   }
   // Nur bei importierten Notizen: unauffällig am Ende des Kommentars
   if (notiz.import_id) meta.push(`imp:${notiz.import_id}`);
@@ -282,6 +290,8 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
           kalender_event_id: kalender ? decodeURIComponent(kalender) : null,
           erinnerung: Math.max(0, Number(meta.get('erinnerung')) || 0),
           erledigt_verlauf: (meta.get('verlauf') ?? '').split(',').filter(Boolean),
+          prioritaet: lesePrioritaet(meta.get('prio')),
+          stand: meta.get('stand') === 'in_arbeit' ? 'in_arbeit' : 'offen',
         }
       : null;
     const erstellt = meta.get('erstellt') ?? umg.jetzt;

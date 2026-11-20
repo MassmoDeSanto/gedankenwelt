@@ -47,6 +47,8 @@ function beispiel(): Datenbestand {
           kalender_event_id: null,
           erinnerung: 0,
           erledigt_verlauf: [],
+          prioritaet: 'hoch',
+          stand: 'in_arbeit',
         },
       }),
       baueNotiz({
@@ -66,6 +68,8 @@ function beispiel(): Datenbestand {
           kalender_event_id: null,
           erinnerung: 0,
           erledigt_verlauf: [],
+          prioritaet: null,
+          stand: 'offen',
         },
       }),
       baueNotiz({ text: 'In der wilden Liste', liste_id: wild.id }),
@@ -82,6 +86,8 @@ function beispiel(): Datenbestand {
           kalender_event_id: 'abc123 /?',
           erinnerung: 15,
           erledigt_verlauf: ['2026-11-08T17:10:00Z', '2026-11-15T17:55:12Z'],
+          prioritaet: null,
+          stand: 'offen',
         },
       }),
       baueNotiz({
@@ -103,6 +109,8 @@ function beispiel(): Datenbestand {
           kalender_event_id: null,
           erinnerung: 0,
           erledigt_verlauf: [],
+          prioritaet: null,
+          stand: 'offen',
         },
       }),
       baueNotiz({ text: 'Erste Doppelte', liste_id: doppelt1.id }),
@@ -113,7 +121,7 @@ function beispiel(): Datenbestand {
         text: 'Gelöschte Aufgabe',
         liste_id: EINGANG_ID,
         geloescht: '2026-11-11T12:00:00Z',
-        aufgabe: { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [] },
+        aufgabe: { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [], prioritaet: null, stand: 'offen' },
       }),
     ],
     einstellungen: { thema: 'hell', geaendert: '2026-11-15T10:00:00Z', erinnerungen: true, kalender_id: 'kal-1@group.calendar.google.com' },
@@ -175,7 +183,7 @@ describe('Markdown-Format', () => {
         '<!-- id:01N0T1Z00000000000000000A3 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:1.5 -->',
         '',
         '[ ] Preise der Konkurrenz vergleichen',
-        '<!-- id:01N0T1Z00000000000000000A2 erstellt:2026-11-15T09:20:00Z geaendert:2026-11-15T09:20:00Z pos:2 faellig:2026-11-20T18:00 wiederholung:keine -->',
+        '<!-- id:01N0T1Z00000000000000000A2 erstellt:2026-11-15T09:20:00Z geaendert:2026-11-15T09:20:00Z pos:2 faellig:2026-11-20T18:00 wiederholung:keine prio:hoch stand:in_arbeit -->',
         '',
       ].join('\n'),
     );
@@ -194,6 +202,25 @@ describe('Markdown-Format', () => {
     expect(inhalt).toContain('wiederholung:monatlich;am=letzter.FR;alle=3;ab=erledigung;noch=4 -->');
   });
 
+  it('Priorität und Stand: alte Kommentare ohne die Angaben und unbekannte Werte', () => {
+    const datei = [
+      '[ ] Alte Aufgabe',
+      '<!-- id:01N0T1Z00000000000000000C1 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:1 wiederholung:keine -->',
+      '',
+      '[ ] Unbekannte Werte',
+      '<!-- id:01N0T1Z00000000000000000C2 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:2 wiederholung:keine prio:dringend stand:wartet -->',
+      '',
+      '[ ] Niedrig',
+      '<!-- id:01N0T1Z00000000000000000C3 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:3 wiederholung:keine prio:niedrig -->',
+      '',
+    ].join('\n');
+    const bestand = ausDateien(new Map([['Eingang.md', datei]]), testUmgebung());
+    const aufgabe = (text: string) => bestand.notizen.find((n) => n.text === text)!.aufgabe!;
+    expect(aufgabe('Alte Aufgabe')).toMatchObject({ prioritaet: null, stand: 'offen' });
+    expect(aufgabe('Unbekannte Werte')).toMatchObject({ prioritaet: null, stand: 'offen' });
+    expect(aufgabe('Niedrig')).toMatchObject({ prioritaet: 'niedrig', stand: 'offen' });
+  });
+
   it('Wiederholungsregeln und Verlauf überstehen die Hin- und Rückumwandlung exakt', () => {
     const zurueck = ausDateien(zuDateien(beispiel()), testUmgebung());
     const wochenplanung = zurueck.notizen.find((n) => n.text === 'Wochenplanung')!;
@@ -205,6 +232,8 @@ describe('Markdown-Format', () => {
       kalender_event_id: 'abc123 /?',
       erinnerung: 15,
       erledigt_verlauf: ['2026-11-08T17:10:00Z', '2026-11-15T17:55:12Z'],
+      prioritaet: null,
+      stand: 'offen',
     });
     expect(zurueck.notizen.find((n) => n.text === 'Filter wechseln')!.aufgabe?.wiederholung).toEqual({
       art: 'monatlich-wochentag',

@@ -187,6 +187,17 @@ describe('Abhaken', () => {
     expect(danach).toMatchObject({ erledigt: true, erledigt_am: STEMPEL, erledigt_verlauf: [] });
   });
 
+  it('mit Wiederholung: Priorität bleibt, Stand springt auf offen', () => {
+    const vorher = aufgabe({
+      faellig: '2026-11-16',
+      wiederholung: regel({ art: 'taeglich' }),
+      prioritaet: 'hoch',
+      stand: 'in_arbeit',
+    });
+    const { aufgabe: danach } = hakeAb(vorher, '2026-11-16T10:00', STEMPEL);
+    expect(danach).toMatchObject({ erledigt: false, prioritaet: 'hoch', stand: 'offen' });
+  });
+
   it('mit Wiederholung: bleibt offen, springt weiter, Zeitpunkt kommt in den Verlauf', () => {
     const vorher = aufgabe({ faellig: '2026-11-16T18:00', wiederholung: regel({ art: 'woechentlich', tage: ['MO'] }) });
     const { aufgabe: danach, naechste } = hakeAb(vorher, '2026-11-16T18:30', STEMPEL);

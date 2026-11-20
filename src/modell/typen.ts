@@ -46,6 +46,12 @@ export type Wiederholung = {
   | { art: 'jaehrlich'; monat: number; tag: number }
 );
 
+/** Priorität einer Aufgabe. Ohne Priorität steht `null` im Feld. */
+export type Prioritaet = 'hoch' | 'mittel' | 'niedrig';
+
+/** Stand einer offenen Aufgabe. „Erledigt“ ist kein Stand, sondern das abgehakte Kästchen. */
+export type Stand = 'offen' | 'in_arbeit';
+
 export interface Aufgabe {
   erledigt: boolean;
   erledigt_am: Zeitstempel | null;
@@ -57,6 +63,9 @@ export interface Aufgabe {
   erinnerung: number;
   /** Wann eine wiederkehrende Aufgabe abgehakt wurde (die neuesten Zeitpunkte) */
   erledigt_verlauf: Zeitstempel[];
+  /** null = keine Priorität */
+  prioritaet: Prioritaet | null;
+  stand: Stand;
 }
 
 /** Die kleinste Einheit: ein Textblock. */
@@ -159,14 +168,28 @@ export function neueAufgabe(erledigt = false, erledigt_am: Zeitstempel | null = 
     kalender_event_id: null,
     erinnerung: 0,
     erledigt_verlauf: [],
+    prioritaet: null,
+    stand: 'offen',
   };
 }
 
 /** Füllt bei Aufgaben aus älteren Versionen der App die später hinzugekommenen Felder auf. */
 export function ergaenzeAufgabe(aufgabe: Aufgabe): Aufgabe {
   const alt = aufgabe as Partial<Aufgabe> & Aufgabe;
-  if (typeof alt.erinnerung === 'number' && Array.isArray(alt.erledigt_verlauf)) return aufgabe;
-  return { ...aufgabe, erinnerung: alt.erinnerung ?? 0, erledigt_verlauf: alt.erledigt_verlauf ?? [] };
+  if (
+    typeof alt.erinnerung === 'number' &&
+    Array.isArray(alt.erledigt_verlauf) &&
+    alt.prioritaet !== undefined &&
+    alt.stand !== undefined
+  )
+    return aufgabe;
+  return {
+    ...aufgabe,
+    erinnerung: alt.erinnerung ?? 0,
+    erledigt_verlauf: alt.erledigt_verlauf ?? [],
+    prioritaet: alt.prioritaet ?? null,
+    stand: alt.stand ?? 'offen',
+  };
 }
 
 /**

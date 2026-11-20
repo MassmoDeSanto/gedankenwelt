@@ -51,5 +51,5 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 ## Offene Punkte
 - Siehe `README.md`: Abschnitt 5 (Stand Phase 1), 7 (Phase 2), 8 (Phase 3), 10 (Phase 4), 11 (To-do-Feld) und 9 („Später erledigen“ – alles, was nur Massimo tun kann).
 - Sobald echte Beispieldateien in `import-beispiele/` liegen: Marker-Tabelle und Automatik daran prüfen und anpassen (README, Abschnitt 9, Schritt 7).
-- **Als Nächstes: To-do-Feld überarbeiten** (Deadline, Priorität, Stand, Kategorie). Wunsch vom 17. Nov 2026, noch nicht begonnen. Offene Fragen stehen in der README, Abschnitt 11 – vor dem Bauen mit Massimo klären und dann einen kurzen Plan zur Freigabe vorlegen. Achtung: Eine Fälligkeit mit Datum gibt es schon; klären, was „Deadline“ zusätzlich sein soll.
+- To-do-Feld überarbeitet am 20. Nov 2026: Priorität (hoch/mittel/niedrig) und Stand (offen/in Arbeit), Entscheidungen in README Abschnitt 11. Deadline = vorhandene Fälligkeit, Kategorie = Tags. Als Nächstes ist Massimo dran: Kalender-Probe (README Abschnitt 9, Schritt 4, Punkt 4).
 - Phase 5 (`[[ ]]`-Links) steht noch aus.

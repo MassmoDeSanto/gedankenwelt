@@ -1027,6 +1027,68 @@ a.kachel:hover,
   color: var(--meta);
 }
 
+/* Priorität und Stand: blass, solange nichts gesetzt ist; ein Tipp schaltet weiter */
+.prio-knopf,
+.stand-knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gedaempft);
+  padding: 1px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  cursor: pointer;
+}
+
+.prio-knopf.leer,
+.stand-knopf.leer {
+  background: none;
+  padding-left: 0;
+  padding-right: 0;
+  color: var(--meta);
+}
+
+.prio-knopf.leer:hover,
+.stand-knopf.leer:hover {
+  color: var(--text);
+}
+
+.prio-zeichen {
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.prio-hoch {
+  color: var(--rot);
+}
+
+.prio-mittel {
+  color: var(--bernstein);
+}
+
+.prio-niedrig {
+  color: var(--blau);
+}
+
+.stand-knopf.in-arbeit,
+.stand-hinweis {
+  color: var(--tuerkis);
+}
+
+/* Blasse Knöpfe nur zeigen, wenn die Notiz bearbeitet wird oder die Maus darüber ist */
+.notiz:not(.aktiv):not(:hover) .prio-knopf.leer,
+.notiz:not(.aktiv):not(:hover) .stand-knopf.leer,
+.notiz.erledigt .stand-knopf {
+  display: none;
+}
+
+.notiz.erledigt .prio-knopf {
+  color: var(--meta);
+}
+
 .notiz-aktionen {
   margin-left: auto;
   display: flex;

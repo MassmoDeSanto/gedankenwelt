@@ -25,7 +25,7 @@ const inC1 = baueNotiz({ text: 'in C1 (an)', liste_id: c1.id });
 const aufgabe = baueNotiz({
   text: 'Aufgabe in A',
   liste_id: a.id,
-  aufgabe: { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [] },
+  aufgabe: { erledigt: false, erledigt_am: null, faellig: null, wiederholung: null, kalender_event_id: null, erinnerung: 0, erledigt_verlauf: [], prioritaet: null, stand: 'offen' },
 });
 const geloescht = baueNotiz({ text: 'gelöscht in A', liste_id: a.id, geloescht: '2026-11-01T12:00:00Z' });
 const alle = [inA, inA1, inA2, inB, inC, inC1, aufgabe, geloescht];

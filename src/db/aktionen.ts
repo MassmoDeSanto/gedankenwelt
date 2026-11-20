@@ -27,6 +27,8 @@ import {
   type Faelligkeit,
   type Liste,
   type Notiz,
+  type Prioritaet,
+  type Stand,
   type TagesgedankeSchalter,
   type Wiederholung,
 } from '../modell/typen';
@@ -213,6 +215,14 @@ export function setzeWiederholung(id: string, wiederholung: Wiederholung | null)
 /** Erinnerung so viele Minuten vor der Fälligkeit (0 = zur Uhrzeit). */
 export function setzeErinnerung(id: string, minuten: number): void {
   aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, erinnerung: Math.max(0, minuten) } } : null));
+}
+
+export function setzePrioritaet(id: string, prioritaet: Prioritaet | null): void {
+  aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, prioritaet } } : null));
+}
+
+export function setzeStand(id: string, stand: Stand): void {
+  aendereNotiz(id, (n) => (n.aufgabe ? { ...n, aufgabe: { ...n.aufgabe, stand } } : null));
 }
 
 /** Verschiebt eine Notiz ans Ende einer anderen Liste. */

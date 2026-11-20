@@ -1,12 +1,35 @@
 /** Auswertung der Aufgaben für die To-do-Box und die Sammelansicht. */
-import type { Notiz } from '../modell/typen';
+import type { Notiz, Prioritaet, Stand } from '../modell/typen';
 import { faelligDatum } from './zeit';
 
-/** Offene Aufgaben: zuerst die mit Fälligkeit (früheste zuerst), dann die ohne Datum (neueste zuerst). */
+/** Reihenfolge beim Weitertippen: keine → hoch → mittel → niedrig → keine. */
+export function naechstePrioritaet(p: Prioritaet | null): Prioritaet | null {
+  return p === null ? 'hoch' : p === 'hoch' ? 'mittel' : p === 'mittel' ? 'niedrig' : null;
+}
+
+/** Weitertippen beim Stand: offen ↔ in Arbeit. */
+export function naechsterStand(s: Stand): Stand {
+  return s === 'offen' ? 'in_arbeit' : 'offen';
+}
+
+/** Rang für die Sortierung: hoch zuerst, ohne Priorität zuletzt. */
+const PRIO_RANG = { hoch: 0, mittel: 1, niedrig: 2 } as const;
+function prioRang(n: Notiz): number {
+  const p = n.aufgabe!.prioritaet;
+  return p ? PRIO_RANG[p] : 3;
+}
+
+/**
+ * Offene Aufgaben: zuerst nach Priorität (hoch, mittel, niedrig, keine), dann die mit Fälligkeit
+ * (früheste zuerst), dann die ohne Datum (neueste zuerst). Die Sammelansicht übernimmt diese
+ * Reihenfolge innerhalb ihrer Gruppen.
+ */
 export function offeneAufgaben(notizen: Iterable<Notiz>): Notiz[] {
   const offen: Notiz[] = [];
   for (const n of notizen) if (!n.geloescht && n.aufgabe && !n.aufgabe.erledigt) offen.push(n);
   return offen.sort((a, b) => {
+    const prio = prioRang(a) - prioRang(b);
+    if (prio !== 0) return prio;
     const fa = a.aufgabe!.faellig;
     const fb = b.aufgabe!.faellig;
     if (fa && fb) return fa < fb ? -1 : fa > fb ? 1 : 0;

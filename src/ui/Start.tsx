@@ -11,6 +11,7 @@ import { EINGANG_ID, type Notiz } from '../modell/typen';
 import { AbgleichSymbol } from './AbgleichSymbol';
 import { Segment, klassen, useListenBaum } from './Bausteine';
 import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
+import { PrioStandHinweis } from './PrioStand';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { hakeAbMitMeldung } from './meldung';
 import { adresse } from './router';
@@ -266,6 +267,7 @@ function TagesgedankeKarte() {
 export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz; heute: string; mitListe?: boolean }) {
   const z = useZustand();
   const faellig = notiz.aufgabe?.faellig ?? null;
+  const prioOderStand = !!notiz.aufgabe?.prioritaet || notiz.aufgabe?.stand === 'in_arbeit';
   return (
     <div className="aufgabenzeile">
       <button
@@ -282,9 +284,14 @@ export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz;
         <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
           <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
         </a>
-        {(faellig || mitListe) && (
+        {(faellig || mitListe || prioOderStand) && (
           <span className="mono meta aufgabeninfo">
-            {notiz.aufgabe && faellig ? <FaelligText aufgabe={notiz.aufgabe} heute={heute} /> : z.listen.get(notiz.liste_id)?.name}
+            {notiz.aufgabe && <PrioStandHinweis aufgabe={notiz.aufgabe} />}
+            {notiz.aufgabe && faellig ? (
+              <FaelligText aufgabe={notiz.aufgabe} heute={heute} />
+            ) : (
+              mitListe && z.listen.get(notiz.liste_id)?.name
+            )}
             {notiz.aufgabe && <WiederholungsHinweis aufgabe={notiz.aufgabe} />}
           </span>
         )}

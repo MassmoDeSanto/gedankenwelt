@@ -45,6 +45,7 @@ import { AufgabenMenue } from './AufgabenMenue';
 import { ListenWahlDialog, Menue, klassen } from './Bausteine';
 import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
+import { PrioStandKnoepfe } from './PrioStand';
 import { hakeAbMitMeldung } from './meldung';
 import { Griff, Haken, KaestchenSymbol, Korb, OrdnerPfeil, Uhr } from './Symbole';
 
@@ -582,6 +583,7 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
                 {() => <AufgabenMenue notiz={notiz} />}
               </Menue>
             )}
+            {aufgabe && <PrioStandKnoepfe id={id} aufgabe={aufgabe} />}
             <span className="notiz-aktionen">
               <button title="Tag einfügen" aria-label="Tag einfügen" onMouseDown={halteFokus} onClick={beiTagKnopf}>
                 #

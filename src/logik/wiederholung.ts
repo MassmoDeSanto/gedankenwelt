@@ -172,7 +172,7 @@ export interface AbhakErgebnis {
  *  - Ohne Wiederholung: erledigt.
  *  - Mit Wiederholung: Sie bleibt offen und springt auf die nächste Fälligkeit; der Zeitpunkt
  *    des Abhakens kommt in den Verlauf. Ist das Ende der Wiederholung erreicht, wird sie
- *    normal erledigt.
+ *    normal erledigt. Die nächste Wiederholung behält die Priorität, ihr Stand ist wieder „offen“.
  */
 export function hakeAb(aufgabe: Aufgabe, jetztLokal: string, stempel: Zeitstempel): AbhakErgebnis {
   const w = aufgabe.wiederholung;
@@ -197,6 +197,7 @@ export function hakeAb(aufgabe: Aufgabe, jetztLokal: string, stempel: Zeitstempe
       faellig: naechste,
       wiederholung: { ...w, ende },
       erledigt_verlauf,
+      stand: 'offen',
     },
     naechste,
   };
