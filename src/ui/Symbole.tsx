@@ -130,6 +130,13 @@ export const PfeilRechts = () => (
 const WOLKE = 'M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.6a4 4 0 0 1-1 7.9z';
 
 /** Abgeglichen: Wolke mit Haken */
+/** Spitze zum Auf- und Zuklappen einer Notiz */
+export const Winkel = () => (
+  <Symbol groesse={18}>
+    <path d="m9 6 6 6-6 6" />
+  </Symbol>
+);
+
 export const WolkeFertig = () => (
   <Symbol>
     <path d={WOLKE} />

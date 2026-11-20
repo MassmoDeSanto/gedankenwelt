@@ -38,6 +38,7 @@ import {
 import { leseZustand, useZustand } from '../db/speicher';
 import { endetMitTrennung, enthaeltTrennung } from '../logik/absatz';
 import { filtereTags, istTagName, tagHaeufigkeit, type TagAnzahl } from '../logik/tags';
+import { nameUndRest } from '../logik/name';
 import { formatStempel, lokalesDatum } from '../logik/zeit';
 import type { Notiz } from '../modell/typen';
 import { neueId } from '../modell/ulid';
@@ -45,9 +46,9 @@ import { AufgabenMenue } from './AufgabenMenue';
 import { ListenWahlDialog, Menue, klassen } from './Bausteine';
 import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
-import { PrioStandKnoepfe } from './PrioStand';
+import { PrioStandHinweis, PrioStandKnoepfe } from './PrioStand';
 import { hakeAbMitMeldung } from './meldung';
-import { Griff, Haken, KaestchenSymbol, Korb, OrdnerPfeil, Uhr } from './Symbole';
+import { Griff, Haken, KaestchenSymbol, Korb, OrdnerPfeil, Uhr, Winkel } from './Symbole';
 
 interface Entwurf {
   id: string;
@@ -230,37 +231,53 @@ function haltSichtbar(el: HTMLTextAreaElement): void {
 const TAG_VOR_CURSOR = /(?:^|[\s(])#([\p{L}\p{N}_-]*)$/u;
 const TAG_IM_TEXT = /(^|[\s(])(#[\p{L}\p{N}_][\p{L}\p{N}_-]*)/gu;
 
-/**
- * Der sichtbare Text zum (durchsichtigen) Textfeld.
- *  - Beim Bearbeiten (`roh`): der Rohtext, wie getippt, nur Tags sind eingefärbt.
- *  - Sonst: „Markdown light“ umgesetzt (fett, kursiv, Aufzählungen, Links, Code).
- */
-function Spiegel({ text, roh }: { text: string; roh: boolean }) {
-  if (!roh) {
-    return (
-      <div className="spiegel" aria-hidden="true">
-        {text ? <MarkdownAnzeige text={text} /> : '​'}
-      </div>
-    );
-  }
+/** Färbt Tags im Rohtext ein. */
+function faerbeTags(text: string, schluessel: string): ReactNode[] {
   const teile: ReactNode[] = [];
   let ende = 0;
   for (const treffer of text.matchAll(TAG_IM_TEXT)) {
     const start = treffer.index! + treffer[1].length;
     if (start > ende) teile.push(text.slice(ende, start));
     teile.push(
-      <span className="tag" key={start}>
+      <span className="tag" key={`${schluessel}${start}`}>
         {treffer[2]}
       </span>,
     );
     ende = start + treffer[2].length;
   }
   teile.push(text.slice(ende));
+  return teile;
+}
+
+/**
+ * Der sichtbare Text zum (durchsichtigen) Textfeld.
+ *  - Beim Bearbeiten (`roh`): der Rohtext, wie getippt, nur Tags sind eingefärbt.
+ *  - Sonst: „Markdown light“ umgesetzt (fett, kursiv, Aufzählungen, Links, Code).
+ * Hat die Notiz mehr als eine Zeile, erscheint die erste als Name hervorgehoben (README, Abschnitt 12).
+ * Die Hervorhebung ändert die Zeichenbreite nicht, damit der Cursor beim Tippen an der richtigen Stelle bleibt.
+ */
+function Spiegel({ text, roh }: { text: string; roh: boolean }) {
+  const mitName = nameUndRest(text) !== null;
+  if (!roh) {
+    return (
+      <div className={klassen('spiegel', mitName && 'mit-name')} aria-hidden="true">
+        {text ? <MarkdownAnzeige text={text} /> : '\u200b'}
+      </div>
+    );
+  }
+  const umbruch = mitName ? text.indexOf('\n') : -1;
   // Das unsichtbare Zeichen am Ende sorgt dafür, dass auch eine leere letzte Zeile Höhe bekommt.
   return (
     <div className="spiegel" aria-hidden="true">
-      {teile}
-      {'​'}
+      {umbruch >= 0 ? (
+        <>
+          <span className="name-zeile">{faerbeTags(text.slice(0, umbruch), 'n')}</span>
+          {faerbeTags(text.slice(umbruch), 'r')}
+        </>
+      ) : (
+        faerbeTags(text, 'r')
+      )}
+      {'\u200b'}
     </div>
   );
 }
@@ -312,6 +329,19 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
   const [tagIndex, setTagIndex] = useState(0);
   const textBeiFokus = useRef<string | undefined>(undefined);
   const caretWunsch = useRef<number | null>(null);
+
+  // ── Auf- und Zuklappen (README, Abschnitt 12) ──
+  const [offen, setOffen] = useState(false);
+  const [fokusGesehen, setFokusGesehen] = useState(fokus);
+  // Wandert der Cursor per Pfeiltaste hierher, klappt die Notiz auf, damit das Textfeld da ist.
+  if (fokus !== fokusGesehen) {
+    setFokusGesehen(fokus);
+    if (fokus && !offen) setOffen(true);
+  }
+  // Sprung aus Suche, Gedanke des Tages oder To-do-Box: aufgeklappt zeigen.
+  if (leuchtet && !offen) setOffen(true);
+  const teile = notiz ? nameUndRest(notiz.text) : null;
+  const zu = teile !== null && !offen && !aktiv;
 
   // Hat sich der gespeicherte Text von außen geändert (Teilen, Zusammenführen, Aufgaben-Kästchen),
   // übernimmt das Textfeld ihn. Beim normalen Tippen sind beide gleich und nichts passiert.
@@ -503,6 +533,25 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
         </button>
       )}
 
+      {teile && (
+        <button
+          className={klassen('klapp', !zu && 'offen')}
+          aria-expanded={!zu}
+          aria-label={zu ? 'Aufklappen' : 'Zuklappen'}
+          title={zu ? 'Aufklappen' : 'Zuklappen'}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (zu) setOffen(true);
+            else {
+              setOffen(false);
+              feld.current?.blur();
+            }
+          }}
+        >
+          <Winkel />
+        </button>
+      )}
+
       {aufgabe && (
         <button
           className={klassen('kaestchen', aufgabe.erledigt && 'an')}
@@ -515,102 +564,115 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
         </button>
       )}
 
-      <div className="notiz-inhalt">
-        <div className="textfeld">
-          <Spiegel text={roh} roh={aktiv} />
-          <textarea
-            ref={feld}
-            rows={1}
-            value={roh}
-            placeholder={platzhalter}
-            aria-label={notiz ? 'Notiz' : 'Neue Notiz'}
-            onChange={(e) => {
-              const el = e.target;
-              uebernimm(el.value, el.selectionStart);
-              requestAnimationFrame(() => haltSichtbar(el));
-            }}
-            onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
-            onKeyDown={beiTaste}
-            onFocus={(e) => {
-              textBeiFokus.current = notiz?.text;
-              steuerung.setzeAktiv(id, true);
-              // warten, bis die Tastatur ausgefahren ist
-              const el = e.currentTarget;
-              setTimeout(() => haltSichtbar(el), 350);
-            }}
-            onBlur={(e) => beiVerlassen(e.target.value)}
-          />
-          {tagOffen && (
-            <div className="tag-auswahl" role="listbox" aria-label="Tags">
-              {vorschlaege.map((v, i) => (
-                <button
-                  key={v.tag}
-                  role="option"
-                  aria-selected={i === gewaehlt}
-                  className={klassen(i === gewaehlt && 'gewaehlt')}
-                  onMouseDown={halteFokus}
-                  onClick={() => waehleTag(v.tag)}
+      {zu && notiz && teile ? (
+        <button className="notiz-kopf" aria-expanded={false} onClick={() => setOffen(true)}>
+          <span className="notiz-name">
+            <MarkdownAnzeige text={teile.name} einzeilig ohneLinks />
+          </span>
+          <span className="mono meta notiz-kopf-info">
+            {aufgabe && !aufgabe.erledigt && <PrioStandHinweis aufgabe={aufgabe} />}
+            {aufgabe?.faellig && <FaelligText aufgabe={aufgabe} heute={heute} />}
+            <span>{formatStempel(notiz.erstellt, heute)}</span>
+          </span>
+        </button>
+      ) : (
+        <div className="notiz-inhalt">
+          <div className="textfeld">
+            <Spiegel text={roh} roh={aktiv} />
+            <textarea
+              ref={feld}
+              rows={1}
+              value={roh}
+              placeholder={platzhalter}
+              aria-label={notiz ? 'Notiz' : 'Neue Notiz'}
+              onChange={(e) => {
+                const el = e.target;
+                uebernimm(el.value, el.selectionStart);
+                requestAnimationFrame(() => haltSichtbar(el));
+              }}
+              onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
+              onKeyDown={beiTaste}
+              onFocus={(e) => {
+                textBeiFokus.current = notiz?.text;
+                steuerung.setzeAktiv(id, true);
+                // warten, bis die Tastatur ausgefahren ist
+                const el = e.currentTarget;
+                setTimeout(() => haltSichtbar(el), 350);
+              }}
+              onBlur={(e) => beiVerlassen(e.target.value)}
+            />
+            {tagOffen && (
+              <div className="tag-auswahl" role="listbox" aria-label="Tags">
+                {vorschlaege.map((v, i) => (
+                  <button
+                    key={v.tag}
+                    role="option"
+                    aria-selected={i === gewaehlt}
+                    className={klassen(i === gewaehlt && 'gewaehlt')}
+                    onMouseDown={halteFokus}
+                    onClick={() => waehleTag(v.tag)}
+                  >
+                    <span>#{v.tag}</span>
+                    <span className="anzahl">{v.neu ? 'neu anlegen' : v.anzahl}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {notiz && (
+            <div className="notiz-meta">
+              <span>{formatStempel(notiz.erstellt, heute)}</span>
+              {aufgabe && (
+                <Menue
+                  knopf={
+                    faellig ? (
+                      <>
+                        <FaelligText aufgabe={aufgabe} heute={heute} />
+                        <WiederholungsHinweis aufgabe={aufgabe} />
+                      </>
+                    ) : (
+                      <>
+                        <Uhr /> Termin
+                      </>
+                    )
+                  }
+                  beschriftung="Fälligkeit, Erinnerung und Wiederholung"
+                  knopfKlasse={klassen('faellig', !faellig && 'leer')}
+                  links
                 >
-                  <span>#{v.tag}</span>
-                  <span className="anzahl">{v.neu ? 'neu anlegen' : v.anzahl}</span>
+                  {() => <AufgabenMenue notiz={notiz} />}
+                </Menue>
+              )}
+              {aufgabe && <PrioStandKnoepfe id={id} aufgabe={aufgabe} />}
+              <span className="notiz-aktionen">
+                <button title="Tag einfügen" aria-label="Tag einfügen" onMouseDown={halteFokus} onClick={beiTagKnopf}>
+                  #
                 </button>
-              ))}
+                <button
+                  title={aufgabe ? 'Keine Aufgabe mehr' : 'Zur Aufgabe machen'}
+                  aria-label={aufgabe ? 'Keine Aufgabe mehr' : 'Zur Aufgabe machen'}
+                  className={klassen(aufgabe && 'an')}
+                  onMouseDown={halteFokus}
+                  onClick={() => setzeAufgabe(id, !aufgabe)}
+                >
+                  <KaestchenSymbol />
+                </button>
+                <button
+                  title="Verschieben nach …"
+                  aria-label="Verschieben nach …"
+                  onClick={() => steuerung.verschiebeDialog(id)}
+                >
+                  <OrdnerPfeil />
+                </button>
+                <button title="In den Papierkorb" aria-label="In den Papierkorb" onClick={() => loescheNotiz(id)}>
+                  <Korb />
+                </button>
+              </span>
             </div>
           )}
         </div>
-
-        {notiz && (
-          <div className="notiz-meta">
-            <span>{formatStempel(notiz.erstellt, heute)}</span>
-            {aufgabe && (
-              <Menue
-                knopf={
-                  faellig ? (
-                    <>
-                      <FaelligText aufgabe={aufgabe} heute={heute} />
-                      <WiederholungsHinweis aufgabe={aufgabe} />
-                    </>
-                  ) : (
-                    <>
-                      <Uhr /> Termin
-                    </>
-                  )
-                }
-                beschriftung="Fälligkeit, Erinnerung und Wiederholung"
-                knopfKlasse={klassen('faellig', !faellig && 'leer')}
-                links
-              >
-                {() => <AufgabenMenue notiz={notiz} />}
-              </Menue>
-            )}
-            {aufgabe && <PrioStandKnoepfe id={id} aufgabe={aufgabe} />}
-            <span className="notiz-aktionen">
-              <button title="Tag einfügen" aria-label="Tag einfügen" onMouseDown={halteFokus} onClick={beiTagKnopf}>
-                #
-              </button>
-              <button
-                title={aufgabe ? 'Keine Aufgabe mehr' : 'Zur Aufgabe machen'}
-                aria-label={aufgabe ? 'Keine Aufgabe mehr' : 'Zur Aufgabe machen'}
-                className={klassen(aufgabe && 'an')}
-                onMouseDown={halteFokus}
-                onClick={() => setzeAufgabe(id, !aufgabe)}
-              >
-                <KaestchenSymbol />
-              </button>
-              <button
-                title="Verschieben nach …"
-                aria-label="Verschieben nach …"
-                onClick={() => steuerung.verschiebeDialog(id)}
-              >
-                <OrdnerPfeil />
-              </button>
-              <button title="In den Papierkorb" aria-label="In den Papierkorb" onClick={() => loescheNotiz(id)}>
-                <Korb />
-              </button>
-            </span>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

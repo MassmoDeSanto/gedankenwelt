@@ -859,6 +859,77 @@ a.kachel:hover,
   min-width: 0;
 }
 
+/* Notizen mit Namen (README, Abschnitt 12): Pfeil zum Auf- und Zuklappen */
+.klapp {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--meta);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.klapp:hover {
+  color: var(--text);
+}
+
+.klapp svg {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--kurz);
+}
+
+.klapp.offen svg {
+  transform: rotate(90deg);
+}
+
+/* Zugeklappte Notiz: Name links, Datum rechts – eine Zeile */
+.notiz-kopf {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--schrift);
+  font-size: 16px;
+  line-height: 1.55;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notiz-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notiz-kopf-info {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+}
+
+/* Der Name ist hervorgehoben, ohne dass sich die Zeichenbreite ändert (Cursor bleibt an seiner Stelle) */
+.notiz-name,
+.name-zeile,
+.spiegel.mit-name > .md > div:first-child {
+  -webkit-text-stroke: 0.45px currentColor;
+}
+
 /* Textfeld und Spiegel liegen deckungsgleich übereinander. Der Spiegel zeigt den
    Text (mit farbigen Tags), das Textfeld darüber ist durchsichtig und nimmt die Eingabe an. */
 .textfeld {

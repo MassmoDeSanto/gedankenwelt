@@ -862,3 +862,21 @@ Vor dem Bauen mit ihm klären:
 - **Dateiformat:** Neue Felder müssen in den Metadaten-Kommentar der Drive-Dateien (wie `faellig:`), damit sie zwischen Laptop und iPhone abgleichen. Ältere Dateien ohne die Felder müssen weiter lesbar bleiben.
 
 Der Kalender-Test aus Abschnitt 9, Schritt 4, Punkt 4 ist am 20. Nov 2026 nachgeholt.
+
+## 12. Notizen mit Namen und kompakte Listen
+
+Wunsch von Massimo vom 20. Nov 2026, statt Phase 5 (Verlinken mit `[[ ]]`, zurückgestellt):
+
+| Thema | Entscheidung |
+|---|---|
+| Name einer Notiz | Die erste Zeile. Hat eine Notiz mehr als eine Zeile, erscheint die erste fett als Name, darunter der Text. Kein eigenes Feld – so wie in Apple Notizen. |
+| Kurze Notizen | Eine Zeile = der ganze Gedanke. Kein Pfeil, Anzeige wie bisher. |
+| Listenansicht | Mehrzeilige Notizen sind zugeklappt: Pfeil, Name, rechts das Datum (bei Aufgaben auch Priorität und Fälligkeit). Antippen klappt auf, der Pfeil klappt wieder zu. |
+| Sprung zu einer Notiz | Aus Suche, Gedanke des Tages oder To-do-Box ist die Notiz gleich aufgeklappt. Mit den Pfeiltasten in eine zugeklappte Notiz wandern klappt sie ebenfalls auf. |
+| Dateiformat | Unverändert. Es ist nur eine andere Darstellung desselben Texts. |
+| Später möglich | Umschalter pro Liste „ausgeschrieben / kompakt“. |
+
+Gebaut am 20. Nov 2026. Geprüft: Tests für die Namens-Regel; im Browser mehrzeilige Notiz geschrieben (Name wird beim Tippen hervorgehoben), Zuklappen beim Verlassen, Aufklappen per Klick (ohne dass die Tastatur aufgeht), Zuklappen per Pfeil, Pfeiltaste in eine zugeklappte Notiz, Sprung aus der Suche, Handy-Breite. Nicht geprüft: am iPhone.
+
+Der Name ist nicht echt fett, sondern mit einer feinen Kontur hervorgehoben. Echte Fettschrift ist breiter und würde beim Tippen den Cursor gegen den sichtbaren Text verschieben.
+

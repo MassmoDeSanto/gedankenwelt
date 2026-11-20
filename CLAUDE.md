@@ -52,4 +52,5 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Siehe `README.md`: Abschnitt 5 (Stand Phase 1), 7 (Phase 2), 8 (Phase 3), 10 (Phase 4), 11 (To-do-Feld) und 9 („Später erledigen“ – alles, was nur Massimo tun kann).
 - Sobald echte Beispieldateien in `import-beispiele/` liegen: Marker-Tabelle und Automatik daran prüfen und anpassen (README, Abschnitt 9, Schritt 7).
 - To-do-Feld überarbeitet am 20. Nov 2026: Priorität (hoch/mittel/niedrig) und Stand (offen/in Arbeit), Entscheidungen in README Abschnitt 11. Deadline = vorhandene Fälligkeit, Kategorie = Tags. Kalender-Probe (README Abschnitt 9, Schritt 4, Punkt 4) am 20. Nov 2026 bestanden.
-- Phase 5 (`[[ ]]`-Links) steht noch aus.
+- Phase 5 (`[[ ]]`-Links, `~/Downloads/PHASE-5.md`) am 20. Nov 2026 auf Massimos Wunsch zurückgestellt – er braucht Verlinken nicht. Stattdessen: Notizen mit Namen und kompakte Listenansicht (README Abschnitt 12).
+- Geplante Reihenfolge danach: Phase 6 (Härtung, `~/Downloads/PHASE-6.md`) **vor** dem echten Import; iPhone ganz am Ende. Phase 6 setzt noch „Google nicht eingerichtet“ voraus – das ist überholt, der Einrichtungstag umfasst nur noch iPhone und Import.
