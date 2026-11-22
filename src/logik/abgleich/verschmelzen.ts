@@ -15,12 +15,15 @@
  */
 import {
   EINGANG_ID,
+  TAGEBUCH_ID,
   eingangsListe,
+  tagebuchListe,
   type Datenbestand,
   type Einstellungen,
   type ImportEintrag,
   type Liste,
   type Notiz,
+  type Tagebuchtag,
   type VerlaufEintrag,
   type Zeitstempel,
 } from '../../modell/typen';
@@ -44,7 +47,19 @@ function gleicheNotiz(a: Notiz, b: Notiz): boolean {
     a.liste_id === b.liste_id &&
     a.position === b.position &&
     a.geloescht === b.geloescht &&
+    a.tagebuch_tag === b.tagebuch_tag &&
     JSON.stringify(a.aufgabe) === JSON.stringify(b.aufgabe)
+  );
+}
+
+function gleicherTag(a: Tagebuchtag, b: Tagebuchtag): boolean {
+  return (
+    a.datum === b.datum &&
+    a.titel === b.titel &&
+    a.bewertung === b.bewertung &&
+    a.impuls === b.impuls &&
+    a.geloescht === b.geloescht &&
+    a.gewohnheiten.join(',') === b.gewohnheiten.join(',')
   );
 }
 
@@ -123,6 +138,8 @@ function repariere(listen: Liste[], notizen: Notiz[], jetzt: Zeitstempel): { lis
   else if (eingang.geloescht || eingang.eltern_id) {
     karte.set(EINGANG_ID, { ...eingang, geloescht: null, eltern_id: null, geaendert: jetzt });
   }
+  // Das Tagebuch ist immer da, mit festen Werten (es steht in Drive nicht als Listendatei).
+  karte.set(TAGEBUCH_ID, tagebuchListe());
 
   // Fehlende Eltern und Kreise (A liegt in B, B liegt in A) auflösen: nach ganz oben.
   for (const liste of [...karte.values()].sort(nachId)) {
@@ -210,7 +227,13 @@ export function verschmelze(
   const basisNotizen = gueltigeBasis ? alsKarte(gueltigeBasis.notizen) : null;
   const basisListen = gueltigeBasis ? alsKarte(gueltigeBasis.listen) : null;
 
+  const basisTage = gueltigeBasis ? alsKarte(gueltigeBasis.tagebuchtage ?? []) : null;
+
   const fernNotizen = stempleHandarbeit(fern.notizen, basisNotizen, gleicheNotiz, jetzt);
+  const fernTage = stempleHandarbeit(fern.tagebuchtage ?? [], basisTage, gleicherTag, jetzt);
+  const tagebuchtage = verschmelzeMenge(lokal.tagebuchtage ?? [], fernTage, basisTage, jetzt)
+    .filter((t) => !t.geloescht)
+    .sort(nachId);
   const fernListen = stempleHandarbeit(fern.listen, basisListen, gleicheListe, jetzt);
 
   const notizen = verschmelzeMenge(lokal.notizen, fernNotizen, basisNotizen, jetzt);
@@ -227,6 +250,7 @@ export function verschmelze(
 
   return {
     ...(importe.length > 0 ? { importe } : {}),
+    ...(tagebuchtage.length > 0 ? { tagebuchtage } : {}),
     listen: repariert.listen.filter(bleibt).sort(nachId),
     notizen: repariert.notizen.filter(bleibt).sort(nachId),
     einstellungen: optionen.fernHatMeta

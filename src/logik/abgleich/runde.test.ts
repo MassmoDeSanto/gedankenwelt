@@ -3,10 +3,11 @@
  * simuliertes Drive. Es wird kein echtes Google-Konto benutzt.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EINGANG_ID, eingangsListe, type Datenbestand, type Liste, type Notiz } from '../../modell/typen';
+import { EINGANG_ID, TAGEBUCH_ID, eingangsListe, type Datenbestand, type Liste, type Notiz, type Tagebuchtag } from '../../modell/typen';
 import { neueId } from '../../modell/ulid';
 import { bearbeiteNotiz, erzeugeNotizen } from '../absatz';
 import { alsKarte } from '../listen';
+import { tagebuchtagId } from '../tagebuch';
 import * as papierkorb from '../papierkorb';
 import { mitTerminId } from '../kalender/abgleich';
 import { KeineVerbindung } from './drive';
@@ -679,3 +680,82 @@ describe('Einstellungen und Gedanke des Tages', () => {
     expect(a.lokal.einstellungen.thema).toBe('hell');
   });
 });
+
+describe('Tagebuch', () => {
+  /** Schreibt – wie die Tagesseite – einen Absatz ins Tagebuch. */
+  function schreibeTagebuch(geraet: TestGeraet, datum: string, text: string, zeit: string): Notiz {
+    const notiz = { ...geraet.schreibe(TAGEBUCH_ID, text, zeit), tagebuch_tag: datum };
+    geraet.lokal = { ...geraet.lokal, notizen: geraet.lokal.notizen.map((n) => (n.id === notiz.id ? notiz : n)) };
+    return notiz;
+  }
+
+  /** Setzt Überschrift oder Bewertung eines Tages. */
+  function setzeTag(geraet: TestGeraet, datum: string, teil: Partial<Tagebuchtag>, zeit: string): void {
+    const id = tagebuchtagId(datum);
+    const alt = geraet.lokal.tagebuchtage?.find((t) => t.id === id);
+    const neu: Tagebuchtag = {
+      ...(alt ?? { id, datum, titel: '', bewertung: null, impuls: null, gewohnheiten: [], erstellt: zeit, geloescht: null }),
+      ...teil,
+      geaendert: zeit,
+    };
+    geraet.lokal = { ...geraet.lokal, tagebuchtage: [...(geraet.lokal.tagebuchtage ?? []).filter((t) => t.id !== id), neu] };
+  }
+
+  it('Einträge, Überschrift und Bewertung kommen beim anderen Gerät an – in einer Monatsdatei', async () => {
+    await grundaufbau();
+    schreibeTagebuch(a, '2026-11-01', 'Heute war ein ruhiger Tag.', um('20:00'));
+    schreibeTagebuch(a, '2026-10-31', 'Nachgetragen', um('20:05'));
+    setzeTag(a, '2026-11-01', { titel: 'Ruhig', bewertung: 4 }, um('20:06'));
+    await alleAbgleichen(um('21:00'));
+
+    erwarteGleichstand();
+    expect(b.lokal.tagebuchtage).toEqual(a.lokal.tagebuchtage);
+    expect(b.lokal.notizen.find((n) => n.text === 'Nachgetragen')?.tagebuch_tag).toBe('2026-10-31');
+    expect(drive.pfade()).toEqual(expect.arrayContaining(['_Tagebuch/2026/2026-10.md', '_Tagebuch/2026/2026-11.md']));
+    expect(drive.dateien().get('_Tagebuch/2026/2026-11.md')).toContain('## 2026-11-01 · Ruhig');
+    erwarteKeineDoppelten();
+
+    // Ein weiterer Abgleich ändert nichts mehr.
+    const vorher = new Map(drive.dateien());
+    await alleAbgleichen(um('22:00'));
+    expect(drive.dateien()).toEqual(vorher);
+  });
+
+  it('beide Geräte setzen offline die Überschrift desselben Tages: ein Eintrag, die neuere gewinnt', async () => {
+    await grundaufbau();
+    setzeTag(a, '2026-11-01', { titel: 'Von A', bewertung: 3 }, um('20:00'));
+    setzeTag(b, '2026-11-01', { titel: 'Von B' }, um('20:30'));
+    await alleAbgleichen(um('21:00'));
+
+    expect(a.lokal.tagebuchtage).toHaveLength(1);
+    expect(a.lokal.tagebuchtage![0]).toMatchObject({ titel: 'Von B' });
+    expect(b.lokal.tagebuchtage).toEqual(a.lokal.tagebuchtage);
+  });
+
+  it('gelöschter Tagebuch-Eintrag landet im Papierkorb und behält seinen Tag', async () => {
+    await grundaufbau();
+    const n = schreibeTagebuch(a, '2026-11-01', 'Wird gelöscht', um('20:00'));
+    await alleAbgleichen(um('20:10'));
+    a.loesche(n.id, um('20:20'));
+    await alleAbgleichen(um('20:30'));
+
+    expect(b.notiz(n.id)).toMatchObject({ geloescht: um('20:20'), tagebuch_tag: '2026-11-01', liste_id: TAGEBUCH_ID });
+    // Der Monat hat keinen Eintrag mehr: Die Datei verschwindet, der Ordner bleibt.
+    expect(drive.pfade()).not.toContain('_Tagebuch/2026/2026-11.md');
+  });
+
+  it('fremde Dateien im Ordner _Tagebuch bleiben unangetastet', async () => {
+    await grundaufbau();
+    schreibeTagebuch(a, '2026-11-01', 'Eintrag', um('20:00'));
+    await alleAbgleichen(um('20:10'));
+    const monatsdatei = drive.driveId('_Tagebuch/2026/2026-11.md');
+    const tagebuchOrdner = (await drive.liste(await drive.wurzel())).find((e) => e.id === monatsdatei)!.eltern;
+    await drive.erstelleDatei('Gedicht.md', tagebuchOrdner, 'Eigener Text');
+    schreibeTagebuch(a, '2026-11-01', 'Noch einer', um('20:20'));
+    await alleAbgleichen(um('20:30'));
+
+    expect(drive.dateien().get('_Tagebuch/2026/Gedicht.md')).toBe('Eigener Text');
+    expect(b.lokal.notizen.some((n) => n.text === 'Eigener Text')).toBe(false);
+  });
+});
+

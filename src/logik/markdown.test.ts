@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { EINGANG_ID, eingangsListe, type Datenbestand } from '../modell/typen';
+import { EINGANG_ID, TAGEBUCH_ID, eingangsListe, tagebuchListe, type Datenbestand, type Tagebuchtag } from '../modell/typen';
+import { festeId } from '../modell/ulid';
 import { ausDateien, zuDateien } from './markdown';
 import { baueListe, baueNotiz, testUmgebung } from './test-hilfe';
 
@@ -22,7 +23,7 @@ function beispiel(): Datenbestand {
   const alt = baueListe({ name: 'Alt', position: 6, geloescht: '2026-11-01T12:00:00Z' });
 
   return {
-    listen: [eingang, reise, geld, features, karte, wild, doppelt1, doppelt2, unterstrich, alt],
+    listen: [eingang, tagebuchListe(), reise, geld, features, karte, wild, doppelt1, doppelt2, unterstrich, alt],
     notizen: [
       baueNotiz({ text: 'Schneller Gedanke', liste_id: EINGANG_ID }),
       baueNotiz({ text: 'Notiz direkt in der Reise-App\nmit zweiter Zeile', liste_id: reise.id }),
@@ -292,7 +293,7 @@ describe('Markdown-Format', () => {
 
   it('leerer Bestand: nur Eingang, Papierkorb und Meta', () => {
     const leer: Datenbestand = {
-      listen: [eingangsListe('2026-01-01T12:00:00Z')],
+      listen: [eingangsListe('2026-01-01T12:00:00Z'), tagebuchListe()],
       notizen: [],
       einstellungen: { thema: 'dunkel' },
       tagesgedanke_verlauf: [],
@@ -302,3 +303,123 @@ describe('Markdown-Format', () => {
     expect(ausDateien(dateien, testUmgebung())).toEqual(leer);
   });
 });
+
+describe('Tagebuch in Drive: Monatsdateien', () => {
+  const tag16: Tagebuchtag = {
+    id: '01TAGEBUCHTAG000000000016A',
+    datum: '2026-11-16',
+    titel: 'Ein Tag voller Konzepte',
+    bewertung: 4,
+    impuls: 'Wofür bist du heute dankbar? Für: Ruhe',
+    gewohnheiten: ['01GEWOHNHEIT0000000000000A', '01GEWOHNHEIT0000000000000B'],
+    erstellt: '2026-11-16T20:00:00Z',
+    geaendert: '2026-11-16T21:00:00Z',
+    geloescht: null,
+  };
+  const tag17: Tagebuchtag = { ...tag16, id: '01TAGEBUCHTAG000000000017A', datum: '2026-11-17', titel: '', bewertung: 2, impuls: null, gewohnheiten: [] };
+
+  function tagebuchBestand(): Datenbestand {
+    return {
+      listen: [eingangsListe('2026-01-01T12:00:00Z'), tagebuchListe()],
+      notizen: [
+        baueNotiz({ id: '01N0T1ZTAGEBUCH00000000001', text: 'Für einen ruhigen Vormittag.', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-16', position: 1 }),
+        baueNotiz({ id: '01N0T1ZTAGEBUCH00000000002', text: 'Zweiter Gedanke #idee', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-16', position: 2 }),
+        baueNotiz({ id: '01N0T1ZTAGEBUCH00000000003', text: 'Nachts noch geschrieben', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-17', position: 1 }),
+        baueNotiz({ id: '01N0T1ZTAGEBUCH00000000004', text: 'Dezember', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-12-01', position: 1 }),
+        baueNotiz({ id: '01N0T1ZTAGEBUCH00000000005', text: 'Weggeworfen', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-16', position: 3, geloescht: '2026-11-18T10:00:00Z' }),
+      ],
+      einstellungen: { thema: 'dunkel' },
+      tagesgedanke_verlauf: [],
+      tagebuchtage: [tag16, tag17],
+    };
+  }
+
+  it('eine Datei pro Monat im Ordner _Tagebuch, keine Listendatei für das Tagebuch', () => {
+    const dateien = zuDateien(tagebuchBestand());
+    expect([...dateien.keys()].sort()).toEqual([
+      'Eingang.md',
+      '_Tagebuch/2026/2026-11.md',
+      '_Tagebuch/2026/2026-12.md',
+      '_meta.json',
+      '_papierkorb.md',
+    ]);
+  });
+
+  it('schreibt lesbare Monatsdateien: Tageszeile mit Überschrift, Metadaten des Tages, Absätze', () => {
+    expect(zuDateien(tagebuchBestand()).get('_Tagebuch/2026/2026-11.md')).toBe(
+      [
+        '---',
+        'art: tagebuch',
+        'monat: 2026-11',
+        '---',
+        '',
+        '## 2026-11-16 · Ein Tag voller Konzepte',
+        '<!-- tag-id:01TAGEBUCHTAG000000000016A erstellt:2026-11-16T20:00:00Z geaendert:2026-11-16T21:00:00Z bewertung:4 ' +
+          'impuls:Wof%C3%BCr%20bist%20du%20heute%20dankbar%3F%20F%C3%BCr%3A%20Ruhe gewohnheiten:01GEWOHNHEIT0000000000000A,01GEWOHNHEIT0000000000000B -->',
+        '',
+        'Für einen ruhigen Vormittag.',
+        '<!-- id:01N0T1ZTAGEBUCH00000000001 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:1 -->',
+        '',
+        'Zweiter Gedanke #idee',
+        '<!-- id:01N0T1ZTAGEBUCH00000000002 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:2 -->',
+        '',
+        '## 2026-11-17',
+        '<!-- tag-id:01TAGEBUCHTAG000000000017A erstellt:2026-11-16T20:00:00Z geaendert:2026-11-16T21:00:00Z bewertung:2 -->',
+        '',
+        'Nachts noch geschrieben',
+        '<!-- id:01N0T1ZTAGEBUCH00000000003 erstellt:2026-03-12T12:00:00Z geaendert:2026-03-12T12:00:00Z pos:1 -->',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('Hin- und Rückumwandlung ergibt exakt dieselben Daten, auch im Papierkorb', () => {
+    const bestand = tagebuchBestand();
+    const dateien = zuDateien(bestand);
+    expect(dateien.get('_papierkorb.md')).toContain('liste:00000000000000000000000001 tag:2026-11-16 geloescht:');
+    const zurueck = ausDateien(dateien, testUmgebung());
+    expect(zurueck).toEqual(sortiert(bestand));
+    expect(zuDateien(zurueck)).toEqual(dateien);
+  });
+
+  it('von Hand geschriebene Tage und Absätze ohne Metadaten werden eingelesen', () => {
+    const datei = [
+      '---',
+      'art: tagebuch',
+      'monat: 2026-11',
+      '---',
+      '',
+      'Absatz ganz oben ohne Tag',
+      '',
+      '## 2026-11-20 · Von Hand ergänzt',
+      '',
+      'Erster Absatz',
+      'mit zweiter Zeile',
+      '',
+      'Zweiter Absatz',
+      '',
+      '## 2026-12-05 · gehört nicht in diese Datei',
+      'bleibt Text des 20.',
+      '',
+    ].join('\n');
+    // Wie im Abgleich: IDs für Absätze ohne Metadaten entstehen fest aus Ort und Text.
+    const umg = { jetzt: '2026-11-21T08:00:00Z', neueId: (hinweis?: string) => festeId(hinweis ?? 'x') };
+    const bestand = ausDateien(new Map([['_Tagebuch/2026/2026-11.md', datei]]), umg);
+    const reihe = bestand.notizen.map((n) => [n.tagebuch_tag, n.text, n.liste_id]);
+    expect(reihe).toContainEqual(['2026-11-01', 'Absatz ganz oben ohne Tag', TAGEBUCH_ID]);
+    expect(reihe).toContainEqual(['2026-11-20', 'Erster Absatz\nmit zweiter Zeile', TAGEBUCH_ID]);
+    expect(reihe).toContainEqual(['2026-11-20', 'Zweiter Absatz', TAGEBUCH_ID]);
+    expect(reihe).toContainEqual(['2026-11-20', '## 2026-12-05 · gehört nicht in diese Datei\nbleibt Text des 20.', TAGEBUCH_ID]);
+    expect(bestand.tagebuchtage).toHaveLength(1);
+    expect(bestand.tagebuchtage![0]).toMatchObject({ datum: '2026-11-20', titel: 'Von Hand ergänzt', bewertung: null });
+    // Beim nächsten Lesen derselben Datei entstehen dieselben IDs (keine Dubletten auf mehreren Geräten).
+    const nochmal = ausDateien(new Map([['_Tagebuch/2026/2026-11.md', datei]]), umg);
+    expect(nochmal.notizen.map((n) => n.id)).toEqual(bestand.notizen.map((n) => n.id));
+  });
+
+  it('ohne Tagebuch entsteht kein Ordner _Tagebuch', () => {
+    const dateien = zuDateien({ ...tagebuchBestand(), notizen: [], tagebuchtage: [] });
+    expect([...dateien.keys()].some((p) => p.startsWith('_Tagebuch'))).toBe(false);
+  });
+});
+

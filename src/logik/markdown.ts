@@ -8,6 +8,9 @@
  *     Monetarisierung.md
  *   _papierkorb.md
  *   _meta.json
+ *   _Tagebuch/
+ *     2026/
+ *       2026-11.md         ← alle Tagebuch-Einträge eines Monats (KONZEPT.md, Abschnitt 13.8)
  *
  * Phase 1 packt diese Dateien in ein ZIP, Phase 2 legt dieselben Dateien in Google Drive ab.
  * Eine „Datei“ ist hier nur ein Paar aus Pfad und Textinhalt.
@@ -15,7 +18,9 @@
 import {
   EINGANG_ID,
   STANDARD_EINSTELLUNGEN,
+  TAGEBUCH_ID,
   eingangsListe,
+  tagebuchListe,
   type Aufgabe,
   type Datenbestand,
   type Einstellungen,
@@ -24,10 +29,13 @@ import {
   type Notiz,
   type Prioritaet,
   type TagesgedankeSchalter,
+  type Tagebuchtag,
   type VerlaufEintrag,
 } from '../modell/typen';
 import { leseAufgabenPraefix, mitAufgabenPraefix, type Umgebung } from './absatz';
 import { leseTags } from './tags';
+import { istBewertung, monatAusPfad, monatVon, monatsPfad, tagebuchtagId } from './tagebuch';
+import { datumVon } from './zeit';
 import { leseRegel, schreibeRegel } from './wiederholung';
 
 /** Pfad → Inhalt. Pfade sind relativ zum Ordner „Gedankenwelt/“ und nutzen „/“. */
@@ -120,6 +128,8 @@ function schreibeNotiz(notiz: Notiz, imPapierkorb: boolean): string {
   if (notiz.import_id) meta.push(`imp:${notiz.import_id}`);
   if (imPapierkorb) {
     meta.push(`liste:${notiz.liste_id}`);
+    // Tagebuch-Notizen merken sich ihren Tag, damit sie beim Wiederherstellen dorthin zurückfinden.
+    if (notiz.tagebuch_tag) meta.push(`tag:${notiz.tagebuch_tag}`);
     if (notiz.geloescht) meta.push(`geloescht:${notiz.geloescht}`);
   }
   return `${mitAufgabenPraefix(notiz)}\n<!-- ${meta.join(' ')} -->\n`;
@@ -133,9 +143,12 @@ export function zuDateien(bestand: Datenbestand): Dateien {
 export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   dateien: Dateien;
   verzeichnis: { id: string; pfad: string }[];
+  /** Monatsdateien des Tagebuchs */
+  monate: { monat: string; pfad: string }[];
 } {
   const dateien: Dateien = new Map();
-  const aktiveListen = bestand.listen.filter((l) => !l.geloescht);
+  // Das Tagebuch hat keine Listendatei: Seine Notizen stehen in den Monatsdateien.
+  const aktiveListen = bestand.listen.filter((l) => !l.geloescht && l.id !== TAGEBUCH_ID);
   const aktiveIds = new Set(aktiveListen.map((l) => l.id));
 
   // Unterlisten je Elternliste (null = oberste Ebene)
@@ -149,8 +162,10 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   // Notizen je Liste; alles Gelöschte (oder Heimatlose) kommt in den Papierkorb
   const notizenJeListe = new Map<string, Notiz[]>();
   const papierkorb: Notiz[] = [];
+  const tagebuch: Notiz[] = [];
   for (const notiz of bestand.notizen) {
-    if (notiz.geloescht || !aktiveIds.has(notiz.liste_id)) papierkorb.push(notiz);
+    if (!notiz.geloescht && notiz.liste_id === TAGEBUCH_ID) tagebuch.push(notiz);
+    else if (notiz.geloescht || !aktiveIds.has(notiz.liste_id)) papierkorb.push(notiz);
     else notizenJeListe.set(notiz.liste_id, [...(notizenJeListe.get(notiz.liste_id) ?? []), notiz]);
   }
 
@@ -180,6 +195,8 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
       .join('\n'),
   );
 
+  const monate = schreibeTagebuch(tagebuch, bestand.tagebuchtage ?? [], dateien);
+
   const meta = {
     version: 1,
     einstellungen: bestand.einstellungen,
@@ -191,7 +208,119 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   };
   dateien.set(META_DATEI, JSON.stringify(meta, null, 2) + '\n');
 
-  return { dateien, verzeichnis };
+  return { dateien, verzeichnis, monate };
+}
+
+// ───────────────────────── Tagebuch: Monatsdateien ─────────────────────────
+
+const TAG_ZEILE = /^## (\d{4}-\d{2}-\d{2})(?:[ \t]+·[ \t]+(.*?))?[ \t]*$/;
+const TAG_META_ZEILE = /^<!--\s+(tag-id:.+?)\s+-->$/;
+
+/** Kopfzeile und Metadaten eines Tages, z. B. „## 2026-11-16 · Ein Tag voller Konzepte“. */
+function schreibeTagKopf(datum: string, tag: Tagebuchtag | undefined): string {
+  const titel = tag?.titel.replace(/\s+/g, ' ').trim() ?? '';
+  const zeilen = [titel ? `## ${datum} · ${titel}` : `## ${datum}`];
+  if (tag) {
+    const meta = [`tag-id:${tag.id}`, `erstellt:${tag.erstellt}`, `geaendert:${tag.geaendert}`];
+    if (tag.bewertung) meta.push(`bewertung:${tag.bewertung}`);
+    if (tag.impuls) meta.push(`impuls:${encodeURIComponent(tag.impuls)}`);
+    if (tag.gewohnheiten.length > 0) meta.push(`gewohnheiten:${tag.gewohnheiten.join(',')}`);
+    zeilen.push(`<!-- ${meta.join(' ')} -->`);
+  }
+  return zeilen.join('\n') + '\n';
+}
+
+/** Schreibt die Monatsdateien des Tagebuchs in `dateien` und gibt sie zurück. */
+function schreibeTagebuch(
+  notizen: Notiz[],
+  tage: Tagebuchtag[],
+  dateien: Dateien,
+): { monat: string; pfad: string }[] {
+  /** Datum → Notizen und Tagebuchtag */
+  const jeDatum = new Map<string, { notizen: Notiz[]; tag?: Tagebuchtag }>();
+  const eintrag = (datum: string) => {
+    let e = jeDatum.get(datum);
+    if (!e) jeDatum.set(datum, (e = { notizen: [] }));
+    return e;
+  };
+  for (const n of notizen) eintrag(n.tagebuch_tag ?? datumVon(n.erstellt)).notizen.push(n);
+  for (const t of tage) if (!t.geloescht) eintrag(t.datum).tag = t;
+
+  const jeMonat = new Map<string, string[]>();
+  for (const datum of [...jeDatum.keys()].sort()) {
+    const { notizen: reihe, tag } = jeDatum.get(datum)!;
+    const rumpf = reihe
+      .sort(nachPosition)
+      .map((n) => schreibeNotiz(n, false))
+      .join('\n');
+    const abschnitt = schreibeTagKopf(datum, tag) + (rumpf ? '\n' + rumpf : '');
+    const monat = monatVon(datum);
+    jeMonat.set(monat, [...(jeMonat.get(monat) ?? []), abschnitt]);
+  }
+
+  const monate: { monat: string; pfad: string }[] = [];
+  for (const [monat, abschnitte] of jeMonat) {
+    const pfad = monatsPfad(monat);
+    dateien.set(pfad, ['---', 'art: tagebuch', `monat: ${monat}`, '---', '', abschnitte.join('\n')].join('\n'));
+    monate.push({ monat, pfad });
+  }
+  return monate.sort((a, b) => (a.monat < b.monat ? -1 : 1));
+}
+
+/** Liest eine Monatsdatei. Absätze vor der ersten Tageszeile gehören zum Ersten des Monats. */
+function leseTagebuch(inhalt: string, monat: string, umg: Umgebung): { notizen: Notiz[]; tage: Tagebuchtag[] } {
+  const { rumpf } = leseKopf(inhalt);
+  const notizen: Notiz[] = [];
+  const tage: Tagebuchtag[] = [];
+
+  let datum = `${monat}-01`;
+  let titel = '';
+  let puffer: string[] = [];
+  let kopfGesehen = false;
+
+  const schliesse = () => {
+    const zeilen = [...puffer];
+    puffer = [];
+    // Die Metadaten des Tages stehen direkt unter der Tageszeile.
+    const erste = zeilen.findIndex((z) => z.trim() !== '');
+    const treffer = kopfGesehen && erste >= 0 ? TAG_META_ZEILE.exec(zeilen[erste].trim()) : null;
+    if (treffer) zeilen.splice(erste, 1);
+
+    if (treffer || titel) {
+      const meta = treffer ? leseMeta(treffer[1]) : new Map<string, string>();
+      const bewertung = Number(meta.get('bewertung'));
+      const impuls = meta.get('impuls');
+      const erstellt = meta.get('erstellt') ?? umg.jetzt;
+      tage.push({
+        id: meta.get('tag-id') || tagebuchtagId(datum),
+        datum,
+        titel,
+        bewertung: istBewertung(bewertung) ? bewertung : null,
+        impuls: impuls ? decodeURIComponent(impuls) : null,
+        gewohnheiten: (meta.get('gewohnheiten') ?? '').split(',').filter(Boolean),
+        erstellt,
+        geaendert: meta.get('geaendert') ?? erstellt,
+        geloescht: null,
+      });
+    }
+    for (const n of baueNotizen(zeilen.join('\n'), TAGEBUCH_ID, umg, `_tagebuch|${datum}`)) {
+      notizen.push({ ...n, tagebuch_tag: datum });
+    }
+  };
+
+  for (const zeile of rumpf.split('\n')) {
+    const kopf = TAG_ZEILE.exec(zeile.trim());
+    if (kopf && monatVon(kopf[1]) === monat) {
+      schliesse();
+      datum = kopf[1];
+      titel = (kopf[2] ?? '').trim();
+      kopfGesehen = true;
+    } else {
+      puffer.push(zeile);
+    }
+  }
+  schliesse();
+  return { notizen, tage };
 }
 
 // ───────────────────────── Lesen: Dateien → Datenbestand ─────────────────────────
@@ -266,7 +395,7 @@ function leseRumpf(rumpf: string): RohNotiz[] {
 }
 
 /** Baut die Notizen einer Datei. `liste_id` null = Papierkorb-Datei (Liste steht dann im Kommentar). */
-function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Notiz[] {
+function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung, bereich?: string): Notiz[] {
   const roh = leseRumpf(rumpf);
   const allePositionen = roh.every((r) => r.meta && Number.isFinite(Number(r.meta.get('pos'))));
   /** Wie oft derselbe Text ohne Metadaten in dieser Datei schon vorkam (für eindeutige Hinweise) */
@@ -274,7 +403,7 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
   const hinweis = (text: string) => {
     const n = gleicheTexte.get(text) ?? 0;
     gleicheTexte.set(text, n + 1);
-    return `notiz|${liste_id ?? '_papierkorb'}|${n}|${text}`;
+    return `notiz|${bereich ?? liste_id ?? '_papierkorb'}|${n}|${text}`;
   };
 
   return roh.map((r, index) => {
@@ -313,6 +442,8 @@ function baueNotizen(rumpf: string, liste_id: string | null, umg: Umgebung): Not
     };
     const importId = meta.get('imp');
     if (importId) notiz.import_id = importId;
+    const tag = meta.get('tag');
+    if (tag && /^\d{4}-\d{2}-\d{2}$/.test(tag)) notiz.tagebuch_tag = tag;
     return notiz;
   });
 }
@@ -342,8 +473,16 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
   const elternOrdner = new Map<string, string>();
   /** Liste → Elternliste laut Dateikopf (null = oberste Ebene) */
   const angegebeneEltern = new Map<string, string | null>();
+  const tagebuchtage: Tagebuchtag[] = [];
 
   for (const [pfad, inhalt] of dateien) {
+    const monat = monatAusPfad(pfad);
+    if (monat) {
+      const gelesen = leseTagebuch(inhalt, monat, umg);
+      notizen.push(...gelesen.notizen);
+      tagebuchtage.push(...gelesen.tage);
+      continue;
+    }
     const teile = pfad.split('/');
     const datei = teile.pop()!;
     if (!datei.endsWith('.md')) continue;
@@ -477,6 +616,10 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
   }
 
   if (!listen.some((l) => l.id === EINGANG_ID)) listen.push(eingangsListe(umg.jetzt));
+  // Das Tagebuch hat keine eigene Datei und ist immer da – mit festen Werten.
+  const tagebuchIndex = listen.findIndex((l) => l.id === TAGEBUCH_ID);
+  if (tagebuchIndex >= 0) listen.splice(tagebuchIndex, 1);
+  listen.push(tagebuchListe());
 
   return {
     listen: listen.sort(nachId),
@@ -484,5 +627,6 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
     einstellungen,
     tagesgedanke_verlauf,
     ...(importe.length > 0 ? { importe: importe.sort(nachId) } : {}),
+    ...(tagebuchtage.length > 0 ? { tagebuchtage: tagebuchtage.sort(nachId) } : {}),
   };
 }

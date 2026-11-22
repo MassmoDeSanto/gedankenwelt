@@ -16,14 +16,18 @@ import { ausDateien, zuDateien } from '../logik/markdown';
 import * as papierkorb from '../logik/papierkorb';
 import { leseTags } from '../logik/tags';
 import { waehleTagesgedanke } from '../logik/tagesgedanke';
+import { tagZuDatum, tagebuchtagId } from '../logik/tagebuch';
 import { ersterTermin, hakeAb } from '../logik/wiederholung';
 import { jetztStempel, lokalJetzt, lokalesDatum } from '../logik/zeit';
 import { entpacke, packe } from '../logik/zip';
 import {
   EINGANG_ID,
   STANDARD_EINSTELLUNGEN,
+  TAGEBUCH_ID,
   eingangsListe,
+  istSystemliste,
   neueAufgabe,
+  type Bewertung,
   type Faelligkeit,
   type Liste,
   type Notiz,
@@ -42,6 +46,7 @@ import {
   sichereEinstellungen,
   sichereListen,
   sichereNotizen,
+  sichereTagebuchtag,
   sichereVerlauf,
 } from './speicher';
 
@@ -51,16 +56,26 @@ function umgebung(): Umgebung {
 
 // ───────────────────────── Notizen ─────────────────────────
 
-/** Aktive Notizen einer Liste in ihrer Reihenfolge. */
-export function notizenVon(liste_id: string): Notiz[] {
+/**
+ * Aktive Notizen einer Liste in ihrer Reihenfolge. Im Tagebuch bildet jeder Tag eine eigene Reihe:
+ * Mit `tag` kommen nur die Notizen dieses Tages.
+ */
+export function notizenVon(liste_id: string, tag?: string): Notiz[] {
   const reihe: Notiz[] = [];
-  for (const n of leseZustand().notizen.values()) if (n.liste_id === liste_id && !n.geloescht) reihe.push(n);
+  for (const n of leseZustand().notizen.values()) {
+    if (n.liste_id === liste_id && !n.geloescht && (tag === undefined || n.tagebuch_tag === tag)) reihe.push(n);
+  }
   return reihe.sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1));
 }
 
-/** Sind zwei Positionen (fast) gleich geworden, wird die Liste einmal sauber durchnummeriert. */
-function pruefePositionen(liste_id: string): void {
-  const reihe = notizenVon(liste_id);
+/** Die Reihe, in der eine Notiz steht: ihre Liste, im Tagebuch nur ihr Tag. */
+function reiheVon(notiz: Notiz): Notiz[] {
+  return notizenVon(notiz.liste_id, notiz.tagebuch_tag);
+}
+
+/** Sind zwei Positionen (fast) gleich geworden, wird die Reihe einmal sauber durchnummeriert. */
+function pruefePositionen(liste_id: string, tag?: string): void {
+  const reihe = notizenVon(liste_id, tag);
   const zuEng = reihe.some((n, i) => i > 0 && n.position - reihe[i - 1].position < 1e-7);
   const jetzt = jetztStempel();
   if (zuEng) sichereNotizen(reihe.map((n, i) => ({ ...n, position: i + 1, geaendert: jetzt })));
@@ -74,14 +89,14 @@ function pruefePositionen(liste_id: string): void {
 export function schreibeNotiz(id: string, roh: string): Bearbeitung | null {
   const notiz = leseZustand().notizen.get(id);
   if (!notiz) return null;
-  const reihe = notizenVon(notiz.liste_id);
+  const reihe = reiheVon(notiz);
   const nach = reihe[reihe.findIndex((n) => n.id === id) + 1]?.position ?? null;
 
   const ergebnis = bearbeiteNotiz(notiz, roh, nach, umgebung());
   const geaendert = [...ergebnis.abgetrennt];
   if (ergebnis.notiz && ergebnis.notiz !== notiz) geaendert.unshift(ergebnis.notiz);
   sichereNotizen(geaendert);
-  if (ergebnis.abgetrennt.length > 0) pruefePositionen(notiz.liste_id);
+  if (ergebnis.abgetrennt.length > 0) pruefePositionen(notiz.liste_id, notiz.tagebuch_tag);
   return ergebnis;
 }
 
@@ -89,13 +104,15 @@ export function schreibeNotiz(id: string, roh: string): Bearbeitung | null {
  * Legt aus getipptem Text neue Notizen an (jeder Absatz eine).
  *  - `nachId`: direkt unter dieser Notiz einfügen; ohne Angabe ans Ende der Liste.
  *  - `ersteId`: ID für die erste neue Notiz (der Schreibbereich reserviert sie vorab).
+ *  - `tag`: im Tagebuch der Tag, zu dem die Notizen gehören.
  */
 export function erstelleNotizen(
   liste_id: string,
   roh: string,
-  optionen: { nachId?: string | null; ersteId?: string; alsAufgabe?: boolean } = {},
+  optionen: { nachId?: string | null; ersteId?: string; alsAufgabe?: boolean; tag?: string } = {},
 ): Notiz[] {
-  const reihe = notizenVon(liste_id);
+  const tag = liste_id === TAGEBUCH_ID ? optionen.tag : undefined;
+  const reihe = notizenVon(liste_id, tag);
   const index = optionen.nachId ? reihe.findIndex((n) => n.id === optionen.nachId) : -1;
   const vor = index >= 0 ? reihe[index].position : (reihe[reihe.length - 1]?.position ?? null);
   const nach = index >= 0 ? (reihe[index + 1]?.position ?? null) : null;
@@ -113,8 +130,9 @@ export function erstelleNotizen(
 
   let neue = erzeugeNotizen(roh, liste_id, vor, nach, umg);
   if (optionen.alsAufgabe) neue = neue.map((n) => (n.aufgabe ? n : { ...n, aufgabe: neueAufgabe() }));
+  if (tag) neue = neue.map((n) => ({ ...n, tagebuch_tag: tag }));
   sichereNotizen(neue);
-  if (neue.length > 0) pruefePositionen(liste_id);
+  if (neue.length > 0) pruefePositionen(liste_id, tag);
   return neue;
 }
 
@@ -134,7 +152,7 @@ export function loescheNotiz(id: string, text?: string): void {
 export function fuehreMitObererZusammen(untereId: string): { obere: Notiz; nahtstelle: number } | null {
   const untere = leseZustand().notizen.get(untereId);
   if (!untere) return null;
-  const reihe = notizenVon(untere.liste_id);
+  const reihe = reiheVon(untere);
   const obere = reihe[reihe.findIndex((n) => n.id === untereId) - 1];
   if (!obere) return null;
   const ergebnis = fuehreZusammen(obere, untere, umgebung());
@@ -227,10 +245,14 @@ export function setzeStand(id: string, stand: Stand): void {
 
 /** Verschiebt eine Notiz ans Ende einer anderen Liste. */
 export function verschiebeNotiz(id: string, liste_id: string): void {
+  // Ins Tagebuch verschiebt man nicht: Dort gehört jede Notiz zu einem Tag.
+  if (liste_id === TAGEBUCH_ID) return;
   aendereNotiz(id, (n) => {
     if (n.liste_id === liste_id) return null;
     const ziel = notizenVon(liste_id);
-    return { ...n, liste_id, position: (ziel[ziel.length - 1]?.position ?? 0) + 1 };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { tagebuch_tag, ...ohneTag } = n;
+    return { ...ohneTag, liste_id, position: (ziel[ziel.length - 1]?.position ?? 0) + 1 };
   });
 }
 
@@ -244,7 +266,7 @@ export function ordneNotiz(id: string, reihenfolge: string[]): void {
   const nach = notizen.get(reihenfolge[index + 1])?.position ?? null;
   const [position] = positionenZwischen(vor, nach, 1);
   aendereNotiz(id, (n) => ({ ...n, position }));
-  pruefePositionen(notiz.liste_id);
+  pruefePositionen(notiz.liste_id, notiz.tagebuch_tag);
 }
 
 // ───────────────────────── Listen ─────────────────────────
@@ -274,7 +296,7 @@ function aendereListe(id: string, teil: Partial<Liste>): void {
 }
 
 export function benenneListeUm(id: string, name: string): void {
-  if (id !== EINGANG_ID && name.trim()) aendereListe(id, { name: name.trim() });
+  if (!istSystemliste(id) && name.trim()) aendereListe(id, { name: name.trim() });
 }
 
 export function setzeAngeheftet(id: string, angeheftet: boolean): void {
@@ -287,7 +309,7 @@ export function setzeTagesgedanke(id: string, tagesgedanke: TagesgedankeSchalter
 
 /** Wohin darf eine Liste verschoben werden? Nicht in sich selbst oder ihre eigenen Unterlisten. */
 export function darfVerschieben(id: string, eltern_id: string | null): boolean {
-  if (id === EINGANG_ID) return false;
+  if (istSystemliste(id) || eltern_id === TAGEBUCH_ID) return false;
   return eltern_id === null || !mitNachfahren(id, leseZustand().listen).has(eltern_id);
 }
 
@@ -298,10 +320,33 @@ export function verschiebeListe(id: string, eltern_id: string | null): void {
 }
 
 export function loescheListe(id: string): void {
+  if (istSystemliste(id)) return;
   const z = leseZustand();
   const aenderung = papierkorb.loescheListe(id, z.listen, z.notizen.values(), jetztStempel());
   sichereListen(aenderung.listen);
   sichereNotizen(aenderung.notizen);
+}
+
+// ───────────────────────── Tagebuch ─────────────────────────
+
+/** Ändert Überschrift oder Bewertung eines Tages. Gibt es den Tag noch nicht, wird er angelegt. */
+export function setzeTagebuchtag(datum: string, teil: { titel?: string; bewertung?: Bewertung | null }): void {
+  const jetzt = jetztStempel();
+  const alt = tagZuDatum(leseZustand().tagebuchtage.values(), datum);
+  const tag = alt ?? {
+    id: tagebuchtagId(datum),
+    datum,
+    titel: '',
+    bewertung: null,
+    impuls: null,
+    gewohnheiten: [],
+    erstellt: jetzt,
+    geaendert: jetzt,
+    geloescht: null,
+  };
+  const neu = { ...tag, ...teil, geaendert: jetzt };
+  if (alt && neu.titel === alt.titel && neu.bewertung === alt.bewertung) return;
+  sichereTagebuchtag(neu);
 }
 
 // ───────────────────────── Papierkorb ─────────────────────────
@@ -318,7 +363,7 @@ export function stelleNotizWiederHer(id: string): void {
   const notiz = z.notizen.get(id);
   if (!notiz?.geloescht) return;
   const wieder = papierkorb.stelleNotizWiederHer(notiz, z.listen, jetztStempel());
-  const ziel = notizenVon(wieder.liste_id);
+  const ziel = reiheVon(wieder);
   // Ist ihre alte Stelle inzwischen belegt oder die Liste eine andere, kommt sie ans Ende.
   const belegt = ziel.some((n) => n.position === wieder.position);
   sichereNotizen([

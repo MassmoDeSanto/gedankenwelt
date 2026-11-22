@@ -13,13 +13,16 @@ import { Suchindex } from '../logik/suche';
 import {
   EINGANG_ID,
   STANDARD_EINSTELLUNGEN,
+  TAGEBUCH_ID,
   eingangsListe,
   ergaenzeAufgabe,
+  tagebuchListe,
   type Datenbestand,
   type Einstellungen,
   type ImportEintrag,
   type Liste,
   type Notiz,
+  type Tagebuchtag,
   type VerlaufEintrag,
 } from '../modell/typen';
 import { db } from './db';
@@ -32,6 +35,8 @@ export interface Zustand {
   verlauf: VerlaufEintrag[];
   /** Import-Verlauf (PHASE-4.md, Abschnitt 6) */
   importe: ImportEintrag[];
+  /** Überschriften und Bewertungen im Tagebuch, je ID */
+  tagebuchtage: Map<string, Tagebuchtag>;
 }
 
 let zustand: Zustand = {
@@ -41,6 +46,7 @@ let zustand: Zustand = {
   einstellungen: { ...STANDARD_EINSTELLUNGEN },
   verlauf: [],
   importe: [],
+  tagebuchtage: new Map(),
 };
 
 export const suchindex = new Suchindex();
@@ -139,6 +145,15 @@ export function sichereImporte(importe: ImportEintrag[]): void {
   melde({ importe });
 }
 
+/** Überschrift oder Bewertung eines Tagebuchtags speichern. Alle Tage stehen unter einem Schlüssel. */
+export function sichereTagebuchtag(tag: Tagebuchtag): void {
+  const tagebuchtage = new Map(zustand.tagebuchtage);
+  tagebuchtage.set(tag.id, tag);
+  db.meta.put({ schluessel: 'tagebuchtage', wert: [...tagebuchtage.values()] }).catch(meldeFehler);
+  nachAenderung?.([tag.id]);
+  melde({ tagebuchtage });
+}
+
 // ───────────────────────── Ergebnis eines Abgleichs übernehmen ─────────────────────────
 
 function gleicheNotiz(a: Notiz, b: Notiz): boolean {
@@ -149,6 +164,7 @@ function gleicheNotiz(a: Notiz, b: Notiz): boolean {
       a.liste_id === b.liste_id &&
       a.position === b.position &&
       a.geloescht === b.geloescht &&
+      a.tagebuch_tag === b.tagebuch_tag &&
       JSON.stringify(a.aufgabe) === JSON.stringify(b.aufgabe))
   );
 }
@@ -200,12 +216,25 @@ export function uebernimmAbgleich(bestand: Datenbestand): void {
   const importeNeu = JSON.stringify(zustand.importe) !== JSON.stringify(importe);
   if (importeNeu) db.meta.put({ schluessel: 'importe', wert: importe }).catch(meldeFehler);
 
+  const tage = bestand.tagebuchtage ?? [];
+  const tageNeu = JSON.stringify([...zustand.tagebuchtage.values()].sort(nachId)) !== JSON.stringify([...tage].sort(nachId));
+  if (tageNeu) db.meta.put({ schluessel: 'tagebuchtage', wert: tage }).catch(meldeFehler);
+
   const geaendert =
-    neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 || einstellungenNeu || importeNeu;
+    neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 ||
+    einstellungenNeu ||
+    importeNeu ||
+    tageNeu;
   if (geaendert) {
-    melde({ ...(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {}), ...(importeNeu ? { importe } : {}) });
+    melde({
+      ...(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {}),
+      ...(importeNeu ? { importe } : {}),
+      ...(tageNeu ? { tagebuchtage: new Map(tage.map((t) => [t.id, t])) } : {}),
+    });
   }
 }
+
+const nachId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 // ───────────────────────── Laden und Ersetzen ─────────────────────────
 
@@ -225,6 +254,7 @@ export async function ladeAlles(): Promise<void> {
   const einstellungen = meta.find((m) => m.schluessel === 'einstellungen')?.wert as Einstellungen | undefined;
   const verlauf = meta.find((m) => m.schluessel === 'tagesgedanke_verlauf')?.wert as VerlaufEintrag[] | undefined;
   const importe = meta.find((m) => m.schluessel === 'importe')?.wert as ImportEintrag[] | undefined;
+  const tage = meta.find((m) => m.schluessel === 'tagebuchtage')?.wert as Tagebuchtag[] | undefined;
 
   zustand = {
     geladen: true,
@@ -233,10 +263,12 @@ export async function ladeAlles(): Promise<void> {
     einstellungen: { ...STANDARD_EINSTELLUNGEN, ...einstellungen },
     verlauf: verlauf ?? [],
     importe: importe ?? [],
+    tagebuchtage: new Map((tage ?? []).map((t) => [t.id, t])),
   };
   suchindex.setzeAlle(notizen);
 
   if (!zustand.listen.has(EINGANG_ID)) sichereListen([eingangsListe()]);
+  if (!zustand.listen.has(TAGEBUCH_ID)) sichereListen([tagebuchListe()]);
   raeumePapierkorbAuf();
   melde();
 }
@@ -249,6 +281,7 @@ export function alsBestand(): Datenbestand {
     einstellungen: zustand.einstellungen,
     tagesgedanke_verlauf: zustand.verlauf,
     ...(zustand.importe.length > 0 ? { importe: zustand.importe } : {}),
+    ...(zustand.tagebuchtage.size > 0 ? { tagebuchtage: [...zustand.tagebuchtage.values()] } : {}),
   };
 }
 
@@ -256,6 +289,7 @@ export function alsBestand(): Datenbestand {
 export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
   const listen = [...bestand.listen];
   if (!listen.some((l) => l.id === EINGANG_ID)) listen.push(eingangsListe());
+  if (!listen.some((l) => l.id === TAGEBUCH_ID)) listen.push(tagebuchListe());
 
   await db.transaction('rw', db.notizen, db.listen, db.meta, async () => {
     await Promise.all([db.notizen.clear(), db.listen.clear(), db.meta.clear()]);
@@ -265,6 +299,7 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
       { schluessel: 'einstellungen', wert: bestand.einstellungen },
       { schluessel: 'tagesgedanke_verlauf', wert: bestand.tagesgedanke_verlauf },
       { schluessel: 'importe', wert: bestand.importe ?? [] },
+      { schluessel: 'tagebuchtage', wert: bestand.tagebuchtage ?? [] },
     ]);
   });
 
@@ -275,6 +310,7 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
     einstellungen: bestand.einstellungen,
     verlauf: bestand.tagesgedanke_verlauf,
     importe: bestand.importe ?? [],
+    tagebuchtage: new Map((bestand.tagebuchtage ?? []).map((t) => [t.id, t])),
   };
   suchindex.setzeAlle(bestand.notizen);
   raeumePapierkorbAuf();

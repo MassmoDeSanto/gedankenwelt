@@ -87,6 +87,31 @@ export interface Notiz {
   verweise: string[];
   /** Nur bei importierten Notizen: zu welchem Import sie gehört (für „Rückgängig“). */
   import_id?: string;
+  /**
+   * Nur bei Notizen im Tagebuch: der Tag, zu dem sie gehört ("2026-11-16"). Kann vom
+   * Erstelldatum abweichen (nachgetragen, oder nach Mitternacht vor dem Tageswechsel geschrieben).
+   */
+  tagebuch_tag?: string;
+}
+
+/** Bewertung eines Tagebuchtags: 1 schlecht, 2 durchwachsen, 3 okay, 4 gut, 5 sehr gut */
+export type Bewertung = 1 | 2 | 3 | 4 | 5;
+
+/** Was zu einem Tag im Tagebuch gehört, außer dem Text (KONZEPT.md, Abschnitt 13.1). Höchstens einer pro Datum. */
+export interface Tagebuchtag {
+  id: string;
+  /** Ortsdatum "2026-11-16" */
+  datum: string;
+  /** Überschrift des Tages, leer = keine */
+  titel: string;
+  bewertung: Bewertung | null;
+  /** Text des übernommenen Schreibimpulses (ab Etappe 3) */
+  impuls: string | null;
+  /** IDs der an diesem Tag abgehakten Gewohnheiten (ab Etappe 3) */
+  gewohnheiten: string[];
+  erstellt: Zeitstempel;
+  geaendert: Zeitstempel;
+  geloescht: Zeitstempel | null;
 }
 
 export type TagesgedankeSchalter = 'an' | 'aus' | 'erben';
@@ -130,6 +155,19 @@ export interface ImportEintrag {
 export const EINGANG_ID = '00000000000000000000000000';
 export const EINGANG_NAME = 'Eingang';
 
+/**
+ * Feste ID der Liste „Tagebuch“ (KONZEPT.md, Abschnitt 13). Wie der Eingang auf jedem Gerät gleich,
+ * nicht löschbar und nicht verschiebbar. Ihre Notizen stehen in Drive nicht in einer Listendatei,
+ * sondern in Monatsdateien unter `_Tagebuch/`.
+ */
+export const TAGEBUCH_ID = '00000000000000000000000001';
+export const TAGEBUCH_NAME = 'Tagebuch';
+
+/** Listen, die die App selbst anlegt und die sich nicht löschen, verschieben oder umbenennen lassen. */
+export function istSystemliste(id: string): boolean {
+  return id === EINGANG_ID || id === TAGEBUCH_ID;
+}
+
 export interface Einstellungen {
   thema: 'dunkel' | 'hell';
   /** Wann die Einstellungen zuletzt geändert wurden (für den Abgleich: die neuere Fassung gewinnt). */
@@ -155,6 +193,8 @@ export interface Datenbestand {
   tagesgedanke_verlauf: VerlaufEintrag[];
   /** Import-Verlauf. Fehlt, solange nie etwas importiert wurde. */
   importe?: ImportEintrag[];
+  /** Überschriften und Bewertungen im Tagebuch. Fehlt, solange es keine gibt. */
+  tagebuchtage?: Tagebuchtag[];
 }
 
 export const STANDARD_EINSTELLUNGEN: Einstellungen = { thema: 'dunkel' };
@@ -197,6 +237,21 @@ export function ergaenzeAufgabe(aufgabe: Aufgabe): Aufgabe {
  * z. B. der leere Eingang eines neu eingerichteten Geräts nie den Eingang aus Google Drive.
  */
 export const URZEIT: Zeitstempel = '1970-01-01T00:00:00Z';
+
+export function tagebuchListe(jetzt: Zeitstempel = URZEIT): Liste {
+  return {
+    id: TAGEBUCH_ID,
+    name: TAGEBUCH_NAME,
+    eltern_id: null,
+    angeheftet: false,
+    // Für das Tagebuch ist der Gedanke des Tages aus (KONZEPT.md, Abschnitt 13.9).
+    tagesgedanke: 'aus',
+    position: -1,
+    erstellt: jetzt,
+    geaendert: jetzt,
+    geloescht: null,
+  };
+}
 
 export function eingangsListe(jetzt: Zeitstempel = URZEIT): Liste {
   return {

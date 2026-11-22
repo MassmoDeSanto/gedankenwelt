@@ -147,7 +147,11 @@ export function bearbeiteNotiz(notiz: Notiz, neuerText: string, nach: number | n
 
   const rest = teile.slice(1);
   const positionen = positionenZwischen(notiz.position, nach, rest.length);
-  const abgetrennt = rest.map((teil, i) => neueNotiz(teil, notiz.liste_id, positionen[i], umg));
+  const abgetrennt = rest.map((teil, i) => {
+    const neu = neueNotiz(teil, notiz.liste_id, positionen[i], umg);
+    // Im Tagebuch bleiben abgetrennte Absätze am selben Tag.
+    return notiz.tagebuch_tag ? { ...neu, tagebuch_tag: notiz.tagebuch_tag } : neu;
+  });
   return { notiz: bearbeitet, abgetrennt };
 }
 

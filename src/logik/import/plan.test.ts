@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EINGANG_ID, eingangsListe, type Datenbestand, type ImportEintrag, type Liste, type Notiz } from '../../modell/typen';
+import { EINGANG_ID, eingangsListe, tagebuchListe, type Datenbestand, type ImportEintrag, type Liste, type Notiz } from '../../modell/typen';
 import { verschmelze } from '../abgleich/verschmelzen';
 import { pfadText, alsKarte, tagesgedankeAktiv } from '../listen';
 import { ausDateien, zuDateien } from '../markdown';
@@ -406,7 +406,8 @@ describe('Hin- und Rückumwandlung', () => {
     const { bestand } = importiere(leererBestand(), alle.map((e) => auftrag(e)));
     const sortiert: Datenbestand = {
       ...bestand,
-      listen: [...bestand.listen].sort((a, b) => (a.id < b.id ? -1 : 1)),
+      // Die Liste „Tagebuch“ gibt es immer; beim Lesen kommt sie dazu.
+      listen: [...bestand.listen, tagebuchListe()].sort((a, b) => (a.id < b.id ? -1 : 1)),
       notizen: [...bestand.notizen].sort((a, b) => (a.id < b.id ? -1 : 1)),
     };
 

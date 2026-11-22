@@ -28,6 +28,7 @@ import {
   type Dateien,
   type LeseProtokoll,
 } from '../markdown';
+import { monatAusPfad } from '../tagebuch';
 import { VersionsKonflikt, type Drive, type DriveEintrag } from './drive';
 import { verschmelze } from './verschmelzen';
 
@@ -62,6 +63,7 @@ const nachId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.i
 
 /** Gehört diese Datei zum Format der App? Alles andere (z. B. der Ordner _import) bleibt unangetastet. */
 function istAppDatei(pfad: string): boolean {
+  if (monatAusPfad(pfad)) return true; // Monatsdatei des Tagebuchs, z. B. _Tagebuch/2026/2026-11.md
   const teile = pfad.split('/');
   const datei = teile.pop()!;
   if (teile.some((t) => t.startsWith('_'))) return false;
@@ -148,13 +150,20 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
   geraet.schreibeLokal(ergebnis);
 
   // ── 3. Drive angleichen ──
-  const { dateien: ziel, verzeichnis } = zuDateienMitVerzeichnis(ergebnis);
+  const { dateien: ziel, verzeichnis, monate } = zuDateienMitVerzeichnis(ergebnis);
 
   /** Vorhandene Drive-Dateien, erkannt an ihrer Kennung (ID der Liste bzw. Papierkorb/Meta) */
   const vorhanden = new Map<string, CacheEintrag>();
   for (const [pfad, e] of dateiJePfad) {
+    const monat = monatAusPfad(pfad);
     const kennung =
-      pfad === META_DATEI ? '_meta' : pfad === PAPIERKORB_DATEI ? '_papierkorb' : protokoll.listeJePfad.get(pfad);
+      pfad === META_DATEI
+        ? '_meta'
+        : pfad === PAPIERKORB_DATEI
+          ? '_papierkorb'
+          : monat
+            ? `_tagebuch|${monat}`
+            : protokoll.listeJePfad.get(pfad);
     if (!kennung) continue;
     if (vorhanden.has(kennung)) ueberzaehlig.push(e);
     else vorhanden.set(kennung, e);
@@ -162,6 +171,7 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
 
   const soll = [
     ...verzeichnis.map((v) => ({ kennung: v.id, pfad: v.pfad })),
+    ...monate.map((m) => ({ kennung: `_tagebuch|${m.monat}`, pfad: m.pfad })),
     { kennung: '_papierkorb', pfad: PAPIERKORB_DATEI },
     { kennung: '_meta', pfad: META_DATEI },
   ].map((s) => ({ ...s, inhalt: ziel.get(s.pfad)! }));
@@ -202,6 +212,24 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
       hochgeladen++;
     }
     ordnerIds.set(o.pfad, ordner.id);
+  }
+
+  // Ordner des Tagebuchs (_Tagebuch und je Jahr einer). Sie gehören zu keiner Liste und werden am Pfad erkannt.
+  for (const m of monate) {
+    const teile = ordnerVon(m.pfad).split('/');
+    for (let i = 1; i <= teile.length; i++) {
+      const pfad = teile.slice(0, i).join('/');
+      if (ordnerIds.has(pfad)) continue;
+      const eltern = ordnerIds.get(teile.slice(0, i - 1).join('/'))!;
+      let ordner = ordnerJePfad.get(pfad);
+      if (!ordner) {
+        ordner = await drive.erstelleOrdner(teile[i - 1], eltern);
+        cache.set(ordner.id, ordner);
+        pfade.set(ordner.id, pfad);
+        hochgeladen++;
+      }
+      ordnerIds.set(pfad, ordner.id);
+    }
   }
 
   // 3c. Dateien: neue anlegen, vorhandene an ihren Platz bringen
