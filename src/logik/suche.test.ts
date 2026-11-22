@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { TAGEBUCH_ID } from '../modell/typen';
 import { alsKarte } from './listen';
 import { LEERER_FILTER, Suchindex, markiere, type SuchFilter } from './suche';
+import { herkunftText } from './tagebuch';
 import { baueListe, baueNotiz } from './test-hilfe';
 
 const reise = baueListe({ name: 'Reise-App' });
@@ -187,5 +189,29 @@ describe('markiere', () => {
 
   it('ohne Treffer bleibt der Text ganz', () => {
     expect(markiere('nur Text', [])).toEqual([{ text: 'nur Text', treffer: false }]);
+  });
+});
+
+describe('Tagebuch in der Suche', () => {
+  const tagebuch = baueNotiz({ text: 'Heute die Preise der Konkurrenz angeschaut', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-20' });
+  const normal = baueNotiz({ text: 'Preise vergleichen', liste_id: geld.id });
+
+  function suche(tagebuchFilter: SuchFilter['tagebuch']): string[] {
+    const idx = new Suchindex();
+    idx.setzeAlle([tagebuch, normal]);
+    return idx.suche('preise', { ...LEERER_FILTER, tagebuch: tagebuchFilter }, listen).map((t) => t.notiz.text);
+  }
+
+  it('wird mit durchsucht, lässt sich auslassen oder allein durchsuchen', () => {
+    expect(suche('ein').sort()).toEqual([normal.text, tagebuch.text].sort());
+    expect(suche('aus')).toEqual([normal.text]);
+    expect(suche('nur')).toEqual([tagebuch.text]);
+  });
+
+  it('Herkunft: Tagebuch, Tag und Überschrift', () => {
+    const tag = { id: 'x', datum: '2026-11-20', titel: 'Marktrecherche', bewertung: null, impuls: null, gewohnheiten: [], erstellt: '', geaendert: '', geloescht: null };
+    expect(herkunftText(tagebuch, listen, [tag])).toBe('Tagebuch › 20. Nov 2026 · Marktrecherche');
+    expect(herkunftText(tagebuch, listen, [])).toBe('Tagebuch › 20. Nov 2026');
+    expect(herkunftText(normal, listen, [])).toBe('Reise-App › Monetarisierung');
   });
 });

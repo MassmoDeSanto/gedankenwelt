@@ -11,17 +11,30 @@ import {
 } from '../db/aktionen';
 import { useZustand } from '../db/speicher';
 import { kinderVon, mitNachfahren, pfadVon, tagesgedankeAktiv } from '../logik/listen';
-import { EINGANG_ID, type Liste } from '../modell/typen';
+import { EINGANG_ID, TAGEBUCH_ID, type Liste } from '../modell/typen';
 import { EingabeDialog, Kopfzeile, ListenWahlDialog, Menue, Segment } from './Bausteine';
 import { ListenKachel, useNotizAnzahl } from './Gedankenwelt';
 import { adresse, gehe, type Route } from './router';
 import { Schreibbereich } from './Schreibbereich';
 import { Korb, Nadel, OrdnerPfeil, Plus, Punkte, Stift } from './Symbole';
+import { TagebuchSeite } from './TagebuchSeite';
 import { merkeZuletzt } from './zuletzt';
 
 type Dialog = 'umbenennen' | 'unterliste' | 'verschieben' | null;
 
 export function Listenansicht({ id, notiz }: { id: string; notiz?: string }) {
+  // Links auf Notizen im Tagebuch (aus Suche, To-dos …) öffnen den Tag der Notiz.
+  if (id === TAGEBUCH_ID) return <TagebuchVerweis notiz={notiz} />;
+  return <ListenSeite id={id} notiz={notiz} />;
+}
+
+function TagebuchVerweis({ notiz }: { notiz?: string }) {
+  const z = useZustand();
+  const tag = notiz ? z.notizen.get(notiz)?.tagebuch_tag : undefined;
+  return <TagebuchSeite datum={tag} notiz={notiz} />;
+}
+
+function ListenSeite({ id, notiz }: { id: string; notiz?: string }) {
   const z = useZustand();
   const anzahl = useNotizAnzahl();
   const [dialog, setDialog] = useState<Dialog>(null);

@@ -1,6 +1,7 @@
 /** Einstiegspunkt: lädt Schriften und Gestaltung, holt die Daten und startet die Oberfläche. */
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/literata';
 import './ui/stil.css';
 
 import { StrictMode } from 'react';

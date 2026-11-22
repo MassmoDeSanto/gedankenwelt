@@ -28,6 +28,7 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - `src/logik/abgleich/`: Abgleich mit Google Drive (Zusammenführen, Abgleich-Runde, simuliertes Drive für Tests)
 - `src/logik/kalender/`: Erinnerungen (Kalender-Schnittstelle, Abgleich Aufgaben → Termine, simulierter Kalender)
 - `src/logik/wiederholung.ts`: Regeln für wiederkehrende Aufgaben
+- `src/logik/tagebuch.ts`: Tagebuch (Tageswechsel, Monatsdatei-Pfade, Herkunft). Die Monatsdateien selbst schreibt und liest `src/logik/markdown.ts`.
 - `src/logik/import/`: Import aus Apple Notizen (Kopf lesen, bereinigen, zerlegen, Einträge und Import bauen, Rückgängig). `marker.ts` ist die eine Tabelle für Checklisten- und Aufzählungszeichen. `testdaten/` enthält nur erfundene Dateien.
 - `src/db/`: Speicherung (IndexedDB), alle Änderungen an Daten, ZIP-Export/-Import, Beispieldaten
 - `src/ui/`: Oberfläche (React-Komponenten und CSS)
@@ -53,4 +54,6 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Sobald echte Beispieldateien in `import-beispiele/` liegen: Marker-Tabelle und Automatik daran prüfen und anpassen (README, Abschnitt 9, Schritt 7).
 - To-do-Feld überarbeitet am 20. Nov 2026: Priorität (hoch/mittel/niedrig) und Stand (offen/in Arbeit), Entscheidungen in README Abschnitt 11. Deadline = vorhandene Fälligkeit, Kategorie = Tags. Kalender-Probe (README Abschnitt 9, Schritt 4, Punkt 4) am 20. Nov 2026 bestanden.
 - Phase 5 (`[[ ]]`-Links, `~/Downloads/PHASE-5.md`) am 20. Nov 2026 auf Massimos Wunsch zurückgestellt – er braucht Verlinken nicht. Stattdessen: Notizen mit Namen und kompakte Listenansicht (README Abschnitt 12).
+- **Tagebuch** (KONZEPT.md Abschnitt 13, README Abschnitt 13): Etappe 1 am 22. Nov 2026 gebaut. Als Nächstes Etappe 2 (Monatsansicht, Startseiten-Karte, Tagesspur, „Vor einem Jahr“), dann 3 (Gewohnheiten, Schreibimpulse), 4 (Schreib-Erinnerung). „Aufräumen mit Claude“ später. Danach will Massimo das Design der ganzen App überarbeiten.
+- Tagebuch in Drive liegt unter `_Tagebuch/` (mit Unterstrich, Schutz vor alten App-Versionen). Gewohnheiten und Impuls-Pool (Etappe 3) nicht in `_meta.json` ablegen, ohne vorher zu prüfen, dass alte Versionen sie beim Zurückschreiben nicht verwerfen.
 - Geplante Reihenfolge danach: Phase 6 (Härtung, `~/Downloads/PHASE-6.md`) **vor** dem echten Import; iPhone ganz am Ende. Phase 6 setzt noch „Google nicht eingerichtet“ voraus – das ist überholt, der Einrichtungstag umfasst nur noch iPhone und Import.

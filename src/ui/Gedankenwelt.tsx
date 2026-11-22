@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { erstelleListe } from '../db/aktionen';
 import { useZustand, type Zustand } from '../db/speicher';
 import { kinderVon, mitNachfahren, pfadVon } from '../logik/listen';
-import type { Liste } from '../modell/typen';
+import { tagZuDatum, tagebuchTagVon } from '../logik/tagebuch';
+import { lokalJetzt } from '../logik/zeit';
+import { TAGEBUCH_ID, type Liste } from '../modell/typen';
 import { EingabeDialog, Kopfzeile } from './Bausteine';
 import { adresse, gehe } from './router';
 import { Plus } from './Symbole';
@@ -75,13 +77,35 @@ function AngeheftetKachel({ liste, z, anzahl }: { liste: Liste; z: Zustand; anza
   );
 }
 
+/** Das Tagebuch: immer ganz oben, in seinen eigenen Farben. */
+function TagebuchKachel({ z }: { z: Zustand }) {
+  const tage = new Set<string>();
+  for (const n of z.notizen.values()) if (n.liste_id === TAGEBUCH_ID && !n.geloescht && n.tagebuch_tag) tage.add(n.tagebuch_tag);
+  const heute = tagebuchTagVon(lokalJetzt());
+  const titel = tagZuDatum(z.tagebuchtage.values(), heute)?.titel;
+  return (
+    <div className="kachel gross tb-kachel">
+      <a className="kachel-kopf" href={adresse({ seite: 'tagebuch' })}>
+        <span className="kachel-name">
+          <span className="punkt tb-punkt" />
+          Tagebuch
+        </span>
+        <span className="mono meta">
+          {tage.size === 1 ? '1 Tag' : `${tage.size} Tage`}
+          {titel ? ` · heute: ${titel}` : tage.has(heute) ? ' · heute geschrieben' : ''}
+        </span>
+      </a>
+    </div>
+  );
+}
+
 export function Gedankenwelt() {
   const z = useZustand();
   const anzahl = useNotizAnzahl();
   const [neu, setNeu] = useState(false);
 
   const angeheftet = [...z.listen.values()]
-    .filter((l) => l.angeheftet && !l.geloescht)
+    .filter((l) => l.angeheftet && !l.geloescht && l.id !== TAGEBUCH_ID)
     .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de'));
   const uebrige = kinderVon(null, z.listen).filter((l) => !l.angeheftet);
 
@@ -97,19 +121,18 @@ export function Gedankenwelt() {
         }
       />
 
-      {angeheftet.length > 0 && (
-        <section>
-          <div className="etikett blau">Angeheftet</div>
-          <div className="kacheln gross">
-            {angeheftet.map((liste) => (
-              <AngeheftetKachel key={liste.id} liste={liste} z={z} anzahl={anzahl} />
-            ))}
-          </div>
-        </section>
-      )}
+      <section>
+        <div className="etikett blau">Angeheftet</div>
+        <div className="kacheln gross">
+          <TagebuchKachel z={z} />
+          {angeheftet.map((liste) => (
+            <AngeheftetKachel key={liste.id} liste={liste} z={z} anzahl={anzahl} />
+          ))}
+        </div>
+      </section>
 
       <section>
-        <div className="etikett">{angeheftet.length > 0 ? 'Alle Listen' : 'Listen'}</div>
+        <div className="etikett">Alle Listen</div>
         <div className="kacheln">
           {uebrige.map((liste) => (
             <ListenKachel key={liste.id} liste={liste} anzahl={anzahl(liste.id)} />

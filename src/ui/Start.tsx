@@ -4,10 +4,11 @@ import { erstelleNotizen, gedankeDesTages } from '../db/aktionen';
 import { suchindex, useZustand } from '../db/speicher';
 import { aufgabenZusammenfassung, gruppiereAufgaben, offeneAufgaben } from '../logik/aufgaben';
 import { kinderVon, pfadText } from '../logik/listen';
+import { herkunftText } from '../logik/tagebuch';
 import { LEERER_FILTER, filterAktiv, type SuchFilter, type Treffer } from '../logik/suche';
 import { tagHaeufigkeit } from '../logik/tags';
 import { formatKopfdatum, formatStempel, lokalesDatum } from '../logik/zeit';
-import { EINGANG_ID, type Notiz } from '../modell/typen';
+import { EINGANG_ID, TAGEBUCH_ID, type Notiz } from '../modell/typen';
 import { AbgleichSymbol } from './AbgleichSymbol';
 import { Segment, klassen, useListenBaum } from './Bausteine';
 import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
@@ -182,6 +183,19 @@ function FilterLeiste({ filter, setFilter }: { filter: SuchFilter; setFilter: (f
         />
       </div>
 
+      <div className="filter-zeile">
+        <span className="etikett">Tagebuch</span>
+        <Segment
+          wert={filter.tagebuch}
+          onWahl={(tagebuch) => setze({ tagebuch })}
+          optionen={[
+            { wert: 'ein', text: 'Mit' },
+            { wert: 'aus', text: 'Ohne' },
+            { wert: 'nur', text: 'Nur Tagebuch' },
+          ]}
+        />
+      </div>
+
       {filterAktiv(filter) && (
         <button className="textknopf" onClick={() => setFilter(LEERER_FILTER)}>
           Filter zurücksetzen
@@ -209,7 +223,9 @@ function Trefferliste({ treffer }: { treffer: Treffer[] }) {
             </div>
           </div>
           <div className="mono meta">
-            {pfadText(notiz.liste_id, z.listen)} · {formatStempel(notiz.erstellt, heute)}
+            {herkunftText(notiz, z.listen, z.tagebuchtage.values())}
+            {/* Im Tagebuch steht das Datum schon in der Herkunft. */}
+            {!notiz.tagebuch_tag && ` · ${formatStempel(notiz.erstellt, heute)}`}
           </div>
         </a>
       ))}
@@ -365,7 +381,7 @@ function TodoBox() {
 function WeltKnopf() {
   const z = useZustand();
   const untertitel = useMemo(() => {
-    const anzahl = [...z.listen.values()].filter((l) => !l.geloescht).length;
+    const anzahl = [...z.listen.values()].filter((l) => !l.geloescht && l.id !== TAGEBUCH_ID).length;
     let zuletzt = z.listen.get(zuletztGeoeffnet() ?? '');
     if (!zuletzt || zuletzt.geloescht) {
       // Ersatz: die Liste mit der zuletzt geänderten Notiz

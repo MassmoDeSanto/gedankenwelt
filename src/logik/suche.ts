@@ -6,7 +6,7 @@
  * Index (ein Nachschlageverzeichnis Wort → Notizen) im Arbeitsspeicher auf.
  */
 import MiniSearch from 'minisearch';
-import type { Notiz } from '../modell/typen';
+import { TAGEBUCH_ID, type Notiz } from '../modell/typen';
 import { mitNachfahren, type ListenKarte } from './listen';
 import { datumVon } from './zeit';
 
@@ -21,6 +21,8 @@ export interface SuchFilter {
   von: string | null;
   bis: string | null;
   aufgaben: 'alle' | 'offen' | 'erledigt' | 'keine';
+  /** Tagebuch mit durchsuchen, auslassen oder nur darin suchen (KONZEPT.md, Abschnitt 13.9) */
+  tagebuch: 'ein' | 'aus' | 'nur';
 }
 
 export const LEERER_FILTER: SuchFilter = {
@@ -30,6 +32,7 @@ export const LEERER_FILTER: SuchFilter = {
   von: null,
   bis: null,
   aufgaben: 'alle',
+  tagebuch: 'ein',
 };
 
 export function filterAktiv(filter: SuchFilter): boolean {
@@ -38,7 +41,8 @@ export function filterAktiv(filter: SuchFilter): boolean {
     filter.tags.length > 0 ||
     filter.von !== null ||
     filter.bis !== null ||
-    filter.aufgaben !== 'alle'
+    filter.aufgaben !== 'alle' ||
+    filter.tagebuch !== 'ein'
   );
 }
 
@@ -60,6 +64,9 @@ export function normalisiere(wort: string): string {
 function passt(notiz: Notiz, filter: SuchFilter, listenIds: Set<string> | null): boolean {
   if (listenIds && !listenIds.has(notiz.liste_id)) return false;
   for (const tag of filter.tags) if (!notiz.tags.includes(tag)) return false;
+  const imTagebuch = notiz.liste_id === TAGEBUCH_ID;
+  if (filter.tagebuch === 'aus' && imTagebuch) return false;
+  if (filter.tagebuch === 'nur' && !imTagebuch) return false;
 
   if (filter.aufgaben === 'offen' && !(notiz.aufgabe && !notiz.aufgabe.erledigt)) return false;
   if (filter.aufgaben === 'erledigt' && !notiz.aufgabe?.erledigt) return false;

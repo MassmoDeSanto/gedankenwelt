@@ -10,6 +10,7 @@ import { Papierkorb } from './Papierkorb';
 import { Meldungsleiste } from './Meldungsleiste';
 import { useRoute, type Route } from './router';
 import { Start } from './Start';
+import { TagebuchSeite } from './TagebuchSeite';
 
 export function App() {
   const z = useZustand();
@@ -53,6 +54,8 @@ function seite(route: Route) {
       return <Papierkorb />;
     case 'import':
       return <ImportSeite />;
+    case 'tagebuch':
+      return <TagebuchSeite datum={route.datum} notiz={route.notiz} />;
     default:
       return <Start />;
   }

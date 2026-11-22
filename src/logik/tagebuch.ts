@@ -1,7 +1,8 @@
 /**
  * Tagebuch (KONZEPT.md, Abschnitt 13): Regeln ohne Oberfläche und ohne Datenbank.
  */
-import type { Bewertung, Notiz, Tagebuchtag } from '../modell/typen';
+import { TAGEBUCH_ID, type Bewertung, type Notiz, type Tagebuchtag } from '../modell/typen';
+import { pfadText, type ListenKarte } from './listen';
 import { festeId } from '../modell/ulid';
 import { verschiebeDatum } from './zeit';
 
@@ -70,4 +71,34 @@ export function tagHatInhalt(tag: Tagebuchtag): boolean {
  */
 export function tagebuchtagId(datum: string): string {
   return festeId(`tagebuchtag|${datum}`);
+}
+
+const MONATE_LANG = [
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+];
+const WOCHENTAGE_LANG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const MONATE_KURZ = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+/** Teile des großen Datums auf der Tagesseite: „22“, „Sonntag“, „November 2026“. */
+export function datumsTeile(datum: string): { tageszahl: string; wochentag: string; monat: string } {
+  const [j, m, t] = datum.split('-').map(Number);
+  const wochentag = new Date(Date.UTC(j, m - 1, t)).getUTCDay();
+  return { tageszahl: String(t), wochentag: WOCHENTAGE_LANG[wochentag], monat: `${MONATE_LANG[m - 1]} ${j}` };
+}
+
+/** „22. Nov 2026“ – für Herkunftspfade in der Suche. */
+export function tagKurz(datum: string): string {
+  const [j, m, t] = datum.split('-').map(Number);
+  return `${t}. ${MONATE_KURZ[m - 1]} ${j}`;
+}
+
+/**
+ * Herkunft einer Notiz als Text: „Reise-App › Monetarisierung“, im Tagebuch
+ * „Tagebuch › 22. Nov 2026 · Überschrift“.
+ */
+export function herkunftText(notiz: Notiz, listen: ListenKarte, tage: Iterable<Tagebuchtag>): string {
+  if (notiz.liste_id !== TAGEBUCH_ID || !notiz.tagebuch_tag) return pfadText(notiz.liste_id, listen);
+  const titel = tagZuDatum(tage, notiz.tagebuch_tag)?.titel;
+  return `Tagebuch › ${tagKurz(notiz.tagebuch_tag)}${titel ? ` · ${titel}` : ''}`;
 }

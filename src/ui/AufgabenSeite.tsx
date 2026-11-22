@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { useZustand } from '../db/speicher';
 import { gruppiereAufgaben, offeneAufgaben } from '../logik/aufgaben';
-import { pfadText } from '../logik/listen';
+import { herkunftText } from '../logik/tagebuch';
 import { lokalesDatum } from '../logik/zeit';
 import type { Notiz } from '../modell/typen';
 import { Kopfzeile, klassen } from './Bausteine';
@@ -24,7 +24,7 @@ export function AufgabenSeite() {
         {aufgaben.map((notiz) => (
           <div key={notiz.id} className="aufgabe-mit-pfad">
             <AufgabenZeile notiz={notiz} heute={heute} mitListe={false} />
-            <div className="mono meta aufgabenpfad">{pfadText(notiz.liste_id, z.listen)}</div>
+            <div className="mono meta aufgabenpfad">{herkunftText(notiz, z.listen, z.tagebuchtage.values())}</div>
           </div>
         ))}
       </section>

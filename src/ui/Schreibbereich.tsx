@@ -79,9 +79,20 @@ interface Steuerung {
 /** Beim Ziehen nur hoch und runter bewegen. */
 const nurSenkrecht: Modifier = ({ transform }) => ({ ...transform, x: 0 });
 
-export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; hervorheben?: string }) {
+export function Schreibbereich({
+  liste_id,
+  hervorheben,
+  tag,
+  platzhalterLeer = 'Schreib einfach los. Zweimal Enter beginnt eine neue Notiz.',
+}: {
+  liste_id: string;
+  hervorheben?: string;
+  /** Im Tagebuch: nur die Notizen dieses Tages. Dort gibt es kein Zuklappen (der Tag hat eine eigene Überschrift). */
+  tag?: string;
+  platzhalterLeer?: string;
+}) {
   const z = useZustand();
-  const notizen = useMemo(() => notizenVon(liste_id), [z, liste_id]);
+  const notizen = useMemo(() => notizenVon(liste_id, tag), [z, liste_id, tag]);
   const tags = useMemo(() => tagHaeufigkeit(z.notizen.values()), [z]);
 
   const [entwurf, setEntwurf] = useState<Entwurf>(() => ({ id: neueId(), nachId: null }));
@@ -130,7 +141,7 @@ export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; he
       return !!ziel;
     },
     neuDarunter: (id) => {
-      const reihe = notizenVon(liste_id);
+      const reihe = notizenVon(liste_id, tag);
       const istLetzte = reihe[reihe.length - 1]?.id === id;
       // Ist der bisherige Entwurf gerade selbst zur Notiz geworden, braucht es eine neue ID.
       const entwurfId = leseZustand().notizen.has(entwurf.id) ? neueId() : entwurf.id;
@@ -142,7 +153,7 @@ export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; he
       if (ergebnis) setFokus({ id: ergebnis.obere.id, caret: ergebnis.nahtstelle });
     },
     mitUntererZusammen: (id) => {
-      const reihe = notizenVon(liste_id);
+      const reihe = notizenVon(liste_id, tag);
       const untere = reihe[reihe.findIndex((n) => n.id === id) + 1];
       const ergebnis = untere ? fuehreMitObererZusammen(untere.id) : null;
       if (ergebnis) setFokus({ id, caret: ergebnis.nahtstelle });
@@ -180,6 +191,7 @@ export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; he
               id={e.id}
               notiz={e.notiz}
               liste_id={liste_id}
+              tag={tag}
               nachId={entwurf.nachId}
               fokus={fokus?.id === e.id ? fokus : null}
               aktiv={aktiv === e.id}
@@ -188,7 +200,7 @@ export function Schreibbereich({ liste_id, hervorheben }: { liste_id: string; he
               steuerung={steuerung}
               platzhalter={
                 notizen.length === 0
-                  ? 'Schreib einfach los. Zweimal Enter beginnt eine neue Notiz.'
+                  ? platzhalterLeer
                   : e.notiz || entwurf.nachId
                     ? ''
                     : 'Neue Notiz …'
@@ -256,8 +268,8 @@ function faerbeTags(text: string, schluessel: string): ReactNode[] {
  * Hat die Notiz mehr als eine Zeile, erscheint die erste als Name hervorgehoben (README, Abschnitt 12).
  * Die Hervorhebung ändert die Zeichenbreite nicht, damit der Cursor beim Tippen an der richtigen Stelle bleibt.
  */
-function Spiegel({ text, roh }: { text: string; roh: boolean }) {
-  const mitName = nameUndRest(text) !== null;
+function Spiegel({ text, roh, ohneName = false }: { text: string; roh: boolean; ohneName?: boolean }) {
+  const mitName = !ohneName && nameUndRest(text) !== null;
   if (!roh) {
     return (
       <div className={klassen('spiegel', mitName && 'mit-name')} aria-hidden="true">
@@ -308,6 +320,7 @@ interface BlockProps {
   /** null = der Entwurf (noch keine gespeicherte Notiz) */
   notiz: Notiz | null;
   liste_id: string;
+  tag?: string;
   nachId: string | null;
   fokus: FokusWunsch | null;
   aktiv: boolean;
@@ -317,7 +330,7 @@ interface BlockProps {
   platzhalter: string;
 }
 
-function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags, steuerung, platzhalter }: BlockProps) {
+function NotizBlock({ id, notiz, liste_id, tag, nachId, fokus, aktiv, leuchtet, tags, steuerung, platzhalter }: BlockProps) {
   const sortierbar = useSortable({ id, disabled: !notiz });
   const feld = useRef<HTMLTextAreaElement>(null);
 
@@ -340,7 +353,7 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
   }
   // Sprung aus Suche, Gedanke des Tages oder To-do-Box: aufgeklappt zeigen.
   if (leuchtet && !offen) setOffen(true);
-  const teile = notiz ? nameUndRest(notiz.text) : null;
+  const teile = notiz && !tag ? nameUndRest(notiz.text) : null;
   const zu = teile !== null && !offen && !aktiv;
 
   // Hat sich der gespeicherte Text von außen geändert (Teilen, Zusammenführen, Aufgaben-Kästchen),
@@ -390,7 +403,7 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
       erste = ergebnis?.notiz ?? null;
       weitere = ergebnis?.abgetrennt ?? [];
     } else {
-      const neue = erstelleNotizen(liste_id, wert, { ersteId: id, nachId });
+      const neue = erstelleNotizen(liste_id, wert, { ersteId: id, nachId, tag });
       erste = neue[0] ?? null;
       weitere = neue.slice(1);
     }
@@ -578,7 +591,7 @@ function NotizBlock({ id, notiz, liste_id, nachId, fokus, aktiv, leuchtet, tags,
       ) : (
         <div className="notiz-inhalt">
           <div className="textfeld">
-            <Spiegel text={roh} roh={aktiv} />
+            <Spiegel text={roh} roh={aktiv} ohneName={!!tag} />
             <textarea
               ref={feld}
               rows={1}

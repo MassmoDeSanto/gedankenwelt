@@ -10,7 +10,7 @@
  * Alles hier ist „rein“: keine Datenbank, kein Browser.
  */
 import type { ImportEintrag, ImportWeg, Liste, Notiz, Zeitstempel } from '../../modell/typen';
-import { neueAufgabe } from '../../modell/typen';
+import { TAGEBUCH_ID, neueAufgabe } from '../../modell/typen';
 import type { Umgebung } from '../absatz';
 import { naechstePosition } from '../listen';
 import { leseTags } from '../tags';
@@ -274,7 +274,8 @@ export function baueImport(
   const listen: Liste[] = [];
   const notizen: Notiz[] = [];
   /** Alle aktiven Listen: die vorhandenen und die in diesem Import schon angelegten */
-  const alle: Liste[] = [...vorhandeneListen].filter((l) => !l.geloescht);
+  // Ins Tagebuch wird nie importiert: Ein Apple-Ordner „Tagebuch“ wird eine eigene Liste.
+  const alle: Liste[] = [...vorhandeneListen].filter((l) => !l.geloescht && l.id !== TAGEBUCH_ID);
 
   const neueListe = (name: string, eltern_id: string | null, erstellt: Zeitstempel, tagesgedanke: Liste['tagesgedanke']) => {
     const liste: Liste = {

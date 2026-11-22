@@ -504,7 +504,7 @@ Stand 17. Nov 2026: Die Client-ID steht in `src/konfig.ts` und ist veröffentlic
 
 ### 3. Laptop verbinden – erledigt am 17. Nov 2026
 
-Ergebnis: Anmeldung geklappt, die Wolke zeigt einen Haken, in Google Drive liegt der Ordner „Gedankenwelt“ mit lesbaren Markdown-Dateien. Damit ist der Drive-Abgleich zum ersten Mal gegen das echte Google gelaufen. Noch nicht berichtet: ob „Still erneuern“ (Punkt 5) klappt.
+Ergebnis: Anmeldung geklappt, die Wolke zeigt einen Haken, in Google Drive liegt der Ordner „Gedankenwelt“ mit lesbaren Markdown-Dateien. Damit ist der Drive-Abgleich zum ersten Mal gegen das echte Google gelaufen. „Still erneuern“ (Punkt 5) am Laptop nicht nötig (20. Nov 2026): Im Alltag bleibt die Anmeldung bestehen. Der Test gehört zur iPhone-Prüfung (Schritt 5), weil Safari strenger ist.
 
 
 1. <https://massmodesanto.github.io/gedankenwelt/> in Chrome öffnen.
@@ -541,6 +541,8 @@ Meldet der Selbsttest einen Fehler, schick mir den Wortlaut. Das ist die Stelle,
 **Wenn du trotzdem Apples Kalender nutzen willst:** iPhone-Einstellungen → Kalender → Accounts → Google-Konto hinzufügen, „Kalender“ einschalten. Zusätzliche Kalender wie „Gedankenwelt“ gibst du für Apple-Geräte unter <https://calendar.google.com/calendar/syncselect> frei (Haken bei „Gedankenwelt“ setzen, speichern). Diesen Weg kenne ich aus früheren Google-Anleitungen; ich habe ihn für diese README nicht neu nachgeprüft.
 
 ### 6. Laptop: Benachrichtigungen in Chrome unter Ubuntu
+
+**Nicht nötig (Massimo, 20. Nov 2026):** Erinnerungen sollen nur am iPhone kommen (Google-Kalender-App, Schritt 5). Die Anleitung bleibt für den Fall, dass sich das ändert.
 
 Quelle: [Google-Hilfe „Fehlende Kalender-Benachrichtigungen“](https://support.google.com/calendar/answer/12200012), Stand 16. Nov 2026.
 
@@ -879,4 +881,64 @@ Wunsch von Massimo vom 20. Nov 2026, statt Phase 5 (Verlinken mit `[[ ]]`, zurü
 Gebaut am 20. Nov 2026. Geprüft: Tests für die Namens-Regel; im Browser mehrzeilige Notiz geschrieben (Name wird beim Tippen hervorgehoben), Zuklappen beim Verlassen, Aufklappen per Klick (ohne dass die Tastatur aufgeht), Zuklappen per Pfeil, Pfeiltaste in eine zugeklappte Notiz, Sprung aus der Suche, Handy-Breite. Nicht geprüft: am iPhone.
 
 Der Name ist nicht echt fett, sondern mit einer feinen Kontur hervorgehoben. Echte Fettschrift ist breiter und würde beim Tippen den Cursor gegen den sichtbaren Text verschieben.
+
+## 13. Tagebuch
+
+Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut wird in vier Etappen, „Aufräumen mit Claude“ kommt später.
+
+| Etappe | Inhalt | Stand |
+|---|---|---|
+| 1 | Tagesseite, Überschrift, Bewertung, Drive-Monatsdateien, Suche, Design Papier/Kerzenlicht | gebaut am 22. Nov 2026 |
+| 2 | Monatsansicht, Karte auf der Startseite, Tagesspur, „Vor einem Jahr“ | offen |
+| 3 | Gewohnheiten, Schreibimpulse | offen |
+| 4 | Tägliche Schreib-Erinnerung über den Kalender (abschaltbar) | offen |
+| später | Knopf „Aufräumen mit Claude“ | zurückgestellt |
+
+### So benutzt du es (Etappe 1)
+
+- **Öffnen:** Gedankenwelt → oberste Kachel „Tagebuch“. Sie zeigt immer den heutigen Tag.
+- **Tag wechseln:** ‹ › neben dem Datum, am Handy nach links/rechts wischen, oder das Kalender-Symbol oben rechts zum Nachtragen. In die Zukunft geht es nicht.
+- **Tageswechsel um 4 Uhr:** Was du um 1 Uhr nachts schreibst, gehört noch zum Vortag.
+- **Überschrift und Bewertung:** Überschrift antippen und tippen. Die Bewertung hat fünf Stufen (schlecht, durchwachsen, okay, gut, sehr gut); dieselbe Stufe nochmal antippen entfernt sie.
+- **Schreiben:** wie überall in der App – einmal Enter neue Zeile, zweimal Enter neuer Absatz. `#tags` und `[ ]`-Aufgaben funktionieren; Aufgaben erscheinen in den To-dos mit Herkunft „Tagebuch“.
+- **Suche:** findet auch Tagebuch-Einträge („Tagebuch › 22. Nov 2026 · Überschrift“). Im Filter: Tagebuch mit / ohne / nur Tagebuch.
+- **Gedanke des Tages:** nimmt nie etwas aus dem Tagebuch.
+
+### So steht es in Drive
+
+Eine Datei pro Monat: `Gedankenwelt/_Tagebuch/2026/2026-11.md`.
+
+```
+---
+art: tagebuch
+monat: 2026-11
+---
+
+## 2026-11-22 · Ein ruhiger Sonntag
+<!-- tag-id:… erstellt:… geaendert:… bewertung:4 -->
+
+Lange spazieren gewesen.
+<!-- id:… erstellt:… geaendert:… pos:1 -->
+```
+
+- Die Überschrift steht lesbar in der Tageszeile, die Bewertung im Kommentar darunter.
+- Von Hand ergänzte Absätze und Tage (auch mit Überschrift) werden beim nächsten Abgleich übernommen. Absätze ganz oben, vor der ersten Tageszeile, gehören zum Ersten des Monats.
+- Gelöschte Tagebuch-Absätze liegen wie alles andere in `_papierkorb.md` und merken sich ihren Tag (`tag:2026-11-22`).
+
+### Entscheidungen
+
+- **Ordner `_Tagebuch/` statt `Tagebuch/` (Abweichung vom Konzept):** Ältere Versionen der App lesen jeden Ordner ohne Unterstrich als Listen. Ein lange offener alter Browser-Tab hätte die Monatsdateien sonst als Listen „Tagebuch › 2026 › 2026-11“ gedeutet und umgeschrieben. Ordner mit Unterstrich lassen alle bisherigen Versionen garantiert in Ruhe.
+- **Feste Liste mit fester ID** (wie der Eingang) statt eines neuen Feldes `art` an jeder Liste. Sie ist nicht löschbar, nicht verschiebbar, nicht umbenennbar und erscheint nicht in der Listenauswahl. Ein Apple-Ordner „Tagebuch“ wird beim Import eine normale Liste.
+- **Tagebuchtag mit fester ID aus dem Datum:** Setzen Laptop und iPhone offline beide eine Überschrift für denselben Tag, bleibt es ein Eintrag; die neuere Fassung gewinnt.
+- **Keine Namen und kein Zuklappen im Tagebuch** (Abschnitt 12 gilt dort nicht): Der Tag hat eine eigene Überschrift, der Text soll sich durchgehend lesen.
+- **Tageswechsel fest 4 Uhr.** Einstellbar machen, falls nötig.
+- **Schrift Literata** ist als Programmbaustein eingebunden (keine Verbindung zu Google Fonts, funktioniert offline).
+
+### Geprüft und nicht geprüft
+
+Geprüft: Tests für Tageszuordnung, Monatsdatei (exakt hin und zurück, von Hand geschrieben, Papierkorb), Abgleich zweier Geräte (auch derselbe Tag auf beiden), fremde Dateien in `_Tagebuch/`, Suchfilter und Herkunft. Im Browser mit simuliertem Drive: Überschrift, Bewertung, Absätze und Aufgabe schreiben, Vortag nachtragen, Wischen, Sprung aus der To-do-Box, Suche mit Filter, Papier (hell) und Kerzenlicht (dunkel), Handy-Breite.
+
+Nicht geprüft: mit dem echten Google Drive, am iPhone (Wischen, Kalender-Auswahl, Tastatur).
+
+**Wichtig nach dem Update:** Die App auf jedem Gerät einmal neu laden, damit keine alte Version mehr läuft.
 

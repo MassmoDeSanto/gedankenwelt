@@ -1,5 +1,5 @@
 /** Hilfsfunktionen für den Listen-Baum (Listen mit beliebig tiefen Unterlisten). */
-import type { Liste } from '../modell/typen';
+import { TAGEBUCH_ID, type Liste } from '../modell/typen';
 
 export type ListenKarte = Map<string, Liste>;
 
@@ -9,10 +9,13 @@ export function alsKarte(listen: Iterable<Liste>): ListenKarte {
   return karte;
 }
 
-/** Aktive (nicht gelöschte) Unterlisten, sortiert nach Position. `eltern_id` null = oberste Ebene. */
+/**
+ * Aktive (nicht gelöschte) Unterlisten, sortiert nach Position. `eltern_id` null = oberste Ebene.
+ * Das Tagebuch gehört nicht in den Listenbaum: Es hat eine eigene Seite und ist kein Ziel zum Verschieben.
+ */
 export function kinderVon(eltern_id: string | null, listen: ListenKarte): Liste[] {
   return [...listen.values()]
-    .filter((l) => l.eltern_id === eltern_id && !l.geloescht)
+    .filter((l) => l.eltern_id === eltern_id && !l.geloescht && l.id !== TAGEBUCH_ID)
     .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
 }
 

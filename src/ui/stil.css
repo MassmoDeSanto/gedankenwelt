@@ -31,7 +31,24 @@
 
   --schrift: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --serif: 'Literata Variable', Georgia, 'Times New Roman', serif;
   --kurz: 120ms;
+
+  /* Tagebuch „Kerzenlicht“ (KONZEPT.md, Abschnitt 13.7) */
+  --tb-hintergrund: #1b1712;
+  --tb-flaeche: #25201a;
+  --tb-chip: #2e281f;
+  --tb-linie: #2e281f;
+  --tb-text: #ece3d3;
+  --tb-gedaempft: #a39684;
+  --tb-meta: #7d7263;
+  --tb-akzent: #e0a45c;
+  --tb-treffer: rgba(224, 164, 92, 0.22);
+  --tb-stufe-1: #3a2f22;
+  --tb-stufe-2: #5c4529;
+  --tb-stufe-3: #8a6534;
+  --tb-stufe-4: #b98446;
+  --tb-stufe-5: #e0a45c;
 
   color-scheme: dark;
 }
@@ -55,6 +72,22 @@
   --auf-violett: #ffffff;
   --treffer: rgba(106, 90, 205, 0.2);
   --schleier: rgba(28, 31, 41, 0.32);
+
+  /* Tagebuch „Papier“ */
+  --tb-hintergrund: #f4eee3;
+  --tb-flaeche: #ebe3d6;
+  --tb-chip: #e3d9c8;
+  --tb-linie: #e3d9c8;
+  --tb-text: #2e2620;
+  --tb-gedaempft: #7d6e60;
+  --tb-meta: #9a8b7a;
+  --tb-akzent: #b5654a;
+  --tb-treffer: rgba(181, 101, 74, 0.18);
+  --tb-stufe-1: #e6cfc0;
+  --tb-stufe-2: #d9a891;
+  --tb-stufe-3: #c8826a;
+  --tb-stufe-4: #b5654a;
+  --tb-stufe-5: #97472e;
 
   color-scheme: light;
 }
@@ -2069,3 +2102,202 @@ details.diagnose > summary {
     animation: none !important;
   }
 }
+
+/* ───────── Tagebuch: eigener Raum „Papier / Kerzenlicht“ (KONZEPT.md, Abschnitt 13.7) ─────────
+   Solange die Tagesseite offen ist, steht data-raum="tagebuch" am <html>-Element. Dann zeigen die
+   allgemeinen Farbvariablen auf die Tagebuch-Farben – Kopfzeile, Schreibfeld und Menüs passen sich
+   so von selbst an. Hell/Dunkel folgt dem Schalter der App. */
+
+:root[data-raum='tagebuch'] {
+  --hintergrund: var(--tb-hintergrund);
+  --flaeche: var(--tb-flaeche);
+  --erhoeht: var(--tb-flaeche);
+  --chip: var(--tb-chip);
+  --text: var(--tb-text);
+  --gedaempft: var(--tb-gedaempft);
+  --meta: var(--tb-meta);
+  --linie: var(--tb-linie);
+  --violett: var(--tb-akzent);
+  --treffer: var(--tb-treffer);
+}
+
+.tb-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding-bottom: 2px;
+}
+
+.tb-nav .textknopf {
+  margin-right: 6px;
+}
+
+.tb-nav-text {
+  color: var(--meta);
+}
+
+.symbolknopf:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.tb-kalender {
+  position: relative;
+}
+
+/* Das Datumsfeld bleibt unsichtbar; das Kalender-Symbol öffnet seine Auswahl. */
+.tb-kalender input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tb-datum {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin: 8px 0 14px;
+}
+
+.tb-tageszahl {
+  font-family: var(--serif);
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+.tb-datum-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 4px;
+  font-size: 12px;
+  color: var(--gedaempft);
+}
+
+.tb-kopf {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.tb-titel {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.3;
+  outline: none;
+}
+
+.tb-titel::placeholder {
+  color: var(--meta);
+  font-weight: 400;
+}
+
+.tb-bewertung {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tb-stufen {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* Jede Stufe ist ein großes, unsichtbares Tippfeld mit einem schmalen Balken darin. */
+.tb-stufe {
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.tb-stufe::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--linie);
+  transition: background var(--kurz);
+}
+
+.tb-stufe:hover::before {
+  background: var(--chip);
+}
+
+.tb-stufen[data-wert='1'] .tb-stufe.an::before {
+  background: var(--tb-stufe-1);
+}
+.tb-stufen[data-wert='2'] .tb-stufe.an::before {
+  background: var(--tb-stufe-2);
+}
+.tb-stufen[data-wert='3'] .tb-stufe.an::before {
+  background: var(--tb-stufe-3);
+}
+.tb-stufen[data-wert='4'] .tb-stufe.an::before {
+  background: var(--tb-stufe-4);
+}
+.tb-stufen[data-wert='5'] .tb-stufe.an::before {
+  background: var(--tb-stufe-5);
+}
+
+.tb-bewertung-text {
+  font-size: 12px;
+  color: var(--gedaempft);
+}
+
+.tb-text {
+  margin-top: 18px;
+}
+
+/* Tagebuchtext: Serifenschrift, großzügiger Zeilenabstand. Spiegel und Textfeld müssen gleich bleiben. */
+.tagebuch .textfeld > .spiegel,
+.tagebuch .textfeld > textarea {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.tagebuch .kaestchen {
+  margin-top: 6px;
+}
+
+/* Die Tagebuch-Kachel in der Gedankenwelt trägt als einzige die Tagebuch-Farben. */
+.kachel.tb-kachel {
+  background: var(--tb-flaeche);
+  color: var(--tb-text);
+}
+
+.tb-kachel .kachel-kopf:hover {
+  background: var(--tb-chip);
+}
+
+.tb-kachel .kachel-name {
+  font-family: var(--serif);
+}
+
+.tb-kachel .meta {
+  color: var(--tb-meta);
+}
+
+.punkt.tb-punkt {
+  background: var(--tb-akzent);
+}
+

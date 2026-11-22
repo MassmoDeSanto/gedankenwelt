@@ -130,6 +130,14 @@ export const PfeilRechts = () => (
 const WOLKE = 'M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.6a4 4 0 0 1-1 7.9z';
 
 /** Abgeglichen: Wolke mit Haken */
+/** Kalenderblatt (Tag im Tagebuch wählen) */
+export const Kalender = () => (
+  <Symbol groesse={18}>
+    <rect x="4" y="5" width="16" height="15" rx="2" />
+    <path d="M4 10h16M9 3v4m6-4v4" />
+  </Symbol>
+);
+
 /** Spitze zum Auf- und Zuklappen einer Notiz */
 export const Winkel = () => (
   <Symbol groesse={18}>
