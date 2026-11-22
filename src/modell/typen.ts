@@ -104,6 +104,8 @@ export interface Tagebuchtag {
   datum: string;
   /** Überschrift des Tages, leer = keine */
   titel: string;
+  /** Wo du an diesem Tag warst, z. B. „Lissabon“. Fehlt oder leer = kein Ort. */
+  ort?: string;
   bewertung: Bewertung | null;
   /** Text des übernommenen Schreibimpulses (ab Etappe 3) */
   impuls: string | null;

@@ -2803,3 +2803,36 @@ a.tb-zelle:hover {
   width: auto;
   height: 38px;
 }
+
+/* Tagebuch: Ort des Tages */
+.tb-ort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -6px;
+  color: var(--meta);
+}
+
+.tb-ort svg {
+  flex: none;
+}
+
+.tb-ort-feld {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gedaempft);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+}
+
+.tb-ort-feld::placeholder {
+  color: var(--meta);
+}
+
+.tb-ort-karte {
+  font-size: 13px;
+}

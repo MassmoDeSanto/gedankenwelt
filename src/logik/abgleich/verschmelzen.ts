@@ -57,6 +57,7 @@ function gleicherTag(a: Tagebuchtag, b: Tagebuchtag): boolean {
   return (
     a.datum === b.datum &&
     a.titel === b.titel &&
+    (a.ort ?? '') === (b.ort ?? '') &&
     a.bewertung === b.bewertung &&
     a.impuls === b.impuls &&
     a.geloescht === b.geloescht &&

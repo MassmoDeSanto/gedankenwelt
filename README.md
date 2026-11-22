@@ -933,6 +933,14 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 - **Grenze:** Die Erinnerung kommt jeden Tag, auch wenn du an dem Tag schon geschrieben hast. Der Kalender kann das nicht wissen.
 - Geprüft: Tests (genau ein Serientermin, Uhrzeit ändern, ausschalten, zwei Geräte gleichzeitig, „Neu aufbauen“ räumt ihn nicht weg, von Hand gelöscht; Google-Format mit `RRULE:FREQ=DAILY` hin und zurück; Dateiformat). Im Browser mit simuliertem Kalender: einschalten, Uhrzeit ändern, ausschalten. Nicht geprüft: mit dem echten Google Kalender und am iPhone (Abschnitt 9, Schritt 5, Punkt 5).
 
+### Ort des Tages (22. Nov 2026)
+
+- Unter der Überschrift steht ein Feld **Ort** (z. B. „Lissabon, Alfama“). Ein Ort pro Tag, einfach eintippen.
+- Daneben öffnet **Karte** den Ort in der Karten-App: am iPhone Apple Karten, sonst Google Maps, jeweils in einem neuen Tab. Kostenlos, ohne Konto. Die App selbst fragt keinen Kartendienst an; erst beim Antippen geht der Ortsname an Apple bzw. Google.
+- „Vor einem Jahr“ zeigt den Ort mit. In der Monatsdatei steht er im Kommentar unter der Tageszeile (`ort:Lissabon%2C%20Alfama`).
+- Bewusst nicht gebaut (Massimos Wahl): eine Karte mit allen Orten in der App und „aktueller Standort“. Ginge kostenlos mit OpenStreetMap, schickt dann aber Ortsnamen an deren Dienst.
+- Geprüft: Tests (Monatsdatei, Karten-Link mit Sonderzeichen). Im Browser: Ort eintippen, Link, Handy-Breite. Nicht geprüft: am iPhone (öffnet sich Apple Karten?).
+
 ### So steht es in Drive
 
 Eine Datei pro Monat: `Gedankenwelt/_Tagebuch/2026/2026-11.md`.

@@ -309,6 +309,7 @@ describe('Tagebuch in Drive: Monatsdateien', () => {
     id: '01TAGEBUCHTAG000000000016A',
     datum: '2026-11-16',
     titel: 'Ein Tag voller Konzepte',
+    ort: 'Lissabon, Alfama',
     bewertung: 4,
     impuls: 'Wofür bist du heute dankbar? Für: Ruhe',
     gewohnheiten: ['01GEWOHNHEIT0000000000000A', '01GEWOHNHEIT0000000000000B'],
@@ -316,7 +317,7 @@ describe('Tagebuch in Drive: Monatsdateien', () => {
     geaendert: '2026-11-16T21:00:00Z',
     geloescht: null,
   };
-  const tag17: Tagebuchtag = { ...tag16, id: '01TAGEBUCHTAG000000000017A', datum: '2026-11-17', titel: '', bewertung: 2, impuls: null, gewohnheiten: [] };
+  const tag17: Tagebuchtag = { ...tag16, id: '01TAGEBUCHTAG000000000017A', datum: '2026-11-17', titel: '', ort: undefined, bewertung: 2, impuls: null, gewohnheiten: [] };
 
   function tagebuchBestand(): Datenbestand {
     return {
@@ -354,7 +355,7 @@ describe('Tagebuch in Drive: Monatsdateien', () => {
         '---',
         '',
         '## 2026-11-16 · Ein Tag voller Konzepte',
-        '<!-- tag-id:01TAGEBUCHTAG000000000016A erstellt:2026-11-16T20:00:00Z geaendert:2026-11-16T21:00:00Z bewertung:4 ' +
+        '<!-- tag-id:01TAGEBUCHTAG000000000016A erstellt:2026-11-16T20:00:00Z geaendert:2026-11-16T21:00:00Z bewertung:4 ort:Lissabon%2C%20Alfama ' +
           'impuls:Wof%C3%BCr%20bist%20du%20heute%20dankbar%3F%20F%C3%BCr%3A%20Ruhe gewohnheiten:01GEWOHNHEIT0000000000000A,01GEWOHNHEIT0000000000000B -->',
         '',
         'Für einen ruhigen Vormittag.',

@@ -240,6 +240,7 @@ function schreibeTagKopf(datum: string, tag: Tagebuchtag | undefined): string {
   if (tag) {
     const meta = [`tag-id:${tag.id}`, `erstellt:${tag.erstellt}`, `geaendert:${tag.geaendert}`];
     if (tag.bewertung) meta.push(`bewertung:${tag.bewertung}`);
+    if (tag.ort) meta.push(`ort:${encodeURIComponent(tag.ort)}`);
     if (tag.impuls) meta.push(`impuls:${encodeURIComponent(tag.impuls)}`);
     if (tag.gewohnheiten.length > 0) meta.push(`gewohnheiten:${tag.gewohnheiten.join(',')}`);
     zeilen.push(`<!-- ${meta.join(' ')} -->`);
@@ -342,8 +343,10 @@ function leseTagebuch(inhalt: string, monat: string, umg: Umgebung): { notizen: 
       const meta = treffer ? leseMeta(treffer[1]) : new Map<string, string>();
       const bewertung = Number(meta.get('bewertung'));
       const impuls = meta.get('impuls');
+      const ort = meta.get('ort');
       const erstellt = meta.get('erstellt') ?? umg.jetzt;
       tage.push({
+        ...(ort ? { ort: decodeURIComponent(ort) } : {}),
         id: meta.get('tag-id') || tagebuchtagId(datum),
         datum,
         titel,

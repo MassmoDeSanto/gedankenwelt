@@ -14,6 +14,7 @@ import {
   BEWERTUNG_WORTE,
   datumsTeile,
   herkunftText,
+  kartenLink,
   monatVon,
   notizenDesTages,
   tagKurz,
@@ -29,7 +30,7 @@ import { Kopfzeile, klassen } from './Bausteine';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { adresse, gehe } from './router';
 import { Schreibbereich } from './Schreibbereich';
-import { Haken, Kalender, Kreuz, PfeilZurueck, Wiederholen, Winkel } from './Symbole';
+import { Haken, Kalender, Kreuz, Ortsmarke, PfeilZurueck, Wiederholen, Winkel } from './Symbole';
 
 const STUFEN: Bewertung[] = [1, 2, 3, 4, 5];
 
@@ -230,7 +231,10 @@ function VorEinemJahr({ datum }: { datum: string }) {
   if (!damals) return null;
   return (
     <a className="tb-damals" href={adresse({ seite: 'tagebuch', datum: damals.datum })}>
-      <span className="etikett">Vor einem Jahr · {tagKurz(damals.datum)}</span>
+      <span className="etikett">
+        Vor einem Jahr · {tagKurz(damals.datum)}
+        {damals.ort ? ` · ${damals.ort}` : ''}
+      </span>
       {damals.titel && <span className="tb-damals-titel">{damals.titel}</span>}
       {damals.text && (
         <span className="tb-damals-text">
@@ -242,24 +246,37 @@ function VorEinemJahr({ datum }: { datum: string }) {
   );
 }
 
-/** Überschrift und Bewertung eines Tages. */
-function Tageskopf({ datum }: { datum: string }) {
-  const z = useZustand();
-  const gespeichert = tagZuDatum(z.tagebuchtage.values(), datum);
-  const gespeicherterTitel = gespeichert?.titel ?? '';
-  const bewertung = gespeichert?.bewertung ?? null;
+/** Ist das ein iPhone oder iPad? Dann öffnet der Karten-Link Apple Karten. */
+function istApple(): boolean {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
 
-  // Die Überschrift wird beim Tippen nur lokal gehalten und kurz danach gespeichert (bereinigt).
-  // So springt der Cursor nicht, wenn zwischendurch ein Abgleich hereinkommt.
-  const [titel, setTitel] = useState(gespeicherterTitel);
+/**
+ * Ein einzeiliges Feld, das beim Tippen nur lokal gehalten und kurz danach (bereinigt) gespeichert wird.
+ * So springt der Cursor nicht, wenn zwischendurch ein Abgleich hereinkommt.
+ */
+function GepuffertesFeld({
+  gespeichert,
+  speichere,
+  className,
+  placeholder,
+  beschriftung,
+}: {
+  gespeichert: string;
+  speichere: (wert: string) => void;
+  className: string;
+  placeholder: string;
+  beschriftung: string;
+}) {
+  const [wert, setWert] = useState(gespeichert);
   const [tippt, setTippt] = useState(false);
   const uhr = useRef<ReturnType<typeof setTimeout> | null>(null);
-  if (!tippt && titel !== gespeicherterTitel) setTitel(gespeicherterTitel);
+  if (!tippt && wert !== gespeichert) setWert(gespeichert);
 
-  const speichere = (wert: string) => {
+  const sichere = (text: string) => {
     if (uhr.current) clearTimeout(uhr.current);
     uhr.current = null;
-    setzeTagebuchtag(datum, { titel: wert.replace(/\s+/g, ' ').trim() });
+    speichere(text.replace(/\s+/g, ' ').trim());
   };
   useEffect(
     () => () => {
@@ -269,28 +286,68 @@ function Tageskopf({ datum }: { datum: string }) {
   );
 
   return (
+    <input
+      className={className}
+      placeholder={placeholder}
+      aria-label={beschriftung}
+      value={wert}
+      enterKeyHint="done"
+      onFocus={() => setTippt(true)}
+      onChange={(e) => {
+        const text = e.target.value;
+        setWert(text);
+        if (uhr.current) clearTimeout(uhr.current);
+        uhr.current = setTimeout(() => sichere(text), 600);
+      }}
+      onBlur={(e) => {
+        sichere(e.target.value);
+        setTippt(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
+    />
+  );
+}
+
+/** Überschrift, Ort, Bewertung und Gewohnheiten eines Tages. */
+function Tageskopf({ datum }: { datum: string }) {
+  const z = useZustand();
+  const gespeichert = tagZuDatum(z.tagebuchtage.values(), datum);
+  const bewertung = gespeichert?.bewertung ?? null;
+  const ort = gespeichert?.ort ?? '';
+
+  return (
     <div className="tb-kopf">
-      <input
+      <GepuffertesFeld
         className="tb-titel"
         placeholder="Überschrift"
-        aria-label="Überschrift des Tages"
-        value={titel}
-        enterKeyHint="done"
-        onFocus={() => setTippt(true)}
-        onChange={(e) => {
-          const wert = e.target.value;
-          setTitel(wert);
-          if (uhr.current) clearTimeout(uhr.current);
-          uhr.current = setTimeout(() => speichere(wert), 600);
-        }}
-        onBlur={(e) => {
-          speichere(e.target.value);
-          setTippt(false);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
+        beschriftung="Überschrift des Tages"
+        gespeichert={gespeichert?.titel ?? ''}
+        speichere={(titel) => setzeTagebuchtag(datum, { titel })}
       />
+
+      <div className="tb-ort">
+        <Ortsmarke />
+        <GepuffertesFeld
+          className="tb-ort-feld"
+          placeholder="Ort"
+          beschriftung="Ort des Tages"
+          gespeichert={ort}
+          speichere={(wert) => setzeTagebuchtag(datum, { ort: wert })}
+        />
+        {ort && (
+          <a
+            className="textknopf tb-ort-karte"
+            href={kartenLink(ort, istApple())}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="In der Karten-App öffnen"
+          >
+            Karte
+          </a>
+        )}
+      </div>
 
       <div className="tb-bewertung" role="radiogroup" aria-label="Wie war der Tag?">
         <div className="tb-stufen" data-wert={bewertung ?? 0}>

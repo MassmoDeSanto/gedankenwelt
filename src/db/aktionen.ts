@@ -336,7 +336,7 @@ export function loescheListe(id: string): void {
 /** Ändert Überschrift, Bewertung, Impuls oder Gewohnheiten eines Tages. Gibt es den Tag noch nicht, wird er angelegt. */
 export function setzeTagebuchtag(
   datum: string,
-  teil: { titel?: string; bewertung?: Bewertung | null; impuls?: string | null; gewohnheiten?: string[] },
+  teil: { titel?: string; ort?: string; bewertung?: Bewertung | null; impuls?: string | null; gewohnheiten?: string[] },
 ): void {
   const jetzt = jetztStempel();
   const alt = tagZuDatum(leseZustand().tagebuchtage.values(), datum);
@@ -355,6 +355,7 @@ export function setzeTagebuchtag(
   const gleich =
     alt &&
     neu.titel === alt.titel &&
+    (neu.ort ?? '') === (alt.ort ?? '') &&
     neu.bewertung === alt.bewertung &&
     neu.impuls === alt.impuls &&
     neu.gewohnheiten.join(',') === alt.gewohnheiten.join(',');

@@ -130,6 +130,14 @@ export const PfeilRechts = () => (
 const WOLKE = 'M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.6a4 4 0 0 1-1 7.9z';
 
 /** Abgeglichen: Wolke mit Haken */
+/** Ortsmarke (Ort eines Tagebuchtags) */
+export const Ortsmarke = () => (
+  <Symbol groesse={16}>
+    <path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z" />
+    <circle cx="12" cy="10" r="2.2" />
+  </Symbol>
+);
+
 /** Kalenderblatt (Tag im Tagebuch wählen) */
 export const Kalender = () => (
   <Symbol groesse={18}>

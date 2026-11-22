@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TAGEBUCH_ID, neueAufgabe, type Aufgabe, type Tagebuchtag } from '../modell/typen';
 import {
   ersterWochentag,
+  kartenLink,
   monatAusPfad,
   monatsPfad,
   monatsuebersicht,
@@ -156,6 +157,15 @@ describe('Tagebuch: Monatsübersicht', () => {
   });
 });
 
+describe('Tagebuch: Ort', () => {
+  it('Link zur Karten-App: Apple Karten am iPhone, sonst Google Maps', () => {
+    expect(kartenLink(' Lissabon, Alfama ', true)).toBe('https://maps.apple.com/?q=Lissabon%2C%20Alfama');
+    expect(kartenLink('Café Kranzler & Co', false)).toBe(
+      'https://www.google.com/maps/search/?api=1&query=Caf%C3%A9%20Kranzler%20%26%20Co',
+    );
+  });
+});
+
 describe('Tagebuch: Vor einem Jahr', () => {
   it('derselbe Tag ein Jahr früher, mit Überschrift und erstem Absatz', () => {
     const notizen = [
@@ -165,7 +175,7 @@ describe('Tagebuch: Vor einem Jahr', () => {
     const tage: Tagebuchtag[] = [
       { id: 'x', datum: '2025-11-22', titel: 'Damals', bewertung: 3, impuls: null, gewohnheiten: [], erstellt: '', geaendert: '', geloescht: null },
     ];
-    expect(vorEinemJahr('2026-11-22', notizen, tage)).toEqual({ datum: '2025-11-22', titel: 'Damals', bewertung: 3, text: 'Erster Absatz' });
+    expect(vorEinemJahr('2026-11-22', notizen, tage)).toEqual({ datum: '2025-11-22', titel: 'Damals', ort: '', bewertung: 3, text: 'Erster Absatz' });
     expect(vorEinemJahr('2026-11-23', notizen, tage)).toBeNull();
   });
 

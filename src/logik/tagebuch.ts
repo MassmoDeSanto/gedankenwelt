@@ -65,7 +65,13 @@ export function tagZuDatum(tage: Iterable<Tagebuchtag>, datum: string): Tagebuch
 
 /** Hat ein Tagebuchtag etwas, das gespeichert werden muss? Ein ganz leerer Tag braucht keinen Eintrag. */
 export function tagHatInhalt(tag: Tagebuchtag): boolean {
-  return tag.titel.trim() !== '' || tag.bewertung !== null || tag.impuls !== null || tag.gewohnheiten.length > 0;
+  return (
+    tag.titel.trim() !== '' ||
+    (tag.ort ?? '').trim() !== '' ||
+    tag.bewertung !== null ||
+    tag.impuls !== null ||
+    tag.gewohnheiten.length > 0
+  );
 }
 
 /**
@@ -268,10 +274,25 @@ export function vorEinemJahr(
   datum: string,
   notizen: Iterable<Notiz>,
   tagebuchtage: Iterable<Tagebuchtag>,
-): { datum: string; titel: string; bewertung: Bewertung | null; text: string } | null {
+): { datum: string; titel: string; ort: string; bewertung: Bewertung | null; text: string } | null {
   const damals = vorEinemJahrDatum(datum);
   const tag = tagZuDatum(tagebuchtage, damals);
   const absaetze = notizenDesTages(notizen, damals);
   if (absaetze.length === 0 && !(tag && tagHatInhalt(tag))) return null;
-  return { datum: damals, titel: tag?.titel ?? '', bewertung: tag?.bewertung ?? null, text: absaetze[0]?.text ?? '' };
+  return {
+    datum: damals,
+    titel: tag?.titel ?? '',
+    ort: tag?.ort ?? '',
+    bewertung: tag?.bewertung ?? null,
+    text: absaetze[0]?.text ?? '',
+  };
+}
+
+/**
+ * Link, der einen Ort in der Karten-App öffnet: am iPhone Apple Karten, sonst Google Maps.
+ * Es wird nur der eingetippte Ortsname übergeben; die App selbst fragt keinen Kartendienst an.
+ */
+export function kartenLink(ort: string, apple: boolean): string {
+  const q = encodeURIComponent(ort.trim());
+  return apple ? `https://maps.apple.com/?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
