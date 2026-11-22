@@ -17,6 +17,8 @@ export interface TerminDaten {
   /** Benachrichtigung so viele Minuten vor Beginn (0 = zum Beginn) */
   erinnerung: number;
   beschreibung: string;
+  /** Wiederholt sich täglich ab `beginn` (nur die Schreib-Erinnerung des Tagebuchs) */
+  taeglich?: boolean;
 }
 
 export interface Termin extends TerminDaten {

@@ -444,6 +444,7 @@ describe('Tagebuch in Drive: Gewohnheiten und Schreibimpulse', () => {
       tagesgedanke_verlauf: [],
       gewohnheiten: [sport, lesen],
       impulse: { fragen: ['Was war schön?', 'Was nun?'], geaendert: '2026-11-22T11:00:00Z' },
+      schreiberinnerung: { an: true, uhrzeit: '21:30', geaendert: '2026-11-22T11:05:00Z' },
     };
   }
 
@@ -455,7 +456,7 @@ describe('Tagebuch in Drive: Gewohnheiten und Schreibimpulse', () => {
   });
 
   it('ohne Gewohnheiten und eigene Impulse gibt es die Datei nicht', () => {
-    const dateien = zuDateien({ ...bestand(), gewohnheiten: [], impulse: undefined });
+    const dateien = zuDateien({ ...bestand(), gewohnheiten: [], impulse: undefined, schreiberinnerung: undefined });
     expect(dateien.has('_Tagebuch/_tagebuch.json')).toBe(false);
   });
 

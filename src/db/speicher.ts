@@ -24,6 +24,7 @@ import {
   type Impulse,
   type Liste,
   type Notiz,
+  type SchreibErinnerung,
   type Tagebuchtag,
   type VerlaufEintrag,
 } from '../modell/typen';
@@ -43,6 +44,8 @@ export interface Zustand {
   gewohnheiten: Map<string, Gewohnheit>;
   /** Eigene Schreibimpulse; null = die eingebaute Liste */
   impulse: Impulse | null;
+  /** Tägliche Schreib-Erinnerung; null = nie eingestellt (aus) */
+  schreiberinnerung: SchreibErinnerung | null;
 }
 
 let zustand: Zustand = {
@@ -55,6 +58,7 @@ let zustand: Zustand = {
   tagebuchtage: new Map(),
   gewohnheiten: new Map(),
   impulse: null,
+  schreiberinnerung: null,
 };
 
 export const suchindex = new Suchindex();
@@ -178,6 +182,12 @@ export function sichereImpulse(impulse: Impulse): void {
   melde({ impulse });
 }
 
+export function sichereSchreibErinnerung(schreiberinnerung: SchreibErinnerung): void {
+  db.meta.put({ schluessel: 'schreiberinnerung', wert: schreiberinnerung }).catch(meldeFehler);
+  nachAenderung?.(['_schreiberinnerung']);
+  melde({ schreiberinnerung });
+}
+
 // ───────────────────────── Ergebnis eines Abgleichs übernehmen ─────────────────────────
 
 function gleicheNotiz(a: Notiz, b: Notiz): boolean {
@@ -253,13 +263,18 @@ export function uebernimmAbgleich(bestand: Datenbestand): void {
   const impulseNeu = JSON.stringify(zustand.impulse) !== JSON.stringify(impulse);
   if (impulseNeu) db.meta.put({ schluessel: 'impulse', wert: impulse }).catch(meldeFehler);
 
+  const se = bestand.schreiberinnerung ?? null;
+  const seNeu = JSON.stringify(zustand.schreiberinnerung) !== JSON.stringify(se);
+  if (seNeu) db.meta.put({ schluessel: 'schreiberinnerung', wert: se }).catch(meldeFehler);
+
   const geaendert =
     neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 ||
     einstellungenNeu ||
     importeNeu ||
     tageNeu ||
     gewohnheitenNeu ||
-    impulseNeu;
+    impulseNeu ||
+    seNeu;
   if (geaendert) {
     melde({
       ...(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {}),
@@ -267,6 +282,7 @@ export function uebernimmAbgleich(bestand: Datenbestand): void {
       ...(tageNeu ? { tagebuchtage: new Map(tage.map((t) => [t.id, t])) } : {}),
       ...(gewohnheitenNeu ? { gewohnheiten: new Map(gewohnheiten.map((g) => [g.id, g])) } : {}),
       ...(impulseNeu ? { impulse } : {}),
+      ...(seNeu ? { schreiberinnerung: se } : {}),
     });
   }
 }
@@ -294,6 +310,7 @@ export async function ladeAlles(): Promise<void> {
   const tage = meta.find((m) => m.schluessel === 'tagebuchtage')?.wert as Tagebuchtag[] | undefined;
   const gewohnheiten = meta.find((m) => m.schluessel === 'gewohnheiten')?.wert as Gewohnheit[] | undefined;
   const impulse = meta.find((m) => m.schluessel === 'impulse')?.wert as Impulse | null | undefined;
+  const se = meta.find((m) => m.schluessel === 'schreiberinnerung')?.wert as SchreibErinnerung | null | undefined;
 
   zustand = {
     geladen: true,
@@ -305,6 +322,7 @@ export async function ladeAlles(): Promise<void> {
     tagebuchtage: new Map((tage ?? []).map((t) => [t.id, t])),
     gewohnheiten: new Map((gewohnheiten ?? []).map((g) => [g.id, g])),
     impulse: impulse ?? null,
+    schreiberinnerung: se ?? null,
   };
   suchindex.setzeAlle(notizen);
 
@@ -325,6 +343,7 @@ export function alsBestand(): Datenbestand {
     ...(zustand.tagebuchtage.size > 0 ? { tagebuchtage: [...zustand.tagebuchtage.values()] } : {}),
     ...(zustand.gewohnheiten.size > 0 ? { gewohnheiten: [...zustand.gewohnheiten.values()] } : {}),
     ...(zustand.impulse ? { impulse: zustand.impulse } : {}),
+    ...(zustand.schreiberinnerung ? { schreiberinnerung: zustand.schreiberinnerung } : {}),
   };
 }
 
@@ -345,6 +364,7 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
       { schluessel: 'tagebuchtage', wert: bestand.tagebuchtage ?? [] },
       { schluessel: 'gewohnheiten', wert: bestand.gewohnheiten ?? [] },
       { schluessel: 'impulse', wert: bestand.impulse ?? null },
+      { schluessel: 'schreiberinnerung', wert: bestand.schreiberinnerung ?? null },
     ]);
   });
 
@@ -358,6 +378,7 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
     tagebuchtage: new Map((bestand.tagebuchtage ?? []).map((t) => [t.id, t])),
     gewohnheiten: new Map((bestand.gewohnheiten ?? []).map((g) => [g.id, g])),
     impulse: bestand.impulse ?? null,
+    schreiberinnerung: bestand.schreiberinnerung ?? null,
   };
   suchindex.setzeAlle(bestand.notizen);
   raeumePapierkorbAuf();

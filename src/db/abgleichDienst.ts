@@ -13,7 +13,7 @@
 import { useSyncExternalStore } from 'react';
 import { KeineVerbindung, NichtAngemeldet, VersionsKonflikt, type Drive } from '../logik/abgleich/drive';
 import { abgleiche, type CacheEintrag, type Geraet } from '../logik/abgleich/runde';
-import { gleicheKalenderAb, mitTerminId } from '../logik/kalender/abgleich';
+import { gleicheKalenderAb, mitTerminId, schreibErinnerungTermin } from '../logik/kalender/abgleich';
 import {
   KALENDER_NAME,
   KalenderFehlt,
@@ -302,6 +302,7 @@ async function kalenderRunde(verwaisteAufraeumen = false): Promise<void> {
         jetztLokal: lokalJetzt(),
         appAdresse: APP_ADRESSE,
         verwaisteAufraeumen,
+        schreibErinnerung: z.schreiberinnerung?.an ? schreibErinnerungTermin(z.schreiberinnerung.uhrzeit, APP_ADRESSE) : null,
       });
       // Termin-IDs übernehmen – auf dem aktuellen Stand der Notiz, falls inzwischen getippt wurde.
       const geaendert = [...ergebnis.ids].flatMap(([id, terminId]) => {

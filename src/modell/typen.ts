@@ -133,6 +133,14 @@ export interface Impulse {
   geaendert: Zeitstempel;
 }
 
+/** Tägliche Schreib-Erinnerung des Tagebuchs über den Kalender (KONZEPT.md, Abschnitt 13.9) */
+export interface SchreibErinnerung {
+  an: boolean;
+  /** Ortszeit "21:00" */
+  uhrzeit: string;
+  geaendert: Zeitstempel;
+}
+
 export type TagesgedankeSchalter = 'an' | 'aus' | 'erben';
 
 export interface Liste {
@@ -218,6 +226,8 @@ export interface Datenbestand {
   gewohnheiten?: Gewohnheit[];
   /** Eigene Schreibimpulse. Fehlt = die eingebaute Liste. */
   impulse?: Impulse;
+  /** Tägliche Schreib-Erinnerung. Fehlt = aus. */
+  schreiberinnerung?: SchreibErinnerung;
 }
 
 export const STANDARD_EINSTELLUNGEN: Einstellungen = { thema: 'dunkel' };

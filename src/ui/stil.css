@@ -2797,3 +2797,9 @@ a.tb-zelle:hover {
   line-height: 1.6;
   resize: vertical;
 }
+
+/* Tagebuch, Etappe 4: Uhrzeit der Schreib-Erinnerung */
+.eingabe.tb-uhrzeit {
+  width: auto;
+  height: 38px;
+}

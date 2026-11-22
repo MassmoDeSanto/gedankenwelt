@@ -124,7 +124,7 @@ export function ErinnerungenBereich() {
           {termine.length === 0 && <div className="meta">noch keine Termine</div>}
           {termine.map((t) => (
             <div key={t.id}>
-              {formatNaechste(t.beginn, heute)} · {t.titel}{' '}
+              {t.taeglich ? `täglich ${t.beginn.slice(11, 16)}` : formatNaechste(t.beginn, heute)} · {t.titel}{' '}
               <span className="meta">
                 ({t.notiz_id ? erinnerungsText(t.erinnerung) : 'von Hand eingetragen'} · {t.id})
               </span>

@@ -31,6 +31,7 @@ interface GoogleTermin {
   start?: { dateTime?: string };
   reminders?: { useDefault?: boolean; overrides?: { method: string; minutes: number }[] };
   extendedProperties?: { private?: Record<string, string> };
+  recurrence?: string[];
 }
 
 /** Rechnet in reiner Ortszeit: "2026-11-22T23:50" + 15 Minuten = "2026-11-23T00:05". */
@@ -54,6 +55,8 @@ export function alsGoogleTermin(daten: TerminDaten, zeitzone: string) {
     // Der Termin soll im Kalender nicht als „beschäftigt“ zählen – er ist nur eine Erinnerung.
     transparency: 'transparent',
     extendedProperties: { private: { [NOTIZ_EIGENSCHAFT]: daten.notiz_id } },
+    // Nur die Schreib-Erinnerung des Tagebuchs ist ein Serientermin.
+    ...(daten.taeglich ? { recurrence: ['RRULE:FREQ=DAILY'] } : {}),
   };
 }
 
@@ -68,6 +71,7 @@ function ausGoogleTermin(g: GoogleTermin): Termin | null {
     beginn: g.start.dateTime.slice(0, 16),
     // Steht der Termin auf „Standard-Erinnerung“, passt er nicht zur App und wird beim Abgleich korrigiert.
     erinnerung: g.reminders?.useDefault ? -1 : (g.reminders?.overrides?.[0]?.minutes ?? -1),
+    ...(g.recurrence?.some((r) => r.startsWith('RRULE:FREQ=DAILY')) ? { taeglich: true } : {}),
   };
 }
 
@@ -182,7 +186,7 @@ export class GoogleKalender implements Kalender {
         showDeleted: 'false',
         // Zeiten in der Antwort in Ortszeit, damit sie zu den Fälligkeiten der App passen
         timeZone: this.optionen.zeitzone,
-        fields: 'nextPageToken,items(id,status,summary,description,start,reminders,extendedProperties/private)',
+        fields: 'nextPageToken,items(id,status,summary,description,start,reminders,recurrence,extendedProperties/private)',
       });
       if (seite) parameter.set('pageToken', seite);
       let antwort: { items?: GoogleTermin[]; nextPageToken?: string };

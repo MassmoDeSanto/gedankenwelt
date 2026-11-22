@@ -44,7 +44,32 @@ export function terminFuer(notiz: Notiz, listen: ListenKarte, appAdresse: string
 }
 
 function gleich(a: TerminDaten, b: TerminDaten): boolean {
-  return a.titel === b.titel && a.beginn === b.beginn && a.erinnerung === b.erinnerung && a.beschreibung === b.beschreibung;
+  return (
+    a.titel === b.titel &&
+    a.beginn === b.beginn &&
+    a.erinnerung === b.erinnerung &&
+    a.beschreibung === b.beschreibung &&
+    !!a.taeglich === !!b.taeglich
+  );
+}
+
+/** Kennung der täglichen Schreib-Erinnerung im Kalender (anstelle einer Notiz-ID). */
+export const SCHREIB_ERINNERUNG_ID = '_schreiberinnerung';
+
+/**
+ * Die tägliche Schreib-Erinnerung des Tagebuchs (KONZEPT.md, Abschnitt 13.9): ein einziger
+ * Serientermin. Er beginnt an einem festen Tag in der Vergangenheit, damit er nicht jeden Tag
+ * geändert werden muss; Google zeigt ihn trotzdem an jedem Tag ab heute.
+ */
+export function schreibErinnerungTermin(uhrzeit: string, appAdresse: string): TerminDaten {
+  return {
+    notiz_id: SCHREIB_ERINNERUNG_ID,
+    titel: 'Tagebuch schreiben',
+    beginn: `2026-01-01T${uhrzeit}`,
+    erinnerung: 0,
+    beschreibung: `Gedankenwelt › Tagebuch\n${appAdresse}#/tagebuch`,
+    taeglich: true,
+  };
 }
 
 /**
@@ -88,6 +113,8 @@ export async function gleicheKalenderAb(
      * Aufgabe löschen, die ein anderes Gerät gerade erst angelegt hat und die hier noch nicht angekommen ist.
      */
     verwaisteAufraeumen?: boolean;
+    /** Die tägliche Schreib-Erinnerung; null oder fehlend = es soll keine geben */
+    schreibErinnerung?: TerminDaten | null;
   },
 ): Promise<KalenderErgebnis> {
   const ergebnis: KalenderErgebnis = { angelegt: 0, geaendert: 0, geloescht: 0, ids: new Map() };
@@ -145,6 +172,32 @@ export async function gleicheKalenderAb(
       ergebnis.angelegt++;
     }
     merke(notiz, id);
+  }
+
+  // Die tägliche Schreib-Erinnerung: genau ein Serientermin, oder keiner.
+  bekannt.add(SCHREIB_ERINNERUNG_ID);
+  {
+    const soll = optionen.schreibErinnerung ?? null;
+    const [behalten, ...ueberzaehlig] = vorhanden.get(SCHREIB_ERINNERUNG_ID) ?? [];
+    for (const termin of ueberzaehlig) await loesche(termin);
+    if (!soll) {
+      if (behalten) await loesche(behalten);
+    } else {
+      let da = !!behalten;
+      if (behalten && !gleich(behalten, soll)) {
+        try {
+          await kalender.aendereTermin(kalenderId, behalten.id, soll);
+          ergebnis.geaendert++;
+        } catch (fehler) {
+          if (!(fehler instanceof TerminFehlt)) throw fehler;
+          da = false;
+        }
+      }
+      if (!da) {
+        await kalender.erstelleTermin(kalenderId, soll);
+        ergebnis.angelegt++;
+      }
+    }
   }
 
   // Verwaiste Termine: Die Notiz dazu gibt es auf diesem Gerät gar nicht (mehr).

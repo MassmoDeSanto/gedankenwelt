@@ -30,6 +30,7 @@ import {
   type Liste,
   type Notiz,
   type Prioritaet,
+  type SchreibErinnerung,
   type TagesgedankeSchalter,
   type Tagebuchtag,
   type VerlaufEintrag,
@@ -202,11 +203,12 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
     pfad: m.pfad,
   }));
   const gewohnheiten = (bestand.gewohnheiten ?? []).filter((g) => !g.geloescht);
-  if (gewohnheiten.length > 0 || bestand.impulse) {
+  if (gewohnheiten.length > 0 || bestand.impulse || bestand.schreiberinnerung) {
     const inhalt = {
       version: 1,
       gewohnheiten: [...gewohnheiten].sort(nachId),
       ...(bestand.impulse ? { impulse: bestand.impulse } : {}),
+      ...(bestand.schreiberinnerung ? { schreiberinnerung: bestand.schreiberinnerung } : {}),
     };
     dateien.set(TAGEBUCH_DATEI, JSON.stringify(inhalt, null, 2) + '\n');
     tagebuchDateien.push({ kennung: '_tagebuch|einstellungen', pfad: TAGEBUCH_DATEI });
@@ -283,7 +285,11 @@ function schreibeTagebuch(
 }
 
 /** Liest _Tagebuch/_tagebuch.json. Unlesbares wird übergangen, statt die App anzuhalten. */
-function leseTagebuchDatei(inhalt: string): { gewohnheiten: Gewohnheit[]; impulse: Impulse | undefined } {
+function leseTagebuchDatei(inhalt: string): {
+  gewohnheiten: Gewohnheit[];
+  impulse: Impulse | undefined;
+  schreiberinnerung: SchreibErinnerung | undefined;
+} {
   try {
     const roh = JSON.parse(inhalt);
     const gewohnheiten = (Array.isArray(roh?.gewohnheiten) ? roh.gewohnheiten : [])
@@ -302,9 +308,14 @@ function leseTagebuchDatei(inhalt: string): { gewohnheiten: Gewohnheit[]; impuls
       i && Array.isArray(i.fragen) && typeof i.geaendert === 'string'
         ? { fragen: i.fragen.filter((f: unknown) => typeof f === 'string'), geaendert: i.geaendert }
         : undefined;
-    return { gewohnheiten, impulse };
+    const e = roh?.schreiberinnerung;
+    const schreiberinnerung =
+      e && typeof e.an === 'boolean' && /^\d{2}:\d{2}$/.test(e.uhrzeit) && typeof e.geaendert === 'string'
+        ? { an: e.an, uhrzeit: e.uhrzeit, geaendert: e.geaendert }
+        : undefined;
+    return { gewohnheiten, impulse, schreiberinnerung };
   } catch {
-    return { gewohnheiten: [], impulse: undefined };
+    return { gewohnheiten: [], impulse: undefined, schreiberinnerung: undefined };
   }
 }
 
@@ -517,10 +528,11 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
   const tagebuchtage: Tagebuchtag[] = [];
   let gewohnheiten: Gewohnheit[] = [];
   let impulse: Impulse | undefined;
+  let schreiberinnerung: SchreibErinnerung | undefined;
 
   for (const [pfad, inhalt] of dateien) {
     if (pfad === TAGEBUCH_DATEI) {
-      ({ gewohnheiten, impulse } = leseTagebuchDatei(inhalt));
+      ({ gewohnheiten, impulse, schreiberinnerung } = leseTagebuchDatei(inhalt));
       continue;
     }
     const monat = monatAusPfad(pfad);
@@ -677,5 +689,6 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
     ...(tagebuchtage.length > 0 ? { tagebuchtage: tagebuchtage.sort(nachId) } : {}),
     ...(gewohnheiten.length > 0 ? { gewohnheiten: gewohnheiten.sort(nachId) } : {}),
     ...(impulse ? { impulse } : {}),
+    ...(schreiberinnerung ? { schreiberinnerung } : {}),
   };
 }

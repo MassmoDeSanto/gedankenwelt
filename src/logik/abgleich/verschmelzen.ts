@@ -272,9 +272,17 @@ export function verschmelze(
         : lokal.impulse
       : (lokal.impulse ?? fern.impulse);
 
+  // Schreib-Erinnerung: wie die eigenen Impulse – die neuere Fassung gewinnt.
+  const se = lokal.schreiberinnerung && fern.schreiberinnerung
+    ? fern.schreiberinnerung.geaendert >= lokal.schreiberinnerung.geaendert
+      ? fern.schreiberinnerung
+      : lokal.schreiberinnerung
+    : (lokal.schreiberinnerung ?? fern.schreiberinnerung);
+
   return {
     ...(importe.length > 0 ? { importe } : {}),
     ...(tagebuchtage.length > 0 ? { tagebuchtage } : {}),
+    ...(se ? { schreiberinnerung: se } : {}),
     ...(gewohnheiten.length > 0 ? { gewohnheiten } : {}),
     ...(impulse ? { impulse } : {}),
     listen: repariert.listen.filter(bleibt).sort(nachId),

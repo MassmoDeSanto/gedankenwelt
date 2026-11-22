@@ -101,6 +101,33 @@ describe('Anfragen an Google: Aufbau', () => {
     ]);
   });
 
+  it('Schreib-Erinnerung: täglicher Serientermin hinaus und zurück', async () => {
+    const g = alsGoogleTermin({ ...daten, taeglich: true }, 'Europe/Berlin');
+    expect(g.recurrence).toEqual(['RRULE:FREQ=DAILY']);
+    expect('recurrence' in alsGoogleTermin(daten, 'Europe/Berlin')).toBe(false);
+
+    const { kalender } = aufbau([
+      {
+        status: 200,
+        koerper: {
+          items: [
+            {
+              id: 's1',
+              status: 'confirmed',
+              summary: 'Tagebuch schreiben',
+              description: 'x',
+              start: { dateTime: '2026-01-01T21:00:00+01:00' },
+              reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }] },
+              recurrence: ['RRULE:FREQ=DAILY'],
+              extendedProperties: { private: { gedankenwelt_notiz: '_schreiberinnerung' } },
+            },
+          ],
+        },
+      },
+    ]);
+    expect((await kalender.termine(KALENDER_ID))[0]).toMatchObject({ notiz_id: '_schreiberinnerung', taeglich: true });
+  });
+
   it('das Ende liegt 15 Minuten nach dem Beginn, auch über Mitternacht und Monatsende', () => {
     expect(plusMinuten('2026-11-22T18:00', 15)).toBe('2026-11-22T18:15');
     expect(plusMinuten('2026-11-22T23:50', 15)).toBe('2026-11-23T00:05');

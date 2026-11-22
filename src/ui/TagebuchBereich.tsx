@@ -8,12 +8,14 @@ import {
   erstelleGewohnheit,
   gewohnheitenSortiert,
   setzeImpulse,
+  setzeSchreibErinnerung,
   verschiebeGewohnheit,
 } from '../db/aktionen';
+import { erinnerungenAktiv } from '../db/abgleichDienst';
 import { useZustand } from '../db/speicher';
 import { STANDARD_IMPULSE, fragenAusText } from '../logik/impulse';
 import type { Gewohnheit } from '../modell/typen';
-import { klassen } from './Bausteine';
+import { Segment, klassen } from './Bausteine';
 
 export function TagebuchBereich() {
   useZustand(); // neu zeichnen, wenn sich Gewohnheiten oder Impulse ändern
@@ -54,7 +56,48 @@ export function TagebuchBereich() {
       </form>
 
       <Impulse />
+      <SchreibErinnerungEinstellung />
     </section>
+  );
+}
+
+/** Tägliche Schreib-Erinnerung über den Kalender „Gedankenwelt“. */
+function SchreibErinnerungEinstellung() {
+  const z = useZustand();
+  const se = z.schreiberinnerung;
+  const an = se?.an ?? false;
+  const uhrzeit = se?.uhrzeit ?? '21:00';
+  return (
+    <>
+      <div className="einstellung">
+        <span className="einstellung-titel">Schreib-Erinnerung</span>
+        <Segment
+          wert={an ? 'an' : 'aus'}
+          onWahl={(w) => setzeSchreibErinnerung({ an: w === 'an' })}
+          optionen={[
+            { wert: 'aus', text: 'Aus' },
+            { wert: 'an', text: 'An' },
+          ]}
+        />
+      </div>
+      {an && (
+        <div className="einstellung">
+          <span>Uhrzeit</span>
+          <input
+            className="eingabe tb-uhrzeit"
+            type="time"
+            aria-label="Uhrzeit der Schreib-Erinnerung"
+            value={uhrzeit}
+            onChange={(e) => e.target.value && setzeSchreibErinnerung({ uhrzeit: e.target.value })}
+          />
+        </div>
+      )}
+      <p className="hinweis klein">
+        Ein täglicher Termin „Tagebuch schreiben“ im Kalender „Gedankenwelt“; die Mitteilung kommt über die
+        Kalender-App.
+        {an && !erinnerungenAktiv() && ' Wirkt erst, wenn unten die Erinnerungen aktiviert sind.'}
+      </p>
+    </>
   );
 }
 

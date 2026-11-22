@@ -535,6 +535,7 @@ Meldet der Selbsttest einen Fehler, schick mir den Wortlaut. Das ist die Stelle,
    - In der App: Menü (drei Striche) → prüfen, dass bei **Gedankenwelt** ein Haken sitzt. Ist der Kalender nicht zu sehen: nach unten ziehen zum Aktualisieren.
    - Fokus-Modi („Nicht stören“, „Schlafen“) lassen Mitteilungen nur durch, wenn Google Kalender dort erlaubt ist.
 4. Zum Testen eine Aufgabe mit Uhrzeit in fünf Minuten anlegen, Erinnerung „Zur Uhrzeit“.
+5. **Tagebuch:** Einstellungen → Tagebuch → Schreib-Erinnerung **An**, Uhrzeit auf in fünf Minuten stellen. Im Google Kalender erscheint „Tagebuch schreiben“ als täglicher Termin; die Mitteilung kommt über die Google-Kalender-App. Danach die gewünschte Uhrzeit (z. B. 21:00) einstellen. Außerdem am iPhone ausprobieren: Wischen zwischen den Tagen, Kalender-Symbol zum Nachtragen, Gewohnheiten antippen.
 
 **Warum die Google-App und nicht Apples Kalender?** Einen belastbaren Vergleich habe ich nicht gefunden (Stand 16. Nov 2026), nur Erfahrungsberichte. Die sprechen für die Google-App: Apples Kalender holt Google-Termine in Abständen ab und nicht sofort; Nutzer und ein Entwickler berichten von 30 Sekunden bis mehreren Minuten Verzögerung und von langsamem Abgleich ([Apple-Entwicklerforum](https://developer.apple.com/forums/thread/766375), [Apple-Forum](https://discussions.apple.com/thread/255205067)). Bei einer Aufgabe, die du kurz vor ihrer Uhrzeit anlegst oder verschiebst, käme die Erinnerung dann zu spät oder gar nicht. Das ist eine Einschätzung aus Berichten, keine Messung.
 
@@ -891,7 +892,7 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 | 1 | Tagesseite, Überschrift, Bewertung, Drive-Monatsdateien, Suche, Design Papier/Kerzenlicht | gebaut am 22. Nov 2026 |
 | 2 | Monatsansicht, Karte auf der Startseite, Tagesspur, „Vor einem Jahr“ | gebaut am 22. Nov 2026 |
 | 3 | Gewohnheiten, Schreibimpulse | gebaut am 22. Nov 2026 |
-| 4 | Tägliche Schreib-Erinnerung über den Kalender (abschaltbar) | offen |
+| 4 | Tägliche Schreib-Erinnerung über den Kalender (abschaltbar) | gebaut am 22. Nov 2026 |
 | später | Knopf „Aufräumen mit Claude“ | zurückgestellt |
 
 ### So benutzt du es (Etappe 1)
@@ -922,6 +923,15 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 - **Sicherheit:** Eine Gewohnheit, die beim Abgleich auf einer Seite fehlt (z. B. weil `_tagebuch.json` in Drive kaputt ist), gilt nie als gelöscht. Es gibt nur „deaktivieren“, kein Löschen.
 - Geprüft: Tests für die Fragen-Auswahl, `_tagebuch.json` (exakt hin und zurück, kaputte Datei), Abgleich mit beschädigter Datei, Zählung im Monat. Im Browser: anlegen, umsortieren, abhaken, deaktivieren, Frage übernehmen und wechseln, Monatsansicht, Handy-Breite. Nicht geprüft: am iPhone.
 - Bekannt: Die Fragen sind in der Gegenwart formuliert („heute“), auch wenn du einen vergangenen Tag nachträgst.
+
+### Etappe 4: Schreib-Erinnerung
+
+- **Einstellen:** Einstellungen → Tagebuch → Schreib-Erinnerung **An**, darunter die Uhrzeit (vorbelegt 21:00). Standard ist **Aus**, damit ohne dein Zutun nichts im Kalender erscheint.
+- **Wie es funktioniert:** Ein einziger täglicher Serientermin „Tagebuch schreiben“ im Kalender „Gedankenwelt“ (Erinnerung zur Uhrzeit, Link zum Tagebuch in der Beschreibung). Er beginnt an einem festen Tag (1. Jan 2026), damit er nicht jeden Tag geändert werden muss; Google zeigt ihn an jedem Tag. Uhrzeit ändern ändert den Termin, Ausschalten löscht ihn. Im Kalender von Hand gelöscht: Die App legt ihn beim nächsten Abgleich neu an.
+- **Voraussetzung:** Die Erinnerungen der App müssen aktiviert sein (Einstellungen → Erinnerungen); sonst steht ein Hinweis unter dem Schalter.
+- **Speicherort:** Auch diese Einstellung liegt in `_Tagebuch/_tagebuch.json` (Schutz vor älteren App-Versionen) und gilt auf allen Geräten.
+- **Grenze:** Die Erinnerung kommt jeden Tag, auch wenn du an dem Tag schon geschrieben hast. Der Kalender kann das nicht wissen.
+- Geprüft: Tests (genau ein Serientermin, Uhrzeit ändern, ausschalten, zwei Geräte gleichzeitig, „Neu aufbauen“ räumt ihn nicht weg, von Hand gelöscht; Google-Format mit `RRULE:FREQ=DAILY` hin und zurück; Dateiformat). Im Browser mit simuliertem Kalender: einschalten, Uhrzeit ändern, ausschalten. Nicht geprüft: mit dem echten Google Kalender und am iPhone (Abschnitt 9, Schritt 5, Punkt 5).
 
 ### So steht es in Drive
 

@@ -49,6 +49,7 @@ import {
   sichereImpulse,
   sichereListen,
   sichereNotizen,
+  sichereSchreibErinnerung,
   sichereTagebuchtag,
   sichereVerlauf,
 } from './speicher';
@@ -416,6 +417,15 @@ export function verschiebeGewohnheit(id: string, richtung: -1 | 1): void {
     .filter(({ alt, neu }) => alt.position !== neu.position)
     .map(({ neu }) => neu);
   sichereGewohnheiten(geaendert);
+}
+
+/** Schreib-Erinnerung ein- oder ausschalten bzw. ihre Uhrzeit ändern. Standard: 21:00. */
+export function setzeSchreibErinnerung(teil: { an?: boolean; uhrzeit?: string }): void {
+  const alt = leseZustand().schreiberinnerung ?? { an: false, uhrzeit: '21:00', geaendert: '' };
+  const uhrzeit = teil.uhrzeit && /^\d{2}:\d{2}$/.test(teil.uhrzeit) ? teil.uhrzeit : alt.uhrzeit;
+  const neu = { an: teil.an ?? alt.an, uhrzeit, geaendert: jetztStempel() };
+  if (neu.an === alt.an && neu.uhrzeit === alt.uhrzeit) return;
+  sichereSchreibErinnerung(neu);
 }
 
 /** Eigene Schreibimpulse speichern (eine Frage pro Eintrag). */

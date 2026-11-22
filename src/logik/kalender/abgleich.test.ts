@@ -8,7 +8,8 @@ import { KeineVerbindung } from '../abgleich/drive';
 import { alsKarte } from '../listen';
 import { baueListe, baueNotiz } from '../test-hilfe';
 import { hakeAb } from '../wiederholung';
-import { gleicheKalenderAb, mitTerminId, terminFuer, titelAus } from './abgleich';
+import { SCHREIB_ERINNERUNG_ID, gleicheKalenderAb, mitTerminId, schreibErinnerungTermin, terminFuer, titelAus } from './abgleich';
+import type { TerminDaten } from './kalender';
 import { SimulierterKalender } from './simulierterKalender';
 
 const JETZT = '2026-11-16T10:00';
@@ -44,11 +45,15 @@ class Geraet {
   }
 
   /** Abgleich; die gemeldeten Termin-IDs werden – wie in der App – in die Notizen übernommen. */
+  /** Die Schreib-Erinnerung des Tagebuchs, wie sie in den Einstellungen steht */
+  schreibErinnerung: TerminDaten | null = null;
+
   async gleicheAb(jetztLokal = JETZT, verwaisteAufraeumen = false) {
     const ergebnis = await gleicheKalenderAb(this.kalender, this.kalenderId, this.notizen, listen, {
       jetztLokal,
       appAdresse: APP,
       verwaisteAufraeumen,
+      schreibErinnerung: this.schreibErinnerung,
     });
     for (const [id, terminId] of ergebnis.ids) {
       this.notizen = this.notizen.map((n) => (n.id === id ? mitTerminId(n, terminId) : n));
@@ -345,3 +350,45 @@ describe('Robustheit', () => {
     ]);
   });
 });
+
+describe('Tägliche Schreib-Erinnerung des Tagebuchs', () => {
+  it('genau ein täglicher Serientermin; Uhrzeit ändern ändert ihn, Ausschalten löscht ihn', async () => {
+    a.schreibErinnerung = schreibErinnerungTermin('21:00', APP);
+    await a.gleicheAb();
+    expect(termine()).toHaveLength(1);
+    expect(termine()[0]).toMatchObject({ notiz_id: SCHREIB_ERINNERUNG_ID, beginn: '2026-01-01T21:00', taeglich: true, erinnerung: 0 });
+    expect(termine()[0].beschreibung).toContain('#/tagebuch');
+
+    await a.gleicheAb(); // nichts zu tun
+    expect(termine()).toHaveLength(1);
+
+    a.schreibErinnerung = schreibErinnerungTermin('20:30', APP);
+    const geaendert = await a.gleicheAb();
+    expect(geaendert.geaendert).toBe(1);
+    expect(termine()[0].beginn).toBe('2026-01-01T20:30');
+
+    a.schreibErinnerung = null;
+    await a.gleicheAb();
+    expect(termine()).toHaveLength(0);
+  });
+
+  it('zwei Geräte legen sie gleichzeitig an: es bleibt einer; „neu aufbauen“ räumt sie nicht weg', async () => {
+    const b = new Geraet(kalender, kalenderId);
+    a.schreibErinnerung = schreibErinnerungTermin('21:00', APP);
+    b.schreibErinnerung = schreibErinnerungTermin('21:00', APP);
+    await kalender.erstelleTermin(kalenderId, a.schreibErinnerung);
+    await kalender.erstelleTermin(kalenderId, b.schreibErinnerung);
+    await b.gleicheAb(JETZT, true);
+    expect(termine()).toHaveLength(1);
+    expect(termine()[0].notiz_id).toBe(SCHREIB_ERINNERUNG_ID);
+  });
+
+  it('im Kalender von Hand gelöscht: wird neu angelegt', async () => {
+    a.schreibErinnerung = schreibErinnerungTermin('21:00', APP);
+    await a.gleicheAb();
+    await kalender.loescheTermin(kalenderId, termine()[0].id);
+    await a.gleicheAb();
+    expect(termine()).toHaveLength(1);
+  });
+});
+
