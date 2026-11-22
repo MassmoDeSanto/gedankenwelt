@@ -6,25 +6,33 @@
  * Das Tagebuch ist ein eigener Raum mit eigenen Farben („Papier“ hell, „Kerzenlicht“ dunkel).
  * Solange die Seite offen ist, steht darum `data-raum="tagebuch"` am <html>-Element.
  */
-import { useEffect, useRef, useState, type TouchEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { setzeTagebuchtag } from '../db/aktionen';
 import { useZustand } from '../db/speicher';
-import { BEWERTUNG_WORTE, datumsTeile, tagZuDatum, tagebuchTagVon } from '../logik/tagebuch';
+import {
+  BEWERTUNG_WORTE,
+  datumsTeile,
+  herkunftText,
+  monatVon,
+  tagKurz,
+  tagZuDatum,
+  tagebuchTagVon,
+  tagebuchTagVonStempel,
+  tagesspur,
+  vorEinemJahr,
+} from '../logik/tagebuch';
 import { lokalJetzt, verschiebeDatum } from '../logik/zeit';
 import { TAGEBUCH_ID, type Bewertung } from '../modell/typen';
 import { Kopfzeile, klassen } from './Bausteine';
-import { gehe } from './router';
+import { MarkdownAnzeige } from './MarkdownAnzeige';
+import { adresse, gehe } from './router';
 import { Schreibbereich } from './Schreibbereich';
 import { Kalender, PfeilZurueck, Winkel } from './Symbole';
 
 const STUFEN: Bewertung[] = [1, 2, 3, 4, 5];
 
-export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string }) {
-  const heute = tagebuchTagVon(lokalJetzt());
-  // In die Zukunft schreibt man kein Tagebuch.
-  const tag = datum && datum <= heute ? datum : heute;
-  const teile = datumsTeile(tag);
-
+/** Schaltet auf die Tagebuch-Farben um, solange die Seite offen ist (auch die Farbe der Browser-Leiste). */
+export function useTagebuchRaum(): void {
   const thema = useZustand().einstellungen.thema;
   useEffect(() => {
     const leiste = document.querySelector('meta[name="theme-color"]');
@@ -35,6 +43,15 @@ export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string
       leiste?.setAttribute('content', thema === 'hell' ? '#f4f5f8' : '#0f1117');
     };
   }, [thema]);
+}
+
+export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string }) {
+  const heute = tagebuchTagVon(lokalJetzt());
+  // In die Zukunft schreibt man kein Tagebuch.
+  const tag = datum && datum <= heute ? datum : heute;
+  const teile = datumsTeile(tag);
+
+  useTagebuchRaum();
 
   useEffect(() => {
     if (!notiz) window.scrollTo(0, 0);
@@ -68,7 +85,11 @@ export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string
     <div className="seite tagebuch" onTouchStart={beiBeruehrung} onTouchEnd={beiLoslassen}>
       <Kopfzeile
         zurueck={{ seite: 'start' }}
-        titel={<span className="mono tb-nav-text">Tagebuch</span>}
+        titel={
+          <a className="mono tb-nav-text" href={adresse({ seite: 'tagebuchmonat', monat: monatVon(tag) })}>
+            Tagebuch · Monat
+          </a>
+        }
         rechts={
           <span className="tb-kalender">
             <button
@@ -103,10 +124,14 @@ export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string
 
       <div className="tb-datum">
         <span className="tb-tageszahl">{teile.tageszahl}</span>
-        <span className="tb-datum-text mono">
+        <a
+          className="tb-datum-text mono"
+          href={adresse({ seite: 'tagebuchmonat', monat: monatVon(tag) })}
+          title="Monatsansicht"
+        >
           <span>{teile.wochentag}</span>
           <span>{teile.monat}</span>
-        </span>
+        </a>
         <nav className="tb-nav" aria-label="Tag wechseln">
           {tag !== heute && (
             <button className="textknopf" onClick={() => zeige(heute)}>
@@ -139,7 +164,78 @@ export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string
           platzhalterLeer={tag === heute ? 'Was war heute?' : 'Was war an diesem Tag?'}
         />
       </div>
+
+      <Spur key={`spur-${tag}`} datum={tag} />
+      <VorEinemJahr datum={tag} />
     </div>
+  );
+}
+
+/** Was an diesem Tag sonst geschah: erledigte Aufgaben und neue Gedanken (KONZEPT.md, Abschnitt 13.2). */
+function Spur({ datum }: { datum: string }) {
+  const z = useZustand();
+  const spur = useMemo(() => tagesspur(z.notizen.values(), datum), [z.notizen, z, datum]);
+  const [offen, setOffen] = useState(false);
+  if (spur.erledigt.length === 0 && spur.neu.length === 0) return null;
+
+  const teile = [];
+  if (spur.erledigt.length > 0) teile.push(`✓ ${spur.erledigt.length} erledigt`);
+  if (spur.neu.length > 0) teile.push(`◆ ${spur.neu.length} ${spur.neu.length === 1 ? 'neuer Gedanke' : 'neue Gedanken'}`);
+  const eintrag = (n: (typeof spur.neu)[number], zeit: string) => (
+    <a key={n.id} className="tb-spur-eintrag" href={adresse({ seite: 'liste', id: n.liste_id, notiz: n.id })}>
+      <span className="tb-spur-text">
+        <MarkdownAnzeige text={n.text} einzeilig ohneLinks />
+      </span>
+      <span className="mono meta">
+        {herkunftText(n, z.listen, z.tagebuchtage.values())} · {zeit}
+      </span>
+    </a>
+  );
+
+  return (
+    <section className="tb-spur">
+      <button className="tb-spur-kopf mono" aria-expanded={offen} onClick={() => setOffen(!offen)}>
+        <Winkel />
+        {teile.join(' · ')}
+      </button>
+      {offen && (
+        <div className="tb-spur-liste">
+          {spur.erledigt.length > 0 && <div className="etikett">Erledigt</div>}
+          {spur.erledigt.map((n) => {
+            // Der Zeitpunkt des Abhakens an diesem Tag (bei wiederkehrenden Aufgaben aus dem Verlauf)
+            const zeitpunkte = [...(n.aufgabe?.erledigt_verlauf ?? []), n.aufgabe?.erledigt_am ?? ''];
+            const am = zeitpunkte.find((z) => z && tagebuchTagVonStempel(z) === datum);
+            return eintrag(n, am ? uhrzeit(am) : '');
+          })}
+          {spur.neu.length > 0 && <div className="etikett">Neue Gedanken</div>}
+          {spur.neu.map((n) => eintrag(n, uhrzeit(n.erstellt)))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Uhrzeit eines Zeitstempels in Ortszeit, z. B. „14:05“ */
+function uhrzeit(stempel: string): string {
+  return lokalJetzt(new Date(stempel)).slice(11, 16);
+}
+
+/** Derselbe Tag vor einem Jahr, falls es dort etwas gibt. */
+function VorEinemJahr({ datum }: { datum: string }) {
+  const z = useZustand();
+  const damals = useMemo(() => vorEinemJahr(datum, z.notizen.values(), z.tagebuchtage.values()), [z, datum]);
+  if (!damals) return null;
+  return (
+    <a className="tb-damals" href={adresse({ seite: 'tagebuch', datum: damals.datum })}>
+      <span className="etikett">Vor einem Jahr · {tagKurz(damals.datum)}</span>
+      {damals.titel && <span className="tb-damals-titel">{damals.titel}</span>}
+      {damals.text && (
+        <span className="tb-damals-text">
+          <MarkdownAnzeige text={damals.text} einzeilig ohneLinks />
+        </span>
+      )}
+      {damals.bewertung && <span className="mono meta">{BEWERTUNG_WORTE[damals.bewertung]}</span>}
+    </a>
   );
 }
 

@@ -10,6 +10,7 @@ import { Papierkorb } from './Papierkorb';
 import { Meldungsleiste } from './Meldungsleiste';
 import { useRoute, type Route } from './router';
 import { Start } from './Start';
+import { TagebuchMonat } from './TagebuchMonat';
 import { TagebuchSeite } from './TagebuchSeite';
 
 export function App() {
@@ -56,6 +57,8 @@ function seite(route: Route) {
       return <ImportSeite />;
     case 'tagebuch':
       return <TagebuchSeite datum={route.datum} notiz={route.notiz} />;
+    case 'tagebuchmonat':
+      return <TagebuchMonat monat={route.monat} />;
     default:
       return <Start />;
   }

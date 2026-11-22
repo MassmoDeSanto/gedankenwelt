@@ -2301,3 +2301,315 @@ details.diagnose > summary {
   background: var(--tb-akzent);
 }
 
+
+/* ───────── Tagebuch, Etappe 2: Tagesspur, Vor einem Jahr, Monatsansicht, Startseiten-Karte ───────── */
+
+.tb-datum-text {
+  transition: color var(--kurz);
+}
+
+a.tb-datum-text:hover,
+a.tb-nav-text:hover {
+  color: var(--text);
+}
+
+.tb-spur {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--linie);
+}
+
+.tb-spur-kopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--gedaempft);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tb-spur-kopf:hover {
+  color: var(--text);
+}
+
+.tb-spur-kopf svg {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--kurz);
+}
+
+.tb-spur-kopf[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+.tb-spur-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.tb-spur-liste .etikett {
+  margin-top: 10px;
+}
+
+.tb-spur-eintrag {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 10px;
+  margin: 0 -10px;
+  border-radius: 10px;
+  transition: background var(--kurz);
+}
+
+.tb-spur-eintrag:hover {
+  background: var(--flaeche);
+}
+
+.tb-spur-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-damals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--flaeche);
+  transition: background var(--kurz);
+}
+
+.tb-damals:hover {
+  background: var(--chip);
+}
+
+.tb-damals-titel {
+  font-family: var(--serif);
+  font-size: 18px;
+}
+
+.tb-damals-text {
+  font-family: var(--serif);
+  color: var(--gedaempft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Monatsansicht */
+.tb-monatskopf {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 20px;
+}
+
+.tb-monatsname {
+  font-family: var(--serif);
+  font-size: clamp(26px, 8vw, 34px);
+  font-weight: 500;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.tb-raster {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  /* Am breiten Bildschirm nicht größer als ein Handy-Kalender */
+  max-width: 440px;
+}
+
+.tb-raster-kopf {
+  text-align: center;
+  font-size: 11px;
+  color: var(--meta);
+  padding-bottom: 2px;
+}
+
+.tb-zelle {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid transparent;
+  transition: filter var(--kurz);
+}
+
+a.tb-zelle:hover {
+  filter: brightness(1.12);
+}
+
+.tb-zelle.leer {
+  border: 1px dashed var(--chip);
+  color: var(--meta);
+}
+
+.tb-zelle.geschrieben {
+  background: var(--flaeche);
+}
+
+.tb-zelle.stufe-1 {
+  background: var(--tb-stufe-1);
+}
+.tb-zelle.stufe-2 {
+  background: var(--tb-stufe-2);
+}
+.tb-zelle.stufe-3 {
+  background: var(--tb-stufe-3);
+}
+.tb-zelle.stufe-4 {
+  background: var(--tb-stufe-4);
+  color: var(--tb-hintergrund);
+}
+.tb-zelle.stufe-5 {
+  background: var(--tb-stufe-5);
+  color: var(--tb-hintergrund);
+}
+
+.tb-zelle.heute {
+  outline: 1.5px solid var(--tb-akzent);
+  outline-offset: 2px;
+}
+
+.tb-zelle.zukunft {
+  border: 0;
+  opacity: 0.25;
+}
+
+.tb-bester {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--flaeche);
+}
+
+.tb-bester:hover {
+  background: var(--chip);
+}
+
+.tb-bester-titel {
+  font-family: var(--serif);
+  font-size: 18px;
+}
+
+.tb-zahlen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+
+.tb-zahlen > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-zahl {
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.tb-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tb-tagchip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--flaeche);
+  color: var(--tb-akzent);
+}
+
+/* Startseiten-Karte: die einzige Fläche dort in den Tagebuch-Farben */
+.karte.tb-karte {
+  display: block;
+  background: var(--tb-flaeche);
+  color: var(--tb-text);
+  transition: filter var(--kurz);
+}
+
+.karte.tb-karte:hover {
+  filter: brightness(1.06);
+}
+
+.etikett.tb-etikett {
+  color: var(--tb-akzent);
+}
+
+.tb-punkte {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.tb-punkt-stufe {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tb-chip);
+}
+
+.tb-punkte[data-wert='1'] .an {
+  background: var(--tb-stufe-1);
+}
+.tb-punkte[data-wert='2'] .an {
+  background: var(--tb-stufe-2);
+}
+.tb-punkte[data-wert='3'] .an {
+  background: var(--tb-stufe-3);
+}
+.tb-punkte[data-wert='4'] .an {
+  background: var(--tb-stufe-4);
+}
+.tb-punkte[data-wert='5'] .an {
+  background: var(--tb-stufe-5);
+}
+
+.tb-karte-titel,
+.tb-karte-text,
+.tb-karte-leer {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-karte-text {
+  font-size: 16px;
+}
+
+.tb-karte-leer {
+  color: var(--tb-meta);
+}
+
+.tb-karte-damals {
+  margin-top: 8px;
+  color: var(--tb-meta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

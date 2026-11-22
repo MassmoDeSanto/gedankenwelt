@@ -4,10 +4,18 @@ import { erstelleNotizen, gedankeDesTages } from '../db/aktionen';
 import { suchindex, useZustand } from '../db/speicher';
 import { aufgabenZusammenfassung, gruppiereAufgaben, offeneAufgaben } from '../logik/aufgaben';
 import { kinderVon, pfadText } from '../logik/listen';
-import { herkunftText } from '../logik/tagebuch';
+import {
+  BEWERTUNG_WORTE,
+  herkunftText,
+  notizenDesTages,
+  tagKurz,
+  tagZuDatum,
+  tagebuchTagVon,
+  vorEinemJahr,
+} from '../logik/tagebuch';
 import { LEERER_FILTER, filterAktiv, type SuchFilter, type Treffer } from '../logik/suche';
 import { tagHaeufigkeit } from '../logik/tags';
-import { formatKopfdatum, formatStempel, lokalesDatum } from '../logik/zeit';
+import { formatKopfdatum, formatStempel, lokalJetzt, lokalesDatum } from '../logik/zeit';
 import { EINGANG_ID, TAGEBUCH_ID, type Notiz } from '../modell/typen';
 import { AbgleichSymbol } from './AbgleichSymbol';
 import { Segment, klassen, useListenBaum } from './Bausteine';
@@ -92,6 +100,7 @@ export function Start() {
         <>
           <TagesgedankeKarte />
           <TodoBox />
+          <TagebuchKarte />
           <WeltKnopf />
         </>
       )}
@@ -373,6 +382,50 @@ function TodoBox() {
         </a>
       </div>
     </section>
+  );
+}
+
+// ───────────────────────── Tagebuch ─────────────────────────
+
+/** Karte in den Tagebuch-Farben (KONZEPT.md, Abschnitt 13.6): der heutige Tag auf einen Blick. */
+function TagebuchKarte() {
+  const z = useZustand();
+  const heute = tagebuchTagVon(lokalJetzt());
+  const tag = tagZuDatum(z.tagebuchtage.values(), heute);
+  const ersterAbsatz = useMemo(() => notizenDesTages(z.notizen.values(), heute)[0], [z, heute]);
+  const damals = useMemo(() => vorEinemJahr(heute, z.notizen.values(), z.tagebuchtage.values()), [z, heute]);
+  const bewertung = tag?.bewertung ?? null;
+
+  return (
+    <a className="karte tb-karte" href={adresse({ seite: 'tagebuch' })}>
+      <div className="kartenkopf">
+        <span className="etikett tb-etikett">Tagebuch</span>
+        <span
+          className="tb-punkte"
+          aria-label={bewertung ? `Bewertung: ${BEWERTUNG_WORTE[bewertung]}` : 'noch nicht bewertet'}
+          data-wert={bewertung ?? 0}
+        >
+          {[1, 2, 3, 4, 5].map((stufe) => (
+            <span key={stufe} className={klassen('tb-punkt-stufe', bewertung !== null && stufe <= bewertung && 'an')} />
+          ))}
+        </span>
+      </div>
+      {tag?.titel ? (
+        <div className="tb-karte-titel">{tag.titel}</div>
+      ) : ersterAbsatz ? (
+        <div className="tb-karte-text">
+          <MarkdownAnzeige text={ersterAbsatz.text} einzeilig ohneLinks />
+        </div>
+      ) : (
+        <div className="tb-karte-leer">Was war heute?</div>
+      )}
+      {damals && (
+        <div className="mono meta tb-karte-damals">
+          Vor einem Jahr · {tagKurz(damals.datum)}
+          {damals.titel ? `: ${damals.titel}` : ''}
+        </div>
+      )}
+    </a>
   );
 }
 

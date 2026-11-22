@@ -889,7 +889,7 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 | Etappe | Inhalt | Stand |
 |---|---|---|
 | 1 | Tagesseite, Überschrift, Bewertung, Drive-Monatsdateien, Suche, Design Papier/Kerzenlicht | gebaut am 22. Nov 2026 |
-| 2 | Monatsansicht, Karte auf der Startseite, Tagesspur, „Vor einem Jahr“ | offen |
+| 2 | Monatsansicht, Karte auf der Startseite, Tagesspur, „Vor einem Jahr“ | gebaut am 22. Nov 2026 |
 | 3 | Gewohnheiten, Schreibimpulse | offen |
 | 4 | Tägliche Schreib-Erinnerung über den Kalender (abschaltbar) | offen |
 | später | Knopf „Aufräumen mit Claude“ | zurückgestellt |
@@ -903,6 +903,14 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 - **Schreiben:** wie überall in der App – einmal Enter neue Zeile, zweimal Enter neuer Absatz. `#tags` und `[ ]`-Aufgaben funktionieren; Aufgaben erscheinen in den To-dos mit Herkunft „Tagebuch“.
 - **Suche:** findet auch Tagebuch-Einträge („Tagebuch › 22. Nov 2026 · Überschrift“). Im Filter: Tagebuch mit / ohne / nur Tagebuch.
 - **Gedanke des Tages:** nimmt nie etwas aus dem Tagebuch.
+
+### Etappe 2: Monat, Startseite, Tagesspur
+
+- **Startseite:** Karte „Tagebuch“ zwischen To-dos und Gedankenwelt, als einzige in den Tagebuch-Farben. Sie zeigt die Überschrift von heute (sonst den ersten Absatz oder „Was war heute?“), die Bewertung als fünf Punkte und „Vor einem Jahr“, falls es etwas gibt. Antippen öffnet den heutigen Tag.
+- **Tagesspur** unter dem Text: eine Zeile „✓ 2 erledigt · ◆ 5 neue Gedanken“, antippen klappt auf. Erledigt = an diesem Tag abgehakte Aufgaben, auch einzelne Male wiederkehrender. Neue Gedanken = an diesem Tag angelegte Notizen außerhalb des Tagebuchs. Bloß bearbeitete Notizen zählen nicht, gelöschte verschwinden. Es gilt derselbe Tageswechsel um 4 Uhr. Die Spur wird jedes Mal neu berechnet und nicht gespeichert.
+- **Vor einem Jahr:** Unter der Spur steht, falls vorhanden, derselbe Tag im Vorjahr (Überschrift, erster Absatz, Bewertung). Aus dem 29. Februar wird der 28.
+- **Monatsansicht:** „Tagebuch · Monat“ oben links oder Wochentag/Monat neben der großen Tageszahl antippen. Kalenderraster ab Montag: Tage nach Bewertung eingefärbt, geschriebene Tage ohne Bewertung als Fläche, Tage ohne Eintrag gestrichelt, heute umrandet, Zukunft blass. Darunter bester Tag (bei Gleichstand der jüngste), Tage geschrieben, erledigte Aufgaben, neue Gedanken und die häufigsten Tags der Tagebuch-Einträge. Monatswechsel mit ‹ ›.
+- Geprüft: Tests für Tagesspur (auch wiederkehrende und beendete Wiederholungen), Monatsübersicht, Kalenderraster, „Vor einem Jahr“. Im Browser mit erfundenen Einträgen: Spur auf- und zuklappen, Abhaken erscheint sofort, Monatszahlen nachgerechnet, Startseiten-Karte, Handy-Breite. Nicht geprüft: am iPhone.
 
 ### So steht es in Drive
 

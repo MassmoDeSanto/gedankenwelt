@@ -11,6 +11,8 @@ export type Route =
   | { seite: 'liste'; id: string; notiz?: string }
   /** Tagebuch: ohne Datum der heutige Tag (KONZEPT.md, Abschnitt 13.6) */
   | { seite: 'tagebuch'; datum?: string; notiz?: string }
+  /** Monatsansicht des Tagebuchs: ohne Monat der aktuelle */
+  | { seite: 'tagebuchmonat'; monat?: string }
   | { seite: 'aufgaben' }
   | { seite: 'einstellungen' }
   | { seite: 'import' }
@@ -24,6 +26,9 @@ export function leseRoute(hash: string): Route {
   if (seite === 'einstellungen') return { seite: 'einstellungen' };
   if (seite === 'papierkorb') return { seite: 'papierkorb' };
   if (seite === 'import') return { seite: 'import' };
+  if (seite === 'tagebuch-monat') {
+    return { seite: 'tagebuchmonat', monat: id && /^\d{4}-\d{2}$/.test(id) ? id : undefined };
+  }
   if (seite === 'tagebuch') {
     const datum = id && /^\d{4}-\d{2}-\d{2}$/.test(id) ? id : undefined;
     const notiz = new URLSearchParams(abfrage).get('n') ?? undefined;
@@ -40,6 +45,7 @@ export function leseRoute(hash: string): Route {
 export function adresse(route: Route): string {
   if (route.seite === 'start') return '#/';
   if (route.seite === 'liste') return `#/liste/${route.id}${route.notiz ? `?n=${route.notiz}` : ''}`;
+  if (route.seite === 'tagebuchmonat') return `#/tagebuch-monat${route.monat ? `/${route.monat}` : ''}`;
   if (route.seite === 'tagebuch') {
     return `#/tagebuch${route.datum ? `/${route.datum}` : ''}${route.notiz ? `?n=${route.notiz}` : ''}`;
   }

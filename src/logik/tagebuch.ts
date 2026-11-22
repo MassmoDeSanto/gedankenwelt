@@ -4,7 +4,7 @@
 import { TAGEBUCH_ID, type Bewertung, type Notiz, type Tagebuchtag } from '../modell/typen';
 import { pfadText, type ListenKarte } from './listen';
 import { festeId } from '../modell/ulid';
-import { verschiebeDatum } from './zeit';
+import { lokalJetzt, verschiebeDatum } from './zeit';
 
 /** Ab dieser Uhrzeit beginnt ein neuer Tagebuchtag. Wer um 1 Uhr nachts schreibt, schreibt noch am Vortag. */
 export const TAGESWECHSEL = '04:00';
@@ -101,4 +101,169 @@ export function herkunftText(notiz: Notiz, listen: ListenKarte, tage: Iterable<T
   if (notiz.liste_id !== TAGEBUCH_ID || !notiz.tagebuch_tag) return pfadText(notiz.liste_id, listen);
   const titel = tagZuDatum(tage, notiz.tagebuch_tag)?.titel;
   return `Tagebuch › ${tagKurz(notiz.tagebuch_tag)}${titel ? ` · ${titel}` : ''}`;
+}
+
+// ───────────────────────── Tagesspur (KONZEPT.md, Abschnitt 13.2) ─────────────────────────
+
+/** Zu welchem Tagebuchtag gehört ein Zeitstempel (UTC)? Rechnet in Ortszeit und mit dem Tageswechsel. */
+export function tagebuchTagVonStempel(stempel: string, wechsel: string = TAGESWECHSEL): string {
+  return tagebuchTagVon(lokalJetzt(new Date(stempel)), wechsel);
+}
+
+export interface Tagesspur {
+  /** An diesem Tag abgehakte Aufgaben (auch einzelne Male wiederkehrender Aufgaben) */
+  erledigt: Notiz[];
+  /** An diesem Tag neu angelegte Notizen außerhalb des Tagebuchs, älteste zuerst */
+  neu: Notiz[];
+}
+
+/**
+ * Was an einem Tag sonst noch geschah. Wird jedes Mal neu berechnet, nie gespeichert.
+ * Gelöschte Notizen fehlen; bloß bearbeitete (nicht neue) Notizen zählen nicht.
+ */
+export function tagesspur(notizen: Iterable<Notiz>, datum: string, wechsel: string = TAGESWECHSEL): Tagesspur {
+  const erledigt: Notiz[] = [];
+  const neu: Notiz[] = [];
+  for (const n of notizen) {
+    if (n.geloescht) continue;
+    const a = n.aufgabe;
+    if (a) {
+      const zeitpunkte = new Set(a.erledigt_verlauf);
+      if (a.erledigt && a.erledigt_am) zeitpunkte.add(a.erledigt_am);
+      if ([...zeitpunkte].some((z) => tagebuchTagVonStempel(z, wechsel) === datum)) erledigt.push(n);
+    }
+    if (n.liste_id !== TAGEBUCH_ID && tagebuchTagVonStempel(n.erstellt, wechsel) === datum) neu.push(n);
+  }
+  neu.sort((a, b) => (a.erstellt < b.erstellt ? -1 : a.erstellt > b.erstellt ? 1 : 0));
+  return { erledigt, neu };
+}
+
+// ───────────────────────── Monatsansicht (KONZEPT.md, Abschnitt 13.6) ─────────────────────────
+
+export interface Monatstag {
+  datum: string;
+  bewertung: Bewertung | null;
+  /** Gibt es an diesem Tag Text, eine Überschrift oder eine Bewertung? */
+  geschrieben: boolean;
+}
+
+export interface Monatsuebersicht {
+  tage: Monatstag[];
+  /** Durchschnitt der Bewertungen, eine Nachkommastelle; null ohne Bewertung */
+  durchschnitt: number | null;
+  /** Höchste Bewertung des Monats (bei Gleichstand der jüngste Tag) */
+  besterTag: { datum: string; titel: string; bewertung: Bewertung } | null;
+  geschrieben: number;
+  erledigt: number;
+  neueGedanken: number;
+  /** Häufigste Tags der Tagebuch-Einträge, höchstens fünf */
+  tags: { tag: string; anzahl: number }[];
+}
+
+/** Anzahl Tage eines Monats "2026-02" */
+export function tageImMonat(monat: string): number {
+  const [j, m] = monat.split('-').map(Number);
+  return new Date(Date.UTC(j, m, 0)).getUTCDate();
+}
+
+/** Wochentag des Ersten, 0 = Montag … 6 = Sonntag (für das Kalenderraster) */
+export function ersterWochentag(monat: string): number {
+  const [j, m] = monat.split('-').map(Number);
+  return (new Date(Date.UTC(j, m - 1, 1)).getUTCDay() + 6) % 7;
+}
+
+/** Vorheriger bzw. nächster Monat */
+export function verschiebeMonat(monat: string, schritte: number): string {
+  const [j, m] = monat.split('-').map(Number);
+  const d = new Date(Date.UTC(j, m - 1 + schritte, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+export function monatsName(monat: string): string {
+  const [j, m] = monat.split('-').map(Number);
+  return `${MONATE_LANG[m - 1]} ${j}`;
+}
+
+export function monatsuebersicht(
+  monat: string,
+  notizen: Iterable<Notiz>,
+  tagebuchtage: Iterable<Tagebuchtag>,
+  wechsel: string = TAGESWECHSEL,
+): Monatsuebersicht {
+  const imMonat = (datum: string) => datum.startsWith(monat + '-');
+  const tageMitText = new Set<string>();
+  const tagZaehler = new Map<string, number>();
+  let erledigt = 0;
+  let neueGedanken = 0;
+
+  for (const n of notizen) {
+    if (n.geloescht) continue;
+    if (n.liste_id === TAGEBUCH_ID && n.tagebuch_tag && imMonat(n.tagebuch_tag)) {
+      tageMitText.add(n.tagebuch_tag);
+      for (const t of n.tags) tagZaehler.set(t, (tagZaehler.get(t) ?? 0) + 1);
+    }
+    if (n.liste_id !== TAGEBUCH_ID && imMonat(tagebuchTagVonStempel(n.erstellt, wechsel))) neueGedanken++;
+    const a = n.aufgabe;
+    if (a) {
+      // Jedes Abhaken zählt einmal, auch mehrere Male derselben wiederkehrenden Aufgabe.
+      const zeitpunkte = new Set(a.erledigt_verlauf);
+      if (a.erledigt && a.erledigt_am) zeitpunkte.add(a.erledigt_am);
+      for (const z of zeitpunkte) if (imMonat(tagebuchTagVonStempel(z, wechsel))) erledigt++;
+    }
+  }
+
+  const jeDatum = new Map<string, Tagebuchtag>();
+  for (const t of tagebuchtage) if (!t.geloescht && imMonat(t.datum)) jeDatum.set(t.datum, t);
+
+  const tage: Monatstag[] = [];
+  for (let tag = 1; tag <= tageImMonat(monat); tag++) {
+    const datum = `${monat}-${String(tag).padStart(2, '0')}`;
+    const t = jeDatum.get(datum);
+    tage.push({
+      datum,
+      bewertung: t?.bewertung ?? null,
+      geschrieben: tageMitText.has(datum) || (t ? tagHatInhalt(t) : false),
+    });
+  }
+
+  const bewertet = [...jeDatum.values()].filter((t) => t.bewertung !== null);
+  const durchschnitt = bewertet.length
+    ? Math.round((bewertet.reduce((s, t) => s + t.bewertung!, 0) / bewertet.length) * 10) / 10
+    : null;
+  const bester = bewertet.sort((a, b) => b.bewertung! - a.bewertung! || (a.datum < b.datum ? 1 : -1))[0];
+
+  return {
+    tage,
+    durchschnitt,
+    besterTag: bester ? { datum: bester.datum, titel: bester.titel, bewertung: bester.bewertung! } : null,
+    geschrieben: tage.filter((t) => t.geschrieben).length,
+    erledigt,
+    neueGedanken,
+    tags: [...tagZaehler]
+      .map(([tag, anzahl]) => ({ tag, anzahl }))
+      .sort((a, b) => b.anzahl - a.anzahl || a.tag.localeCompare(b.tag, 'de'))
+      .slice(0, 5),
+  };
+}
+
+// ───────────────────────── Vor einem Jahr ─────────────────────────
+
+/** Derselbe Tag ein Jahr früher; aus dem 29. Februar wird der 28. */
+export function vorEinemJahrDatum(datum: string): string {
+  const [j, m, t] = datum.split('-').map(Number);
+  const tag = m === 2 && t === 29 ? 28 : t;
+  return `${j - 1}-${String(m).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+}
+
+/** Was vor einem Jahr im Tagebuch stand, oder null. */
+export function vorEinemJahr(
+  datum: string,
+  notizen: Iterable<Notiz>,
+  tagebuchtage: Iterable<Tagebuchtag>,
+): { datum: string; titel: string; bewertung: Bewertung | null; text: string } | null {
+  const damals = vorEinemJahrDatum(datum);
+  const tag = tagZuDatum(tagebuchtage, damals);
+  const absaetze = notizenDesTages(notizen, damals);
+  if (absaetze.length === 0 && !(tag && tagHatInhalt(tag))) return null;
+  return { datum: damals, titel: tag?.titel ?? '', bewertung: tag?.bewertung ?? null, text: absaetze[0]?.text ?? '' };
 }

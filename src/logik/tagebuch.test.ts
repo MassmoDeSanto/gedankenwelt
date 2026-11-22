@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { monatAusPfad, monatsPfad, tagebuchTagVon } from './tagebuch';
+import { TAGEBUCH_ID, neueAufgabe, type Aufgabe, type Tagebuchtag } from '../modell/typen';
+import {
+  ersterWochentag,
+  monatAusPfad,
+  monatsPfad,
+  monatsuebersicht,
+  tageImMonat,
+  tagebuchTagVon,
+  tagesspur,
+  verschiebeMonat,
+  vorEinemJahr,
+  vorEinemJahrDatum,
+} from './tagebuch';
+import { baueNotiz } from './test-hilfe';
 
 describe('Tagebuch: Tageszuordnung', () => {
   it('tagsüber gehört ein Eintrag zum selben Tag', () => {
@@ -35,5 +48,119 @@ describe('Tagebuch: Pfade der Monatsdateien', () => {
     expect(monatAusPfad('_Tagebuch/2026/notizen.md')).toBeNull();
     expect(monatAusPfad('_Tagebuch/2025/2026-11.md')).toBeNull();
     expect(monatAusPfad('Tagebuch/2026/2026-11.md')).toBeNull();
+  });
+});
+
+// Zeitpunkte um 12 Uhr Weltzeit: In jeder Zeitzone Europas derselbe Tag, also unabhängig vom Rechner.
+const mittag = (datum: string) => `${datum}T12:00:00Z`;
+
+function aufgabe(teil: Partial<Aufgabe>): Aufgabe {
+  return { ...neueAufgabe(), ...teil };
+}
+
+describe('Tagebuch: Tagesspur', () => {
+  it('erledigte Aufgaben, einzelne Male wiederkehrender Aufgaben und neue Gedanken des Tages', () => {
+    const erledigt = baueNotiz({ text: 'Steuer abgeben', aufgabe: aufgabe({ erledigt: true, erledigt_am: mittag('2026-11-20') }) });
+    const wiederkehrend = baueNotiz({
+      text: 'Zählerstand',
+      aufgabe: aufgabe({ wiederholung: null, erledigt_verlauf: [mittag('2026-11-13'), mittag('2026-11-20')] }),
+    });
+    const neu = baueNotiz({ text: 'Neue Idee', erstellt: mittag('2026-11-20') });
+    const alt = baueNotiz({ text: 'Alte Idee, heute bearbeitet', erstellt: mittag('2026-11-01'), geaendert: mittag('2026-11-20') });
+    const geloescht = baueNotiz({ text: 'Weg', erstellt: mittag('2026-11-20'), geloescht: mittag('2026-11-20') });
+    const imTagebuch = baueNotiz({ text: 'Tagebuch zählt nicht als neuer Gedanke', liste_id: TAGEBUCH_ID, erstellt: mittag('2026-11-20') });
+
+    const spur = tagesspur([erledigt, wiederkehrend, neu, alt, geloescht, imTagebuch], '2026-11-20');
+    expect(spur.erledigt.map((n) => n.text)).toEqual(['Steuer abgeben', 'Zählerstand']);
+    expect(spur.neu.map((n) => n.text)).toEqual(['Neue Idee']);
+  });
+
+  it('beendete Wiederholung zählt nur einmal, auch wenn der Zeitpunkt in Verlauf und erledigt_am steht', () => {
+    const n = baueNotiz({
+      text: 'Kurs',
+      erstellt: mittag('2026-10-01'),
+      aufgabe: aufgabe({ erledigt: true, erledigt_am: mittag('2026-11-20'), erledigt_verlauf: [mittag('2026-11-20')] }),
+    });
+    expect(monatsuebersicht('2026-11', [n], []).erledigt).toBe(1);
+    expect(tagesspur([n], '2026-11-20').erledigt).toHaveLength(1);
+  });
+});
+
+describe('Tagebuch: Monatsübersicht', () => {
+  const tag = (datum: string, teil: Partial<Tagebuchtag>): Tagebuchtag => ({
+    id: datum,
+    datum,
+    titel: '',
+    bewertung: null,
+    impuls: null,
+    gewohnheiten: [],
+    erstellt: mittag(datum),
+    geaendert: mittag(datum),
+    geloescht: null,
+    ...teil,
+  });
+
+  it('Raster, Durchschnitt, bester Tag, Zahlen und Tags', () => {
+    const notizen = [
+      baueNotiz({ text: 'Text #arbeit', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-02' }),
+      baueNotiz({ text: 'Mehr #arbeit #sport', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-11-05' }),
+      baueNotiz({ text: 'Oktober', liste_id: TAGEBUCH_ID, tagebuch_tag: '2026-10-31' }),
+      baueNotiz({ text: 'Neuer Gedanke', erstellt: mittag('2026-11-07') }),
+      baueNotiz({ text: 'Erledigt', erstellt: mittag('2026-10-07'), aufgabe: aufgabe({ erledigt: true, erledigt_am: mittag('2026-11-08') }) }),
+    ];
+    const tage = [
+      tag('2026-11-02', { bewertung: 4 }),
+      tag('2026-11-05', { bewertung: 5, titel: 'Großartig' }),
+      tag('2026-11-09', { bewertung: 2 }),
+      tag('2026-11-12', { titel: 'Nur Überschrift' }),
+      tag('2026-10-30', { bewertung: 5 }),
+    ];
+    const m = monatsuebersicht('2026-11', notizen, tage);
+
+    expect(m.tage).toHaveLength(30);
+    expect(m.tage.filter((t) => t.geschrieben).map((t) => t.datum)).toEqual(['2026-11-02', '2026-11-05', '2026-11-09', '2026-11-12']);
+    expect(m.tage[4]).toEqual({ datum: '2026-11-05', bewertung: 5, geschrieben: true });
+    expect(m.durchschnitt).toBe(3.7);
+    expect(m.besterTag).toEqual({ datum: '2026-11-05', titel: 'Großartig', bewertung: 5 });
+    expect(m.geschrieben).toBe(4);
+    expect(m.neueGedanken).toBe(1);
+    expect(m.erledigt).toBe(1);
+    expect(m.tags).toEqual([
+      { tag: 'arbeit', anzahl: 2 },
+      { tag: 'sport', anzahl: 1 },
+    ]);
+  });
+
+  it('leerer Monat', () => {
+    const m = monatsuebersicht('2026-02', [], []);
+    expect(m.tage).toHaveLength(28);
+    expect(m.durchschnitt).toBeNull();
+    expect(m.besterTag).toBeNull();
+  });
+
+  it('Kalenderraster und Monatswechsel', () => {
+    expect(ersterWochentag('2026-11')).toBe(6); // 1. Nov 2026 ist ein Sonntag
+    expect(ersterWochentag('2026-12')).toBe(1); // 1. Dez 2026 ist ein Dienstag
+    expect(tageImMonat('2028-02')).toBe(29);
+    expect(verschiebeMonat('2026-01', -1)).toBe('2025-12');
+    expect(verschiebeMonat('2026-12', 1)).toBe('2027-01');
+  });
+});
+
+describe('Tagebuch: Vor einem Jahr', () => {
+  it('derselbe Tag ein Jahr früher, mit Überschrift und erstem Absatz', () => {
+    const notizen = [
+      baueNotiz({ text: 'Erster Absatz', liste_id: TAGEBUCH_ID, tagebuch_tag: '2025-11-22', position: 1 }),
+      baueNotiz({ text: 'Zweiter', liste_id: TAGEBUCH_ID, tagebuch_tag: '2025-11-22', position: 2 }),
+    ];
+    const tage: Tagebuchtag[] = [
+      { id: 'x', datum: '2025-11-22', titel: 'Damals', bewertung: 3, impuls: null, gewohnheiten: [], erstellt: '', geaendert: '', geloescht: null },
+    ];
+    expect(vorEinemJahr('2026-11-22', notizen, tage)).toEqual({ datum: '2025-11-22', titel: 'Damals', bewertung: 3, text: 'Erster Absatz' });
+    expect(vorEinemJahr('2026-11-23', notizen, tage)).toBeNull();
+  });
+
+  it('aus dem 29. Februar wird der 28.', () => {
+    expect(vorEinemJahrDatum('2028-02-29')).toBe('2027-02-28');
   });
 });
