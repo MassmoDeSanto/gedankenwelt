@@ -19,7 +19,9 @@ import {
   tagebuchListe,
   type Datenbestand,
   type Einstellungen,
+  type Gewohnheit,
   type ImportEintrag,
+  type Impulse,
   type Liste,
   type Notiz,
   type Tagebuchtag,
@@ -37,6 +39,10 @@ export interface Zustand {
   importe: ImportEintrag[];
   /** Überschriften und Bewertungen im Tagebuch, je ID */
   tagebuchtage: Map<string, Tagebuchtag>;
+  /** Gewohnheiten im Tagebuch, je ID */
+  gewohnheiten: Map<string, Gewohnheit>;
+  /** Eigene Schreibimpulse; null = die eingebaute Liste */
+  impulse: Impulse | null;
 }
 
 let zustand: Zustand = {
@@ -47,6 +53,8 @@ let zustand: Zustand = {
   verlauf: [],
   importe: [],
   tagebuchtage: new Map(),
+  gewohnheiten: new Map(),
+  impulse: null,
 };
 
 export const suchindex = new Suchindex();
@@ -154,6 +162,22 @@ export function sichereTagebuchtag(tag: Tagebuchtag): void {
   melde({ tagebuchtage });
 }
 
+/** Gewohnheiten speichern (angelegt, umbenannt, umsortiert, (de)aktiviert). */
+export function sichereGewohnheiten(geaendert: Gewohnheit[]): void {
+  const gewohnheiten = new Map(zustand.gewohnheiten);
+  for (const g of geaendert) gewohnheiten.set(g.id, g);
+  db.meta.put({ schluessel: 'gewohnheiten', wert: [...gewohnheiten.values()] }).catch(meldeFehler);
+  nachAenderung?.(geaendert.map((g) => g.id));
+  melde({ gewohnheiten });
+}
+
+/** Eigene Schreibimpulse speichern. Zurück zur eingebauten Liste heißt: sie als eigene Liste übernehmen. */
+export function sichereImpulse(impulse: Impulse): void {
+  db.meta.put({ schluessel: 'impulse', wert: impulse }).catch(meldeFehler);
+  nachAenderung?.(['_impulse']);
+  melde({ impulse });
+}
+
 // ───────────────────────── Ergebnis eines Abgleichs übernehmen ─────────────────────────
 
 function gleicheNotiz(a: Notiz, b: Notiz): boolean {
@@ -220,16 +244,29 @@ export function uebernimmAbgleich(bestand: Datenbestand): void {
   const tageNeu = JSON.stringify([...zustand.tagebuchtage.values()].sort(nachId)) !== JSON.stringify([...tage].sort(nachId));
   if (tageNeu) db.meta.put({ schluessel: 'tagebuchtage', wert: tage }).catch(meldeFehler);
 
+  const gewohnheiten = bestand.gewohnheiten ?? [];
+  const gewohnheitenNeu =
+    JSON.stringify([...zustand.gewohnheiten.values()].sort(nachId)) !== JSON.stringify([...gewohnheiten].sort(nachId));
+  if (gewohnheitenNeu) db.meta.put({ schluessel: 'gewohnheiten', wert: gewohnheiten }).catch(meldeFehler);
+
+  const impulse = bestand.impulse ?? null;
+  const impulseNeu = JSON.stringify(zustand.impulse) !== JSON.stringify(impulse);
+  if (impulseNeu) db.meta.put({ schluessel: 'impulse', wert: impulse }).catch(meldeFehler);
+
   const geaendert =
     neueNotizen.length + neueListen.length + wegNotizen.length + wegListen.length > 0 ||
     einstellungenNeu ||
     importeNeu ||
-    tageNeu;
+    tageNeu ||
+    gewohnheitenNeu ||
+    impulseNeu;
   if (geaendert) {
     melde({
       ...(einstellungenNeu ? { einstellungen: bestand.einstellungen } : {}),
       ...(importeNeu ? { importe } : {}),
       ...(tageNeu ? { tagebuchtage: new Map(tage.map((t) => [t.id, t])) } : {}),
+      ...(gewohnheitenNeu ? { gewohnheiten: new Map(gewohnheiten.map((g) => [g.id, g])) } : {}),
+      ...(impulseNeu ? { impulse } : {}),
     });
   }
 }
@@ -255,6 +292,8 @@ export async function ladeAlles(): Promise<void> {
   const verlauf = meta.find((m) => m.schluessel === 'tagesgedanke_verlauf')?.wert as VerlaufEintrag[] | undefined;
   const importe = meta.find((m) => m.schluessel === 'importe')?.wert as ImportEintrag[] | undefined;
   const tage = meta.find((m) => m.schluessel === 'tagebuchtage')?.wert as Tagebuchtag[] | undefined;
+  const gewohnheiten = meta.find((m) => m.schluessel === 'gewohnheiten')?.wert as Gewohnheit[] | undefined;
+  const impulse = meta.find((m) => m.schluessel === 'impulse')?.wert as Impulse | null | undefined;
 
   zustand = {
     geladen: true,
@@ -264,6 +303,8 @@ export async function ladeAlles(): Promise<void> {
     verlauf: verlauf ?? [],
     importe: importe ?? [],
     tagebuchtage: new Map((tage ?? []).map((t) => [t.id, t])),
+    gewohnheiten: new Map((gewohnheiten ?? []).map((g) => [g.id, g])),
+    impulse: impulse ?? null,
   };
   suchindex.setzeAlle(notizen);
 
@@ -282,6 +323,8 @@ export function alsBestand(): Datenbestand {
     tagesgedanke_verlauf: zustand.verlauf,
     ...(zustand.importe.length > 0 ? { importe: zustand.importe } : {}),
     ...(zustand.tagebuchtage.size > 0 ? { tagebuchtage: [...zustand.tagebuchtage.values()] } : {}),
+    ...(zustand.gewohnheiten.size > 0 ? { gewohnheiten: [...zustand.gewohnheiten.values()] } : {}),
+    ...(zustand.impulse ? { impulse: zustand.impulse } : {}),
   };
 }
 
@@ -300,6 +343,8 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
       { schluessel: 'tagesgedanke_verlauf', wert: bestand.tagesgedanke_verlauf },
       { schluessel: 'importe', wert: bestand.importe ?? [] },
       { schluessel: 'tagebuchtage', wert: bestand.tagebuchtage ?? [] },
+      { schluessel: 'gewohnheiten', wert: bestand.gewohnheiten ?? [] },
+      { schluessel: 'impulse', wert: bestand.impulse ?? null },
     ]);
   });
 
@@ -311,6 +356,8 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
     verlauf: bestand.tagesgedanke_verlauf,
     importe: bestand.importe ?? [],
     tagebuchtage: new Map((bestand.tagebuchtage ?? []).map((t) => [t.id, t])),
+    gewohnheiten: new Map((bestand.gewohnheiten ?? []).map((g) => [g.id, g])),
+    impulse: bestand.impulse ?? null,
   };
   suchindex.setzeAlle(bestand.notizen);
   raeumePapierkorbAuf();

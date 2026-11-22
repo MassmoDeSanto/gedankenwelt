@@ -423,3 +423,47 @@ describe('Tagebuch in Drive: Monatsdateien', () => {
   });
 });
 
+
+describe('Tagebuch in Drive: Gewohnheiten und Schreibimpulse', () => {
+  const sport = {
+    id: '01GEWOHNHEIT0000000000000A',
+    name: 'Sport',
+    position: 1,
+    aktiv: true,
+    erstellt: '2026-11-22T10:00:00Z',
+    geaendert: '2026-11-22T10:00:00Z',
+    geloescht: null,
+  };
+  const lesen = { ...sport, id: '01GEWOHNHEIT0000000000000B', name: 'Lesen', position: 2, aktiv: false };
+
+  function bestand(): Datenbestand {
+    return {
+      listen: [eingangsListe('2026-01-01T12:00:00Z'), tagebuchListe()],
+      notizen: [],
+      einstellungen: { thema: 'dunkel' },
+      tagesgedanke_verlauf: [],
+      gewohnheiten: [sport, lesen],
+      impulse: { fragen: ['Was war schön?', 'Was nun?'], geaendert: '2026-11-22T11:00:00Z' },
+    };
+  }
+
+  it('stehen in _Tagebuch/_tagebuch.json und überstehen die Hin- und Rückumwandlung exakt', () => {
+    const dateien = zuDateien(bestand());
+    expect(JSON.parse(dateien.get('_Tagebuch/_tagebuch.json')!).gewohnheiten.map((g: { name: string }) => g.name)).toEqual(['Sport', 'Lesen']);
+    expect(dateien.get('_meta.json')).not.toContain('Sport');
+    expect(ausDateien(dateien, testUmgebung())).toEqual(bestand());
+  });
+
+  it('ohne Gewohnheiten und eigene Impulse gibt es die Datei nicht', () => {
+    const dateien = zuDateien({ ...bestand(), gewohnheiten: [], impulse: undefined });
+    expect(dateien.has('_Tagebuch/_tagebuch.json')).toBe(false);
+  });
+
+  it('eine beschädigte Datei hält das Lesen nicht an', () => {
+    const dateien = zuDateien(bestand());
+    dateien.set('_Tagebuch/_tagebuch.json', '{ "gewohnheiten": [ kaputt');
+    const gelesen = ausDateien(dateien, testUmgebung());
+    expect(gelesen.gewohnheiten).toBeUndefined();
+    expect(gelesen.listen.map((l) => l.id)).toContain(TAGEBUCH_ID);
+  });
+});

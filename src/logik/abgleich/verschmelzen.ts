@@ -20,6 +20,7 @@ import {
   tagebuchListe,
   type Datenbestand,
   type Einstellungen,
+  type Gewohnheit,
   type ImportEintrag,
   type Liste,
   type Notiz,
@@ -208,6 +209,20 @@ function verschmelzeImporte(lokal: ImportEintrag[], fern: ImportEintrag[]): Impo
   return [...jeId.values()].sort(nachId);
 }
 
+/**
+ * Gewohnheiten: Vereinigung beider Seiten, bei gleicher ID gewinnt die neuere Fassung.
+ * Eine Gewohnheit, die nur auf einer Seite fehlt, gilt nie als gelöscht (es gibt nur „inaktiv“).
+ * So geht auch bei einer beschädigten oder fehlenden Datei in Drive keine verloren.
+ */
+function verschmelzeGewohnheiten(lokal: Gewohnheit[], fern: Gewohnheit[]): Gewohnheit[] {
+  const jeId = new Map<string, Gewohnheit>();
+  for (const g of [...lokal, ...fern]) {
+    const alt = jeId.get(g.id);
+    if (!alt || g.geaendert >= alt.geaendert) jeId.set(g.id, g);
+  }
+  return [...jeId.values()].sort(nachId);
+}
+
 export interface VerschmelzOptionen {
   /**
    * Gab es in Drive eine Meta-Datei? Wenn nicht, ist Drive leer oder der Zustand unklar:
@@ -248,9 +263,20 @@ export function verschmelze(
     ? verschmelzeImporte(lokal.importe ?? [], fern.importe ?? [])
     : (lokal.importe ?? []);
 
+  const gewohnheiten = verschmelzeGewohnheiten(lokal.gewohnheiten ?? [], fern.gewohnheiten ?? []);
+  // Eigene Schreibimpulse: die neuere Fassung gewinnt; fehlen sie in Drive, bleiben die eigenen.
+  const impulse =
+    lokal.impulse && fern.impulse
+      ? fern.impulse.geaendert >= lokal.impulse.geaendert
+        ? fern.impulse
+        : lokal.impulse
+      : (lokal.impulse ?? fern.impulse);
+
   return {
     ...(importe.length > 0 ? { importe } : {}),
     ...(tagebuchtage.length > 0 ? { tagebuchtage } : {}),
+    ...(gewohnheiten.length > 0 ? { gewohnheiten } : {}),
+    ...(impulse ? { impulse } : {}),
     listen: repariert.listen.filter(bleibt).sort(nachId),
     notizen: repariert.notizen.filter(bleibt).sort(nachId),
     einstellungen: optionen.fernHatMeta

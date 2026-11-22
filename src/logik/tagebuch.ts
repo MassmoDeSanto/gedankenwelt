@@ -24,6 +24,9 @@ export function monatVon(datum: string): string {
 /** Ordner des Tagebuchs in Drive. Der Unterstrich schützt ihn vor älteren App-Versionen, die ihn sonst als Listen deuten würden. */
 export const TAGEBUCH_ORDNER = '_Tagebuch';
 
+/** Gewohnheiten und eigene Schreibimpulse. Bewusst nicht in _meta.json: Ältere App-Versionen würden sie dort beim Zurückschreiben verwerfen. */
+export const TAGEBUCH_DATEI = '_Tagebuch/_tagebuch.json';
+
 /** Pfad der Monatsdatei, z. B. "_Tagebuch/2026/2026-11.md" */
 export function monatsPfad(monat: string): string {
   return `${TAGEBUCH_ORDNER}/${monat.slice(0, 4)}/${monat}.md`;
@@ -158,6 +161,8 @@ export interface Monatsuebersicht {
   neueGedanken: number;
   /** Häufigste Tags der Tagebuch-Einträge, höchstens fünf */
   tags: { tag: string; anzahl: number }[];
+  /** An wie vielen Tagen des Monats jede Gewohnheit abgehakt wurde (ID → Anzahl) */
+  gewohnheiten: Map<string, number>;
 }
 
 /** Anzahl Tage eines Monats "2026-02" */
@@ -214,6 +219,8 @@ export function monatsuebersicht(
 
   const jeDatum = new Map<string, Tagebuchtag>();
   for (const t of tagebuchtage) if (!t.geloescht && imMonat(t.datum)) jeDatum.set(t.datum, t);
+  const gewohnheiten = new Map<string, number>();
+  for (const t of jeDatum.values()) for (const id of new Set(t.gewohnheiten)) gewohnheiten.set(id, (gewohnheiten.get(id) ?? 0) + 1);
 
   const tage: Monatstag[] = [];
   for (let tag = 1; tag <= tageImMonat(monat); tag++) {
@@ -243,6 +250,7 @@ export function monatsuebersicht(
       .map(([tag, anzahl]) => ({ tag, anzahl }))
       .sort((a, b) => b.anzahl - a.anzahl || a.tag.localeCompare(b.tag, 'de'))
       .slice(0, 5),
+    gewohnheiten,
   };
 }
 

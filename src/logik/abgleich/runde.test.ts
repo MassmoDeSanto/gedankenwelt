@@ -3,7 +3,7 @@
  * simuliertes Drive. Es wird kein echtes Google-Konto benutzt.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EINGANG_ID, TAGEBUCH_ID, eingangsListe, type Datenbestand, type Liste, type Notiz, type Tagebuchtag } from '../../modell/typen';
+import { EINGANG_ID, TAGEBUCH_ID, eingangsListe, type Datenbestand, type Gewohnheit, type Liste, type Notiz, type Tagebuchtag } from '../../modell/typen';
 import { neueId } from '../../modell/ulid';
 import { bearbeiteNotiz, erzeugeNotizen } from '../absatz';
 import { alsKarte } from '../listen';
@@ -756,6 +756,22 @@ describe('Tagebuch', () => {
 
     expect(drive.dateien().get('_Tagebuch/2026/Gedicht.md')).toBe('Eigener Text');
     expect(b.lokal.notizen.some((n) => n.text === 'Eigener Text')).toBe(false);
+  });
+
+  it('Gewohnheiten und eigene Impulse kommen an; eine beschädigte Datei in Drive löscht keine Gewohnheit', async () => {
+    await grundaufbau();
+    const sport: Gewohnheit = { id: neueId(), name: 'Sport', position: 1, aktiv: true, erstellt: um('20:00'), geaendert: um('20:00'), geloescht: null };
+    a.lokal = { ...a.lokal, gewohnheiten: [sport], impulse: { fragen: ['Eigene Frage?'], geaendert: um('20:00') } };
+    await alleAbgleichen(um('20:10'));
+    expect(b.lokal.gewohnheiten).toEqual([sport]);
+    expect(b.lokal.impulse?.fragen).toEqual(['Eigene Frage?']);
+
+    drive.bearbeiteVonHand('_Tagebuch/_tagebuch.json', () => '{ kaputt');
+    await alleAbgleichen(um('20:20'));
+    expect(a.lokal.gewohnheiten).toEqual([sport]);
+    expect(b.lokal.gewohnheiten).toEqual([sport]);
+    // Die Datei wird beim Abgleich wieder vollständig geschrieben.
+    expect(JSON.parse(drive.dateien().get('_Tagebuch/_tagebuch.json')!).gewohnheiten[0].name).toBe('Sport');
   });
 });
 

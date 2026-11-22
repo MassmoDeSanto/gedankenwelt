@@ -28,7 +28,7 @@ import {
   type Dateien,
   type LeseProtokoll,
 } from '../markdown';
-import { monatAusPfad } from '../tagebuch';
+import { TAGEBUCH_DATEI, monatAusPfad } from '../tagebuch';
 import { VersionsKonflikt, type Drive, type DriveEintrag } from './drive';
 import { verschmelze } from './verschmelzen';
 
@@ -63,7 +63,8 @@ const nachId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.i
 
 /** Gehört diese Datei zum Format der App? Alles andere (z. B. der Ordner _import) bleibt unangetastet. */
 function istAppDatei(pfad: string): boolean {
-  if (monatAusPfad(pfad)) return true; // Monatsdatei des Tagebuchs, z. B. _Tagebuch/2026/2026-11.md
+  // Dateien des Tagebuchs, z. B. _Tagebuch/2026/2026-11.md und _Tagebuch/_tagebuch.json
+  if (monatAusPfad(pfad) || pfad === TAGEBUCH_DATEI) return true;
   const teile = pfad.split('/');
   const datei = teile.pop()!;
   if (teile.some((t) => t.startsWith('_'))) return false;
@@ -150,7 +151,7 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
   geraet.schreibeLokal(ergebnis);
 
   // ── 3. Drive angleichen ──
-  const { dateien: ziel, verzeichnis, monate } = zuDateienMitVerzeichnis(ergebnis);
+  const { dateien: ziel, verzeichnis, tagebuch } = zuDateienMitVerzeichnis(ergebnis);
 
   /** Vorhandene Drive-Dateien, erkannt an ihrer Kennung (ID der Liste bzw. Papierkorb/Meta) */
   const vorhanden = new Map<string, CacheEintrag>();
@@ -163,7 +164,9 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
           ? '_papierkorb'
           : monat
             ? `_tagebuch|${monat}`
-            : protokoll.listeJePfad.get(pfad);
+            : pfad === TAGEBUCH_DATEI
+              ? '_tagebuch|einstellungen'
+              : protokoll.listeJePfad.get(pfad);
     if (!kennung) continue;
     if (vorhanden.has(kennung)) ueberzaehlig.push(e);
     else vorhanden.set(kennung, e);
@@ -171,7 +174,7 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
 
   const soll = [
     ...verzeichnis.map((v) => ({ kennung: v.id, pfad: v.pfad })),
-    ...monate.map((m) => ({ kennung: `_tagebuch|${m.monat}`, pfad: m.pfad })),
+    ...tagebuch,
     { kennung: '_papierkorb', pfad: PAPIERKORB_DATEI },
     { kennung: '_meta', pfad: META_DATEI },
   ].map((s) => ({ ...s, inhalt: ziel.get(s.pfad)! }));
@@ -215,7 +218,7 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
   }
 
   // Ordner des Tagebuchs (_Tagebuch und je Jahr einer). Sie gehören zu keiner Liste und werden am Pfad erkannt.
-  for (const m of monate) {
+  for (const m of tagebuch) {
     const teile = ordnerVon(m.pfad).split('/');
     for (let i = 1; i <= teile.length; i++) {
       const pfad = teile.slice(0, i).join('/');

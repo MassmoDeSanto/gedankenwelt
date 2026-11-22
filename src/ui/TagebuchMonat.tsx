@@ -22,6 +22,34 @@ import { useTagebuchRaum } from './TagebuchSeite';
 
 const WOCHENTAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
+/** „Sport 14/20 Tage“ – aktive Gewohnheiten und inaktive, die in diesem Monat noch abgehakt wurden. */
+function GewohnheitenImMonat({ anzahl, bisher }: { anzahl: Map<string, number>; bisher: number }) {
+  const z = useZustand();
+  const reihe = [...z.gewohnheiten.values()]
+    .filter((g) => !g.geloescht && (g.aktiv || (anzahl.get(g.id) ?? 0) > 0))
+    .sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1));
+  if (reihe.length === 0) return null;
+  return (
+    <section className="tb-gewohnheiten-monat">
+      <div className="etikett">Gewohnheiten</div>
+      {reihe.map((g) => {
+        const n = anzahl.get(g.id) ?? 0;
+        return (
+          <div key={g.id} className="tb-gewohnheit-zeile">
+            <span>{g.name}</span>
+            <span className="tb-gewohnheit-balken" aria-hidden="true">
+              <span style={{ width: `${bisher ? Math.min(100, (n / bisher) * 100) : 0}%` }} />
+            </span>
+            <span className="mono meta">
+              {n}/{bisher} Tage
+            </span>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 export function TagebuchMonat({ monat: gewaehlt }: { monat?: string }) {
   useTagebuchRaum();
   const z = useZustand();
@@ -118,6 +146,8 @@ export function TagebuchMonat({ monat: gewaehlt }: { monat?: string }) {
           <span className="mono meta">neue Gedanken</span>
         </div>
       </div>
+
+      <GewohnheitenImMonat anzahl={m.gewohnheiten} bisher={bisher} />
 
       {m.tags.length > 0 && (
         <section>

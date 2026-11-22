@@ -131,6 +131,15 @@ describe('Tagebuch: Monatsübersicht', () => {
     ]);
   });
 
+  it('Gewohnheiten: an wie vielen Tagen abgehakt', () => {
+    const m = monatsuebersicht('2026-11', [], [
+      tag('2026-11-01', { gewohnheiten: ['sport', 'lesen'] }),
+      tag('2026-11-02', { gewohnheiten: ['sport'] }),
+      tag('2026-10-31', { gewohnheiten: ['sport'] }),
+    ]);
+    expect(Object.fromEntries(m.gewohnheiten)).toEqual({ sport: 2, lesen: 1 });
+  });
+
   it('leerer Monat', () => {
     const m = monatsuebersicht('2026-02', [], []);
     expect(m.tage).toHaveLength(28);

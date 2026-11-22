@@ -890,7 +890,7 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 |---|---|---|
 | 1 | Tagesseite, Überschrift, Bewertung, Drive-Monatsdateien, Suche, Design Papier/Kerzenlicht | gebaut am 22. Nov 2026 |
 | 2 | Monatsansicht, Karte auf der Startseite, Tagesspur, „Vor einem Jahr“ | gebaut am 22. Nov 2026 |
-| 3 | Gewohnheiten, Schreibimpulse | offen |
+| 3 | Gewohnheiten, Schreibimpulse | gebaut am 22. Nov 2026 |
 | 4 | Tägliche Schreib-Erinnerung über den Kalender (abschaltbar) | offen |
 | später | Knopf „Aufräumen mit Claude“ | zurückgestellt |
 
@@ -911,6 +911,17 @@ Ein eigener Bereich für tägliche Einträge (KONZEPT.md, Abschnitt 13). Gebaut 
 - **Vor einem Jahr:** Unter der Spur steht, falls vorhanden, derselbe Tag im Vorjahr (Überschrift, erster Absatz, Bewertung). Aus dem 29. Februar wird der 28.
 - **Monatsansicht:** „Tagebuch · Monat“ oben links oder Wochentag/Monat neben der großen Tageszahl antippen. Kalenderraster ab Montag: Tage nach Bewertung eingefärbt, geschriebene Tage ohne Bewertung als Fläche, Tage ohne Eintrag gestrichelt, heute umrandet, Zukunft blass. Darunter bester Tag (bei Gleichstand der jüngste), Tage geschrieben, erledigte Aufgaben, neue Gedanken und die häufigsten Tags der Tagebuch-Einträge. Monatswechsel mit ‹ ›.
 - Geprüft: Tests für Tagesspur (auch wiederkehrende und beendete Wiederholungen), Monatsübersicht, Kalenderraster, „Vor einem Jahr“. Im Browser mit erfundenen Einträgen: Spur auf- und zuklappen, Abhaken erscheint sofort, Monatszahlen nachgerechnet, Startseiten-Karte, Handy-Breite. Nicht geprüft: am iPhone.
+
+### Etappe 3: Gewohnheiten und Schreibimpulse
+
+- **Gewohnheiten** richtest du unter Einstellungen → Tagebuch ein: anlegen, umbenennen (Namen antippen), mit ↑ ↓ sortieren, deaktivieren. Auf der Tagesseite stehen sie unter der Bewertung zum Abhaken. Deaktivierte verschwinden dort; an Tagen, an denen sie abgehakt waren, bleiben sie sichtbar. Gibt es noch keine, zeigt die Tagesseite den Link „+ Gewohnheiten einrichten“.
+- **Monatsansicht:** pro Gewohnheit eine Zeile mit Balken, z. B. „Sport 14/20 Tage“ (von den bisherigen Tagen des Monats).
+- **Schreibimpulse:** Solange ein Tag leer ist, steht über dem Schreibfeld eine Frage. Antippen übernimmt sie als Kopfzeile des Tages (in Akzentfarbe, × entfernt sie wieder), ↻ zeigt eine andere, ignorieren geht auch. 60 eingebaute Fragen zu Dankbarkeit, Rückblick, Ausblick, Energie und Begegnungen; unter Einstellungen → Tagebuch → Schreibimpulse lassen sie sich bearbeiten (eine pro Zeile) und wiederherstellen.
+- **Welche Frage an welchem Tag:** fest aus dem Datum berechnet, gemischt in Runden von 60 Tagen. Laptop und iPhone zeigen dieselbe Frage, ohne einen Verlauf abgleichen zu müssen; innerhalb einer Runde kommt keine doppelt. (Abweichung vom Konzept, das „wie beim Gedanken des Tages“ mit gespeichertem Verlauf vorsah.) ↻ gilt nur auf diesem Gerät und bis zum Verlassen des Tages.
+- **Speicherort (Abweichung vom Konzept):** Gewohnheiten und eigene Fragen stehen in `_Tagebuch/_tagebuch.json`, nicht in `_meta.json`. Ältere App-Versionen schreiben `_meta.json` neu und hätten unbekannte Felder dabei verworfen. Die übernommene Frage und die abgehakten Gewohnheiten eines Tages stehen im Kommentar unter der Tageszeile (`impuls:…`, `gewohnheiten:…`).
+- **Sicherheit:** Eine Gewohnheit, die beim Abgleich auf einer Seite fehlt (z. B. weil `_tagebuch.json` in Drive kaputt ist), gilt nie als gelöscht. Es gibt nur „deaktivieren“, kein Löschen.
+- Geprüft: Tests für die Fragen-Auswahl, `_tagebuch.json` (exakt hin und zurück, kaputte Datei), Abgleich mit beschädigter Datei, Zählung im Monat. Im Browser: anlegen, umsortieren, abhaken, deaktivieren, Frage übernehmen und wechseln, Monatsansicht, Handy-Breite. Nicht geprüft: am iPhone.
+- Bekannt: Die Fragen sind in der Gegenwart formuliert („heute“), auch wenn du einen vergangenen Tag nachträgst.
 
 ### So steht es in Drive
 

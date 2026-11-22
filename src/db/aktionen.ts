@@ -29,6 +29,7 @@ import {
   neueAufgabe,
   type Bewertung,
   type Faelligkeit,
+  type Gewohnheit,
   type Liste,
   type Notiz,
   type Prioritaet,
@@ -44,6 +45,8 @@ import {
   ersetzeAlles,
   leseZustand,
   sichereEinstellungen,
+  sichereGewohnheiten,
+  sichereImpulse,
   sichereListen,
   sichereNotizen,
   sichereTagebuchtag,
@@ -329,8 +332,11 @@ export function loescheListe(id: string): void {
 
 // ───────────────────────── Tagebuch ─────────────────────────
 
-/** Ändert Überschrift oder Bewertung eines Tages. Gibt es den Tag noch nicht, wird er angelegt. */
-export function setzeTagebuchtag(datum: string, teil: { titel?: string; bewertung?: Bewertung | null }): void {
+/** Ändert Überschrift, Bewertung, Impuls oder Gewohnheiten eines Tages. Gibt es den Tag noch nicht, wird er angelegt. */
+export function setzeTagebuchtag(
+  datum: string,
+  teil: { titel?: string; bewertung?: Bewertung | null; impuls?: string | null; gewohnheiten?: string[] },
+): void {
   const jetzt = jetztStempel();
   const alt = tagZuDatum(leseZustand().tagebuchtage.values(), datum);
   const tag = alt ?? {
@@ -345,8 +351,76 @@ export function setzeTagebuchtag(datum: string, teil: { titel?: string; bewertun
     geloescht: null,
   };
   const neu = { ...tag, ...teil, geaendert: jetzt };
-  if (alt && neu.titel === alt.titel && neu.bewertung === alt.bewertung) return;
+  const gleich =
+    alt &&
+    neu.titel === alt.titel &&
+    neu.bewertung === alt.bewertung &&
+    neu.impuls === alt.impuls &&
+    neu.gewohnheiten.join(',') === alt.gewohnheiten.join(',');
+  if (gleich) return;
   sichereTagebuchtag(neu);
+}
+
+/** Hakt eine Gewohnheit für einen Tag ab oder nimmt das Häkchen zurück. */
+export function schalteGewohnheit(datum: string, gewohnheit_id: string): void {
+  const tag = tagZuDatum(leseZustand().tagebuchtage.values(), datum);
+  const bisher = tag?.gewohnheiten ?? [];
+  setzeTagebuchtag(datum, {
+    gewohnheiten: bisher.includes(gewohnheit_id) ? bisher.filter((id) => id !== gewohnheit_id) : [...bisher, gewohnheit_id],
+  });
+}
+
+/** Gewohnheiten in ihrer Reihenfolge (auch inaktive). */
+export function gewohnheitenSortiert(): Gewohnheit[] {
+  return [...leseZustand().gewohnheiten.values()]
+    .filter((g) => !g.geloescht)
+    .sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1));
+}
+
+export function erstelleGewohnheit(name: string): void {
+  const sauber = name.replace(/\s+/g, ' ').trim();
+  if (!sauber) return;
+  const jetzt = jetztStempel();
+  const reihe = gewohnheitenSortiert();
+  sichereGewohnheiten([
+    {
+      id: neueId(),
+      name: sauber,
+      position: (reihe[reihe.length - 1]?.position ?? 0) + 1,
+      aktiv: true,
+      erstellt: jetzt,
+      geaendert: jetzt,
+      geloescht: null,
+    },
+  ]);
+}
+
+export function aendereGewohnheit(id: string, teil: { name?: string; aktiv?: boolean }): void {
+  const g = leseZustand().gewohnheiten.get(id);
+  if (!g) return;
+  const name = teil.name !== undefined ? teil.name.replace(/\s+/g, ' ').trim() || g.name : g.name;
+  sichereGewohnheiten([{ ...g, ...teil, name, geaendert: jetztStempel() }]);
+}
+
+/** Verschiebt eine Gewohnheit um eine Stelle nach oben (-1) oder unten (+1). */
+export function verschiebeGewohnheit(id: string, richtung: -1 | 1): void {
+  const reihe = gewohnheitenSortiert();
+  const i = reihe.findIndex((g) => g.id === id);
+  const j = i + richtung;
+  if (i < 0 || j < 0 || j >= reihe.length) return;
+  [reihe[i], reihe[j]] = [reihe[j], reihe[i]];
+  // Neu durchnummerieren; gespeichert wird nur, wessen Platz sich geändert hat.
+  const jetzt = jetztStempel();
+  const geaendert = reihe
+    .map((g, k) => ({ alt: g, neu: { ...g, position: k + 1, geaendert: jetzt } }))
+    .filter(({ alt, neu }) => alt.position !== neu.position)
+    .map(({ neu }) => neu);
+  sichereGewohnheiten(geaendert);
+}
+
+/** Eigene Schreibimpulse speichern (eine Frage pro Eintrag). */
+export function setzeImpulse(fragen: string[]): void {
+  sichereImpulse({ fragen, geaendert: jetztStempel() });
 }
 
 // ───────────────────────── Papierkorb ─────────────────────────

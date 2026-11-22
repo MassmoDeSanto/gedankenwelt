@@ -1,4 +1,4 @@
-/** Einstellungen: Hell/Dunkel, Google Drive, Erinnerungen, Import, Papierkorb, Export/Import als ZIP, Beispieldaten. */
+/** Einstellungen: Hell/Dunkel, Tagebuch, Google Drive, Erinnerungen, Import, Papierkorb, Export/Import als ZIP, Beispieldaten. */
 import { useRef, useState } from 'react';
 import { exportiereZip, importiereZip, ladeBeispieldaten, loescheAlles, setzeThema } from '../db/aktionen';
 import { useAbgleichStatus } from '../db/abgleichDienst';
@@ -9,6 +9,7 @@ import { DriveBereich } from './DriveBereich';
 import { ErinnerungenBereich } from './ErinnerungenBereich';
 import { ImportBereich } from './ImportBereich';
 import { adresse } from './router';
+import { TagebuchBereich } from './TagebuchBereich';
 
 export function Einstellungen() {
   const z = useZustand();
@@ -60,6 +61,7 @@ export function Einstellungen() {
         </div>
       </section>
 
+      <TagebuchBereich />
       <DriveBereich />
       <ErinnerungenBereich />
       <ImportBereich />

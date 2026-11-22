@@ -7,13 +7,15 @@
  * Solange die Seite offen ist, steht darum `data-raum="tagebuch"` am <html>-Element.
  */
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
-import { setzeTagebuchtag } from '../db/aktionen';
+import { schalteGewohnheit, setzeTagebuchtag } from '../db/aktionen';
+import { STANDARD_IMPULSE, impulsFuer } from '../logik/impulse';
 import { useZustand } from '../db/speicher';
 import {
   BEWERTUNG_WORTE,
   datumsTeile,
   herkunftText,
   monatVon,
+  notizenDesTages,
   tagKurz,
   tagZuDatum,
   tagebuchTagVon,
@@ -27,7 +29,7 @@ import { Kopfzeile, klassen } from './Bausteine';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { adresse, gehe } from './router';
 import { Schreibbereich } from './Schreibbereich';
-import { Kalender, PfeilZurueck, Winkel } from './Symbole';
+import { Haken, Kalender, Kreuz, PfeilZurueck, Wiederholen, Winkel } from './Symbole';
 
 const STUFEN: Bewertung[] = [1, 2, 3, 4, 5];
 
@@ -154,6 +156,7 @@ export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string
       </div>
 
       <Tageskopf key={tag} datum={tag} />
+      <Schreibimpuls key={`impuls-${tag}`} datum={tag} />
 
       <div className="tb-text">
         <Schreibbereich
@@ -307,6 +310,91 @@ function Tageskopf({ datum }: { datum: string }) {
           {bewertung ? `${bewertung} · ${BEWERTUNG_WORTE[bewertung]}` : 'Wie war der Tag?'}
         </span>
       </div>
+
+      <Gewohnheiten datum={datum} abgehakt={gespeichert?.gewohnheiten ?? []} />
+    </div>
+  );
+}
+
+/** Gewohnheiten zum Abhaken (KONZEPT.md, Abschnitt 13.4). Inaktive erscheinen nur, wenn sie an diesem Tag abgehakt sind. */
+function Gewohnheiten({ datum, abgehakt }: { datum: string; abgehakt: string[] }) {
+  const z = useZustand();
+  const alle = [...z.gewohnheiten.values()]
+    .filter((g) => !g.geloescht && (g.aktiv || abgehakt.includes(g.id)))
+    .sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1));
+  if (alle.length === 0) {
+    return z.gewohnheiten.size === 0 ? (
+      <a className="textknopf tb-gewohnheiten-einrichten" href={adresse({ seite: 'einstellungen' })}>
+        + Gewohnheiten einrichten
+      </a>
+    ) : null;
+  }
+  return (
+    <div className="tb-gewohnheiten" role="group" aria-label="Gewohnheiten">
+      {alle.map((g) => {
+        const an = abgehakt.includes(g.id);
+        return (
+          <button
+            key={g.id}
+            className={klassen('tb-gewohnheit', an && 'an')}
+            aria-pressed={an}
+            onClick={() => schalteGewohnheit(datum, g.id)}
+          >
+            <span className="tb-gewohnheit-haken">{an && <Haken />}</span>
+            {g.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Schreibimpuls (KONZEPT.md, Abschnitt 13.3): Solange der Tag leer ist, steht eine Frage über dem
+ * Schreibfeld. Antippen übernimmt sie als Kopfzeile des Tages, ↻ zeigt eine andere, ignorieren geht auch.
+ */
+function Schreibimpuls({ datum }: { datum: string }) {
+  const z = useZustand();
+  const [weiter, setWeiter] = useState(0);
+  const tag = tagZuDatum(z.tagebuchtage.values(), datum);
+  const leer = notizenDesTages(z.notizen.values(), datum).length === 0;
+
+  if (tag?.impuls) {
+    return (
+      <div className="tb-impuls uebernommen">
+        <span className="tb-impuls-text">{tag.impuls}</span>
+        <button
+          className="symbolknopf klein"
+          onClick={() => setzeTagebuchtag(datum, { impuls: null })}
+          aria-label="Frage entfernen"
+          title="Frage entfernen"
+        >
+          <Kreuz />
+        </button>
+      </div>
+    );
+  }
+  if (!leer) return null;
+
+  const frage = impulsFuer(datum, z.impulse?.fragen ?? STANDARD_IMPULSE, weiter);
+  if (!frage) return null;
+  return (
+    <div className="tb-impuls">
+      <button
+        className="tb-impuls-text tb-impuls-frage"
+        onClick={() => setzeTagebuchtag(datum, { impuls: frage })}
+        title="Als Kopfzeile übernehmen"
+      >
+        {frage}
+      </button>
+      <button
+        className="symbolknopf klein"
+        onClick={() => setWeiter(weiter + 1)}
+        aria-label="Andere Frage"
+        title="Andere Frage"
+      >
+        <Wiederholen />
+      </button>
     </div>
   );
 }

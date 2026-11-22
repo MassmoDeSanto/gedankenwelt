@@ -25,6 +25,8 @@ import {
   type Datenbestand,
   type Einstellungen,
   type ImportEintrag,
+  type Gewohnheit,
+  type Impulse,
   type Liste,
   type Notiz,
   type Prioritaet,
@@ -34,7 +36,7 @@ import {
 } from '../modell/typen';
 import { leseAufgabenPraefix, mitAufgabenPraefix, type Umgebung } from './absatz';
 import { leseTags } from './tags';
-import { istBewertung, monatAusPfad, monatVon, monatsPfad, tagebuchtagId } from './tagebuch';
+import { TAGEBUCH_DATEI, istBewertung, monatAusPfad, monatVon, monatsPfad, tagebuchtagId } from './tagebuch';
 import { datumVon } from './zeit';
 import { leseRegel, schreibeRegel } from './wiederholung';
 
@@ -143,8 +145,8 @@ export function zuDateien(bestand: Datenbestand): Dateien {
 export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   dateien: Dateien;
   verzeichnis: { id: string; pfad: string }[];
-  /** Monatsdateien des Tagebuchs */
-  monate: { monat: string; pfad: string }[];
+  /** Dateien des Tagebuchs (Monatsdateien und _tagebuch.json), mit fester Kennung für den Abgleich */
+  tagebuch: { kennung: string; pfad: string }[];
 } {
   const dateien: Dateien = new Map();
   // Das Tagebuch hat keine Listendatei: Seine Notizen stehen in den Monatsdateien.
@@ -195,7 +197,20 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
       .join('\n'),
   );
 
-  const monate = schreibeTagebuch(tagebuch, bestand.tagebuchtage ?? [], dateien);
+  const tagebuchDateien = schreibeTagebuch(tagebuch, bestand.tagebuchtage ?? [], dateien).map((m) => ({
+    kennung: `_tagebuch|${m.monat}`,
+    pfad: m.pfad,
+  }));
+  const gewohnheiten = (bestand.gewohnheiten ?? []).filter((g) => !g.geloescht);
+  if (gewohnheiten.length > 0 || bestand.impulse) {
+    const inhalt = {
+      version: 1,
+      gewohnheiten: [...gewohnheiten].sort(nachId),
+      ...(bestand.impulse ? { impulse: bestand.impulse } : {}),
+    };
+    dateien.set(TAGEBUCH_DATEI, JSON.stringify(inhalt, null, 2) + '\n');
+    tagebuchDateien.push({ kennung: '_tagebuch|einstellungen', pfad: TAGEBUCH_DATEI });
+  }
 
   const meta = {
     version: 1,
@@ -208,7 +223,7 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   };
   dateien.set(META_DATEI, JSON.stringify(meta, null, 2) + '\n');
 
-  return { dateien, verzeichnis, monate };
+  return { dateien, verzeichnis, tagebuch: tagebuchDateien };
 }
 
 // ───────────────────────── Tagebuch: Monatsdateien ─────────────────────────
@@ -265,6 +280,32 @@ function schreibeTagebuch(
     monate.push({ monat, pfad });
   }
   return monate.sort((a, b) => (a.monat < b.monat ? -1 : 1));
+}
+
+/** Liest _Tagebuch/_tagebuch.json. Unlesbares wird übergangen, statt die App anzuhalten. */
+function leseTagebuchDatei(inhalt: string): { gewohnheiten: Gewohnheit[]; impulse: Impulse | undefined } {
+  try {
+    const roh = JSON.parse(inhalt);
+    const gewohnheiten = (Array.isArray(roh?.gewohnheiten) ? roh.gewohnheiten : [])
+      .filter((g: Gewohnheit) => typeof g?.id === 'string' && typeof g?.name === 'string')
+      .map((g: Gewohnheit) => ({
+        id: g.id,
+        name: g.name,
+        position: Number.isFinite(Number(g.position)) ? Number(g.position) : 0,
+        aktiv: g.aktiv !== false,
+        erstellt: typeof g.erstellt === 'string' ? g.erstellt : '',
+        geaendert: typeof g.geaendert === 'string' ? g.geaendert : '',
+        geloescht: typeof g.geloescht === 'string' ? g.geloescht : null,
+      }));
+    const i = roh?.impulse;
+    const impulse =
+      i && Array.isArray(i.fragen) && typeof i.geaendert === 'string'
+        ? { fragen: i.fragen.filter((f: unknown) => typeof f === 'string'), geaendert: i.geaendert }
+        : undefined;
+    return { gewohnheiten, impulse };
+  } catch {
+    return { gewohnheiten: [], impulse: undefined };
+  }
 }
 
 /** Liest eine Monatsdatei. Absätze vor der ersten Tageszeile gehören zum Ersten des Monats. */
@@ -474,8 +515,14 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
   /** Liste → Elternliste laut Dateikopf (null = oberste Ebene) */
   const angegebeneEltern = new Map<string, string | null>();
   const tagebuchtage: Tagebuchtag[] = [];
+  let gewohnheiten: Gewohnheit[] = [];
+  let impulse: Impulse | undefined;
 
   for (const [pfad, inhalt] of dateien) {
+    if (pfad === TAGEBUCH_DATEI) {
+      ({ gewohnheiten, impulse } = leseTagebuchDatei(inhalt));
+      continue;
+    }
     const monat = monatAusPfad(pfad);
     if (monat) {
       const gelesen = leseTagebuch(inhalt, monat, umg);
@@ -628,5 +675,7 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
     tagesgedanke_verlauf,
     ...(importe.length > 0 ? { importe: importe.sort(nachId) } : {}),
     ...(tagebuchtage.length > 0 ? { tagebuchtage: tagebuchtage.sort(nachId) } : {}),
+    ...(gewohnheiten.length > 0 ? { gewohnheiten: gewohnheiten.sort(nachId) } : {}),
+    ...(impulse ? { impulse } : {}),
   };
 }

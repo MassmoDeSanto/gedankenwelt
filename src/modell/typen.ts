@@ -114,6 +114,25 @@ export interface Tagebuchtag {
   geloescht: Zeitstempel | null;
 }
 
+/** Eine Gewohnheit zum Abhaken im Tagebuch, z. B. „Sport“ (KONZEPT.md, Abschnitt 13.4). */
+export interface Gewohnheit {
+  id: string;
+  name: string;
+  /** Reihenfolge auf der Tagesseite */
+  position: number;
+  /** Inaktive erscheinen nicht mehr zum Abhaken; alte Häkchen bleiben erhalten. */
+  aktiv: boolean;
+  erstellt: Zeitstempel;
+  geaendert: Zeitstempel;
+  geloescht: Zeitstempel | null;
+}
+
+/** Eigene Liste der Schreibimpulse. Fehlt sie, gilt die eingebaute Liste. */
+export interface Impulse {
+  fragen: string[];
+  geaendert: Zeitstempel;
+}
+
 export type TagesgedankeSchalter = 'an' | 'aus' | 'erben';
 
 export interface Liste {
@@ -195,6 +214,10 @@ export interface Datenbestand {
   importe?: ImportEintrag[];
   /** Überschriften und Bewertungen im Tagebuch. Fehlt, solange es keine gibt. */
   tagebuchtage?: Tagebuchtag[];
+  /** Gewohnheiten im Tagebuch. Fehlt, solange es keine gibt. */
+  gewohnheiten?: Gewohnheit[];
+  /** Eigene Schreibimpulse. Fehlt = die eingebaute Liste. */
+  impulse?: Impulse;
 }
 
 export const STANDARD_EINSTELLUNGEN: Einstellungen = { thema: 'dunkel' };

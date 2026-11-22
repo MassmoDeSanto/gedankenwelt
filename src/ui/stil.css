@@ -2613,3 +2613,187 @@ a.tb-zelle:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ───────── Tagebuch, Etappe 3: Gewohnheiten und Schreibimpulse ───────── */
+
+.tb-gewohnheiten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tb-gewohnheit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 4px 12px 4px 8px;
+  border: 1px solid var(--linie);
+  border-radius: 999px;
+  background: none;
+  color: var(--gedaempft);
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background var(--kurz),
+    color var(--kurz),
+    border-color var(--kurz);
+}
+
+.tb-gewohnheit:hover {
+  color: var(--text);
+}
+
+.tb-gewohnheit-haken {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--meta);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tb-gewohnheit-haken svg {
+  width: 12px;
+  height: 12px;
+}
+
+.tb-gewohnheit.an {
+  background: var(--flaeche);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.tb-gewohnheit.an .tb-gewohnheit-haken {
+  background: var(--tb-akzent);
+  border-color: var(--tb-akzent);
+  color: var(--tb-hintergrund);
+}
+
+.tb-gewohnheiten-einrichten {
+  align-self: flex-start;
+  font-size: 13px;
+}
+
+.tb-impuls {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.tb-impuls-text {
+  flex: 1;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--gedaempft);
+}
+
+.tb-impuls-frage {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--meta);
+  transition: color var(--kurz);
+}
+
+.tb-impuls-frage:hover {
+  color: var(--tb-akzent);
+}
+
+.tb-impuls.uebernommen .tb-impuls-text {
+  color: var(--tb-akzent);
+}
+
+.tb-impuls + .tb-text {
+  margin-top: 6px;
+}
+
+/* Monatsansicht */
+.tb-gewohnheiten-monat {
+  margin: 4px 0 22px;
+}
+
+.tb-gewohnheit-zeile {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 2fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+}
+
+.tb-gewohnheit-balken {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--linie);
+  overflow: hidden;
+}
+
+.tb-gewohnheit-balken > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tb-akzent);
+}
+
+/* Einstellungen */
+.einstellung-titel {
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.tb-gewohnheiten-liste {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.tb-gewohnheit-einstellung {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+}
+
+.tb-gewohnheit-name {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+}
+
+.tb-gewohnheit-name:focus {
+  background: var(--erhoeht);
+  outline: none;
+}
+
+.tb-gewohnheit-einstellung.inaktiv .tb-gewohnheit-name {
+  color: var(--meta);
+  text-decoration: line-through;
+}
+
+.tb-gewohnheit-neu {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+
+.tb-impulse-feld {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--erhoeht);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
