@@ -39,6 +39,7 @@
   --woche-text: #5dcaa5;
   --spaeter-grund: #444441;
   --spaeter-auf: #d3d1c7;
+  --kachel: #302f2b; /* einzelne To-do-Kachel */
   /* Priorität (Flagge) und Stand „in Arbeit“ */
   --prio-hauch: #4b1528;
   --prio-text: #f4c0d1;
@@ -109,6 +110,7 @@
   --woche-text: #0f6e56;
   --spaeter-grund: #f1efe8;
   --spaeter-auf: #444441;
+  --kachel: #ffffff;
   --prio-hauch: #fbeaf0;
   --prio-text: #993556;
   --arbeit-hauch: #e6f1fb;
@@ -624,39 +626,172 @@ mark {
   color: var(--gedaempft);
 }
 
-.aufgabenzeile {
+/* ───────── To-dos im Design „Planer“: eine Kachel je Aufgabe ─────────
+   Kalenderblatt und Streifen links tragen die Farbe der Dringlichkeit (logik/aufgaben.ts). */
+.stufe-ueberfaellig {
+  --stufe-grund: var(--ueberfaellig-grund);
+  --stufe-auf: var(--ueberfaellig-auf);
+  --stufe-text: var(--ueberfaellig-text);
+}
+.stufe-heute {
+  --stufe-grund: var(--heute-grund);
+  --stufe-auf: var(--heute-auf);
+  --stufe-text: var(--heute-text);
+}
+.stufe-bald {
+  --stufe-grund: var(--bald-grund);
+  --stufe-auf: var(--bald-auf);
+  --stufe-text: var(--bald-text);
+}
+.stufe-woche {
+  --stufe-grund: var(--woche-grund);
+  --stufe-auf: var(--woche-auf);
+  --stufe-text: var(--woche-text);
+}
+.stufe-spaeter {
+  --stufe-grund: var(--spaeter-grund);
+  --stufe-auf: var(--spaeter-auf);
+  --stufe-text: var(--gedaempft);
+}
+.stufe-ohne {
+  --stufe-grund: transparent;
+  --stufe-auf: var(--meta);
+  --stufe-text: var(--meta);
+}
+
+.aufgabenkachel {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 38px;
+  margin-top: 8px;
+  padding: 9px 12px 9px 14px;
+  border-radius: 12px;
+  /* gerader Streifen links (harte Kante, kein sichtbarer Verlauf), von der runden Ecke abgeschnitten */
+  background: linear-gradient(to right, var(--stufe-grund) 4px, var(--kachel) 4px);
 }
 
-.aufgabenzeile .kaestchen {
-  margin-top: 0;
+.kalenderblatt {
+  flex: none;
+  width: 38px;
+  padding: 3px 0 4px;
+  border-radius: 8px;
+  background: var(--stufe-grund);
+  color: var(--stufe-auf);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+}
+
+.stufe-ohne .kalenderblatt {
+  border: 1.5px dashed var(--chip);
+}
+
+.blatt-oben {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.blatt-zahl {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
 }
 
 .aufgabeninhalt {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .aufgabentext {
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aufgabeninfo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  font-size: 12px;
+  color: var(--meta);
+}
+
+.aufgabeninfo .abstand {
+  color: var(--stufe-text);
+}
+
+.herkunftstext {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.aufgabenzeile .meta {
-  flex: none;
-  max-width: 55%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.aufgabenkachel .kaestchen {
+  width: 22px;
+  height: 22px;
+  margin-top: 0;
+  border-radius: 50%;
+}
+
+/* Kopf der To-do-Karte: kleine Zähl-Chips statt Fließtext */
+.zaehlchips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.zaehlchip {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--gedaempft);
+  transition: opacity var(--kurz);
+}
+
+.zaehlchip:hover {
+  opacity: 0.8;
+}
+
+.zaehlchip.ueberfaellig {
+  background: var(--ueberfaellig-hauch);
+  color: var(--ueberfaellig-text);
+}
+
+.zaehlchip.heute {
+  background: var(--heute-hauch);
+  color: var(--heute-text);
+}
+
+/* Priorität als rosa Flagge mit Wort, Stand „in Arbeit“ als blaues Schild */
+.flagge,
+.arbeit-schild {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--schrift);
+  font-size: 11px;
+  line-height: 1.5;
   white-space: nowrap;
+}
+
+.flagge {
+  background: var(--prio-hauch);
+  color: var(--prio-text);
+}
+
+.arbeit-schild {
+  background: var(--arbeit-hauch);
+  color: var(--arbeit-text);
 }
 
 .aufgabe-neu {
@@ -670,10 +805,6 @@ mark {
 
 .aufgabe-neu::placeholder {
   color: var(--meta);
-}
-
-.aufgabenpfad {
-  margin: -6px 0 6px 30px;
 }
 
 .weltknopf {
@@ -1166,12 +1297,6 @@ a.kachel:hover,
   color: var(--meta);
 }
 
-.aufgabeninfo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .notiz.erledigt .faellig {
   color: var(--meta);
 }
@@ -1210,21 +1335,14 @@ a.kachel:hover,
   letter-spacing: -1px;
 }
 
-.prio-hoch {
-  color: var(--rot);
+.prio-knopf:not(.leer) {
+  background: var(--prio-hauch);
+  color: var(--prio-text);
 }
 
-.prio-mittel {
-  color: var(--bernstein);
-}
-
-.prio-niedrig {
-  color: var(--blau);
-}
-
-.stand-knopf.in-arbeit,
-.stand-hinweis {
-  color: var(--tuerkis);
+.stand-knopf.in-arbeit {
+  background: var(--arbeit-hauch);
+  color: var(--arbeit-text);
 }
 
 /* Blasse Knöpfe nur zeigen, wenn die Notiz bearbeitet wird oder die Maus darüber ist */
@@ -1984,29 +2102,12 @@ details.diagnose > summary {
     width: auto;
   }
 
-  /* Aufgaben-Zeilen: Text oben, Fälligkeit und Wiederholung darunter */
-  .aufgabenzeile {
-    align-items: flex-start;
-    padding: 7px 0;
-  }
-
-  .aufgabeninhalt {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-  }
-
+  /* Aufgaben-Kacheln: Text darf am Handy zweizeilig werden */
   .aufgabentext {
-    flex: none;
-    max-width: 100%;
-  }
-
-  .aufgabenzeile .meta {
-    max-width: 100%;
-  }
-
-  .aufgabenpfad {
-    margin-top: -4px;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .seite {
@@ -2117,10 +2218,6 @@ details.diagnose > summary {
   .aufgabe-neu {
     font-size: 16px;
     min-height: 40px;
-  }
-
-  .aufgabenpfad {
-    margin-left: 34px;
   }
 
   .schnellwahl button {

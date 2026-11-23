@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { neueAufgabe, type Aufgabe } from '../modell/typen';
-import { gruppiereAufgaben, naechsterStand, naechstePrioritaet, offeneAufgaben } from './aufgaben';
+import {
+  abstandText,
+  dringlichkeitsstufe,
+  gruppiereAufgaben,
+  kalenderblatt,
+  naechsterStand,
+  naechstePrioritaet,
+  offeneAufgaben,
+} from './aufgaben';
 import { baueNotiz } from './test-hilfe';
 
 function aufgabe(text: string, teil: Partial<Aufgabe>, erstellt = '2026-11-01T12:00:00Z') {
@@ -66,5 +74,37 @@ describe('Weitertippen', () => {
   it('Stand: offen ↔ in Arbeit', () => {
     expect(naechsterStand('offen')).toBe('in_arbeit');
     expect(naechsterStand('in_arbeit')).toBe('offen');
+  });
+});
+
+describe('Darstellung „Planer“', () => {
+  const heute = '2026-11-23'; // ein Montag
+
+  it('Farbstufe wird wärmer, je näher die Fälligkeit rückt', () => {
+    expect(dringlichkeitsstufe(null, heute)).toBe('ohne');
+    expect(dringlichkeitsstufe('2026-11-21', heute)).toBe('ueberfaellig');
+    expect(dringlichkeitsstufe('2026-11-23T18:00', heute)).toBe('heute');
+    expect(dringlichkeitsstufe('2026-11-24', heute)).toBe('bald');
+    expect(dringlichkeitsstufe('2026-11-25', heute)).toBe('bald');
+    expect(dringlichkeitsstufe('2026-11-26', heute)).toBe('woche');
+    expect(dringlichkeitsstufe('2026-11-30', heute)).toBe('woche');
+    expect(dringlichkeitsstufe('2026-12-01', heute)).toBe('spaeter');
+  });
+
+  it('Abstand in Worten, auch über Monats- und Jahresgrenzen', () => {
+    expect(abstandText('2026-11-23', heute)).toBe('heute');
+    expect(abstandText('2026-11-24T09:00', heute)).toBe('morgen');
+    expect(abstandText('2026-11-25', heute)).toBe('übermorgen');
+    expect(abstandText('2026-11-22', heute)).toBe('seit gestern');
+    expect(abstandText('2026-11-21', heute)).toBe('seit 2 Tagen');
+    expect(abstandText('2026-12-09', heute)).toBe('in 16 Tagen');
+    expect(abstandText('2027-01-01', '2026-12-31')).toBe('morgen');
+  });
+
+  it('Kalenderblatt: Wochentag in der Nähe, sonst Monat', () => {
+    expect(kalenderblatt('2026-11-21', heute)).toEqual({ oben: 'SA', zahl: 21 });
+    expect(kalenderblatt('2026-11-30T18:00', heute)).toEqual({ oben: 'MO', zahl: 30 });
+    expect(kalenderblatt('2026-12-09', heute)).toEqual({ oben: 'DEZ', zahl: 9 });
+    expect(kalenderblatt('2026-10-02', heute)).toEqual({ oben: 'OKT', zahl: 2 });
   });
 });

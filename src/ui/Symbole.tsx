@@ -190,3 +190,10 @@ export const Wiederholen = () => (
     <path d="M4 11a8 8 0 0 1 13.7-5.2L20 8M20 4v4h-4M20 13a8 8 0 0 1-13.7 5.2L4 16m0 4v-4h4" strokeWidth="2" />
   </Symbol>
 );
+
+export const Flagge = () => (
+  <Symbol groesse={11}>
+    <path d="M5 21V4" />
+    <path d="M5 4h12l-2.5 4.5L17 13H5" />
+  </Symbol>
+);

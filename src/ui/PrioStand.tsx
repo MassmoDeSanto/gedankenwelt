@@ -6,6 +6,7 @@ import { setzePrioritaet, setzeStand } from '../db/aktionen';
 import { naechsterStand, naechstePrioritaet } from '../logik/aufgaben';
 import type { Aufgabe, Prioritaet } from '../modell/typen';
 import { klassen } from './Bausteine';
+import { Flagge } from './Symbole';
 
 const PRIO_ZEICHEN: Record<Prioritaet, string> = { hoch: '!!!', mittel: '!!', niedrig: '!' };
 
@@ -53,17 +54,18 @@ export function PrioStandKnoepfe({ id, aufgabe }: { id: string; aufgabe: Aufgabe
   );
 }
 
-/** Kurze Anzeige in der To-do-Box und der Sammelansicht, z. B. „!!! · in Arbeit“. */
+/** Kurze Anzeige in der To-do-Box, der Sammelansicht und an zugeklappten Notizen: Flagge mit Wort und „in Arbeit“. */
 export function PrioStandHinweis({ aufgabe }: { aufgabe: Aufgabe }) {
   const p = aufgabe.prioritaet;
   return (
     <>
       {p && (
-        <span className={`prio-zeichen prio-${p}`} title={`Priorität ${p}`}>
-          {PRIO_ZEICHEN[p]}
+        <span className={`flagge prio-${p}`} title={`Priorität ${p}`}>
+          <Flagge />
+          {p}
         </span>
       )}
-      {aufgabe.stand === 'in_arbeit' && <span className="stand-hinweis">in Arbeit</span>}
+      {aufgabe.stand === 'in_arbeit' && <span className="arbeit-schild">in Arbeit</span>}
     </>
   );
 }

@@ -22,10 +22,12 @@ export function AufgabenSeite() {
           <span className="mono meta">{aufgaben.length}</span>
         </div>
         {aufgaben.map((notiz) => (
-          <div key={notiz.id} className="aufgabe-mit-pfad">
-            <AufgabenZeile notiz={notiz} heute={heute} mitListe={false} />
-            <div className="mono meta aufgabenpfad">{herkunftText(notiz, z.listen, z.tagebuchtage.values())}</div>
-          </div>
+          <AufgabenZeile
+            key={notiz.id}
+            notiz={notiz}
+            heute={heute}
+            herkunft={herkunftText(notiz, z.listen, z.tagebuchtage.values())}
+          />
         ))}
       </section>
     );

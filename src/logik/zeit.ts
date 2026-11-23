@@ -22,6 +22,15 @@ export function datumVon(stempel: Zeitstempel): string {
   return lokalesDatum(new Date(stempel));
 }
 
+/** Ganze Tage von `von` bis `bis` (beides Ortsdaten), z. B. morgen = 1, gestern = -1. */
+export function tageZwischen(von: string, bis: string): number {
+  const ms = (datum: string) => {
+    const [j, m, t] = datum.split('-').map(Number);
+    return Date.UTC(j, m - 1, t);
+  };
+  return Math.round((ms(bis) - ms(von)) / 86_400_000);
+}
+
 /** Verschiebt ein Ortsdatum um eine Anzahl Tage (negativ = zurück). */
 export function verschiebeDatum(datum: string, tage: number): string {
   const [j, m, t] = datum.split('-').map(Number);

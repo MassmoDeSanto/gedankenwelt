@@ -2,7 +2,13 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { erstelleNotizen, gedankeDesTages } from '../db/aktionen';
 import { suchindex, useZustand } from '../db/speicher';
-import { aufgabenZusammenfassung, gruppiereAufgaben, offeneAufgaben } from '../logik/aufgaben';
+import {
+  abstandText,
+  dringlichkeitsstufe,
+  gruppiereAufgaben,
+  kalenderblatt,
+  offeneAufgaben,
+} from '../logik/aufgaben';
 import { kinderVon, pfadText } from '../logik/listen';
 import {
   BEWERTUNG_WORTE,
@@ -15,11 +21,11 @@ import {
 } from '../logik/tagebuch';
 import { LEERER_FILTER, filterAktiv, type SuchFilter, type Treffer } from '../logik/suche';
 import { tagHaeufigkeit } from '../logik/tags';
-import { formatKopfdatum, formatStempel, lokalJetzt, lokalesDatum } from '../logik/zeit';
+import { faelligUhrzeit, formatFaellig, formatKopfdatum, formatStempel, lokalJetzt, lokalesDatum } from '../logik/zeit';
 import { EINGANG_ID, TAGEBUCH_ID, type Notiz } from '../modell/typen';
 import { AbgleichSymbol } from './AbgleichSymbol';
 import { Segment, klassen, useListenBaum } from './Bausteine';
-import { FaelligText, WiederholungsHinweis } from './FaelligAnzeige';
+import { WiederholungsHinweis } from './FaelligAnzeige';
 import { PrioStandHinweis } from './PrioStand';
 import { MarkdownAnzeige } from './MarkdownAnzeige';
 import { hakeAbMitMeldung } from './meldung';
@@ -288,13 +294,40 @@ function TagesgedankeKarte() {
 
 // ───────────────────────── To-dos ─────────────────────────
 
-/** Eine offene Aufgabe. Rechts steht die Fälligkeit oder – wenn `mitListe` – ersatzweise die Herkunftsliste. */
-export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz; heute: string; mitListe?: boolean }) {
+/**
+ * Eine offene Aufgabe als Kachel (Design „Planer“): links das Kalenderblatt in der Farbe der
+ * Dringlichkeit, in der Mitte der Text und darunter Abstand („morgen“), Priorität, Stand,
+ * Wiederholung und Herkunft, rechts das Kästchen zum Abhaken. Ohne `herkunft` steht dort der Listenname.
+ */
+export function AufgabenZeile({ notiz, heute, herkunft }: { notiz: Notiz; heute: string; herkunft?: string }) {
   const z = useZustand();
-  const faellig = notiz.aufgabe?.faellig ?? null;
-  const prioOderStand = !!notiz.aufgabe?.prioritaet || notiz.aufgabe?.stand === 'in_arbeit';
+  const aufgabe = notiz.aufgabe;
+  const faellig = aufgabe?.faellig ?? null;
+  const blatt = faellig ? kalenderblatt(faellig, heute) : null;
+  const uhrzeit = faellig ? faelligUhrzeit(faellig) : null;
+  const woher = herkunft ?? z.listen.get(notiz.liste_id)?.name;
   return (
-    <div className="aufgabenzeile">
+    <div className={`aufgabenkachel stufe-${dringlichkeitsstufe(faellig, heute)}`}>
+      <span className="kalenderblatt" title={faellig ? formatFaellig(faellig, heute) : 'ohne Datum'}>
+        <span className="blatt-oben">{blatt?.oben ?? '–'}</span>
+        <span className="blatt-zahl">{blatt?.zahl ?? '·'}</span>
+      </span>
+      <div className="aufgabeninhalt">
+        <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
+          <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
+        </a>
+        <span className="aufgabeninfo">
+          {faellig && (
+            <span className="abstand">
+              {abstandText(faellig, heute)}
+              {uhrzeit && ` · ${uhrzeit}`}
+            </span>
+          )}
+          {aufgabe && <PrioStandHinweis aufgabe={aufgabe} />}
+          {aufgabe && <WiederholungsHinweis aufgabe={aufgabe} />}
+          {woher && <span className="herkunftstext">{woher}</span>}
+        </span>
+      </div>
       <button
         className="kaestchen"
         role="checkbox"
@@ -304,23 +337,6 @@ export function AufgabenZeile({ notiz, heute, mitListe = true }: { notiz: Notiz;
       >
         <Haken />
       </button>
-      {/* Am Laptop nebeneinander, am Handy untereinander – damit das Datum nie abgeschnitten wird */}
-      <div className="aufgabeninhalt">
-        <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
-          <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
-        </a>
-        {(faellig || mitListe || prioOderStand) && (
-          <span className="mono meta aufgabeninfo">
-            {notiz.aufgabe && <PrioStandHinweis aufgabe={notiz.aufgabe} />}
-            {notiz.aufgabe && faellig ? (
-              <FaelligText aufgabe={notiz.aufgabe} heute={heute} />
-            ) : (
-              mitListe && z.listen.get(notiz.liste_id)?.name
-            )}
-            {notiz.aufgabe && <WiederholungsHinweis aufgabe={notiz.aufgabe} />}
-          </span>
-        )}
-      </div>
     </div>
   );
 }
@@ -341,7 +357,25 @@ function TodoBox() {
     <section className="karte">
       <div className="kartenkopf">
         <span className="etikett tuerkis">To-dos</span>
-        <span className="mono meta">{aufgabenZusammenfassung(gruppen)}</span>
+        {offen.length === 0 ? (
+          <span className="mono meta">nichts offen</span>
+        ) : (
+          <span className="zaehlchips">
+            {gruppen.ueberfaellig.length > 0 && (
+              <a className="zaehlchip ueberfaellig" href={adresse({ seite: 'aufgaben' })}>
+                {gruppen.ueberfaellig.length} überfällig
+              </a>
+            )}
+            {gruppen.heute.length > 0 && (
+              <a className="zaehlchip heute" href={adresse({ seite: 'aufgaben' })}>
+                {gruppen.heute.length} heute
+              </a>
+            )}
+            <a className="zaehlchip" href={adresse({ seite: 'aufgaben' })}>
+              {offen.length} offen
+            </a>
+          </span>
+        )}
       </div>
 
       {offen.slice(0, 5).map((notiz) => (
@@ -350,13 +384,16 @@ function TodoBox() {
 
       {neu !== null && (
         <form
-          className="aufgabenzeile"
+          className="aufgabenkachel stufe-ohne"
           onSubmit={(e) => {
             e.preventDefault();
             lege();
           }}
         >
-          <span className="kaestchen leer" />
+          <span className="kalenderblatt" aria-hidden="true">
+            <span className="blatt-oben">–</span>
+            <span className="blatt-zahl">·</span>
+          </span>
           <input
             className="aufgabe-neu"
             autoFocus
