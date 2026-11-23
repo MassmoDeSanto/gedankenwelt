@@ -43,7 +43,7 @@ export function useTagebuchRaum(): void {
     leiste?.setAttribute('content', thema === 'hell' ? '#f4eee3' : '#1b1712');
     return () => {
       delete document.documentElement.dataset.raum;
-      leiste?.setAttribute('content', thema === 'hell' ? '#f4f5f8' : '#0f1117');
+      leiste?.setAttribute('content', thema === 'hell' ? '#f3f1ec' : '#1c1b19');
     };
   }, [thema]);
 }

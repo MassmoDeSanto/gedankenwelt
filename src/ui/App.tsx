@@ -23,7 +23,7 @@ export function App() {
     // Farbe der Browser-Leiste (wichtig für die installierte App am Handy)
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', thema === 'hell' ? '#f4f5f8' : '#0f1117');
+      ?.setAttribute('content', thema === 'hell' ? '#f3f1ec' : '#1c1b19');
   }, [thema]);
 
   // Beim Wechsel der Seite oben anfangen (Listen kümmern sich selbst darum).

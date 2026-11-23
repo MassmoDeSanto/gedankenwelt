@@ -1,27 +1,51 @@
 /*
- * Gestaltung „Nachtlabor, minimalistisch“ (KONZEPT.md, Abschnitt 6):
- * ruhig, viel Raum, keine harten Rahmen, keine Schatten, keine Verläufe.
+ * Gestaltung „Planer“ (ab 23. Nov 2026, Nachfolger von „Nachtlabor“, KONZEPT.md Abschnitt 6):
+ * ruhig, viel Raum, keine harten Rahmen, keine Schatten, keine Verläufe. Warmes Grau statt Blaugrau.
  * Alle Farben stehen als Variablen oben; der helle Modus tauscht nur die Variablen aus.
  */
 
 :root {
-  --hintergrund: #0f1117;
-  --flaeche: #181b24;
-  --erhoeht: #222633;
-  --chip: #2c3142;
-  --text: #e6e8ee;
-  --gedaempft: #8a90a2;
-  --meta: #6b7184;
+  --hintergrund: #1c1b19;
+  --flaeche: #262522;
+  --erhoeht: #302f2b;
+  --chip: #3a3934;
+  --text: #ecebe6;
+  --gedaempft: #a19f97;
+  --meta: #7d7b74;
   --linie: rgba(255, 255, 255, 0.07);
 
   /* Akzente mit fester Bedeutung */
-  --violett: #a99cf0; /* Gedanke des Tages, Gedankenwelt */
+  --violett: #afa9ec; /* Gedanke des Tages, Gedankenwelt */
   --tuerkis: #5dcaa5; /* To-dos */
   --bernstein: #ef9f27; /* fällig, Erinnerung */
   --blau: #85b7eb; /* angeheftet */
-  --rot: #e88c8c; /* Löschen */
+  --rot: #f09595; /* Löschen */
 
-  --auf-violett: #17132e;
+  /* Dringlichkeit nach Datum (To-dos): Grund = Kalenderblatt, auf = Schrift darauf,
+     text = Hinweis wie „morgen“, hauch = zarte Fläche (Chips) */
+  --ueberfaellig-grund: #e24b4a;
+  --ueberfaellig-auf: #ffffff;
+  --ueberfaellig-text: #f09595;
+  --ueberfaellig-hauch: #501313;
+  --heute-grund: #ef9f27;
+  --heute-auf: #412402;
+  --heute-text: #fac775;
+  --heute-hauch: #412402;
+  --bald-grund: #854f0b;
+  --bald-auf: #fac775;
+  --bald-text: #fac775;
+  --woche-grund: #085041;
+  --woche-auf: #9fe1cb;
+  --woche-text: #5dcaa5;
+  --spaeter-grund: #444441;
+  --spaeter-auf: #d3d1c7;
+  /* Priorität (Flagge) und Stand „in Arbeit“ */
+  --prio-hauch: #4b1528;
+  --prio-text: #f4c0d1;
+  --arbeit-hauch: #042c53;
+  --arbeit-text: #b5d4f4;
+
+  --auf-violett: #1d1940;
   --treffer: rgba(169, 156, 240, 0.26);
   --schleier: rgba(6, 7, 11, 0.62);
 
@@ -54,24 +78,45 @@
 }
 
 :root[data-thema='hell'] {
-  --hintergrund: #f4f5f8;
-  --flaeche: #ffffff;
-  --erhoeht: #eaecf2;
-  --chip: #dde1ea;
-  --text: #1c1f29;
-  --gedaempft: #5b6173;
-  --meta: #80869a;
-  --linie: rgba(0, 0, 0, 0.09);
+  --hintergrund: #f3f1ec;
+  --flaeche: #fbfaf7;
+  --erhoeht: #efede7;
+  --chip: #e6e3db;
+  --text: #2b2a27;
+  --gedaempft: #5f5e5a;
+  --meta: #888780;
+  --linie: rgba(60, 50, 30, 0.1);
 
-  --violett: #6a5acd;
-  --tuerkis: #17866a;
-  --bernstein: #ad6805;
-  --blau: #2f76c2;
-  --rot: #c0453f;
+  --violett: #534ab7;
+  --tuerkis: #0f6e56;
+  --bernstein: #854f0b;
+  --blau: #185fa5;
+  --rot: #a32d2d;
+
+  --ueberfaellig-grund: #e24b4a;
+  --ueberfaellig-auf: #ffffff;
+  --ueberfaellig-text: #a32d2d;
+  --ueberfaellig-hauch: #fcebeb;
+  --heute-grund: #ef9f27;
+  --heute-auf: #412402;
+  --heute-text: #854f0b;
+  --heute-hauch: #faeeda;
+  --bald-grund: #fac775;
+  --bald-auf: #633806;
+  --bald-text: #854f0b;
+  --woche-grund: #e1f5ee;
+  --woche-auf: #085041;
+  --woche-text: #0f6e56;
+  --spaeter-grund: #f1efe8;
+  --spaeter-auf: #444441;
+  --prio-hauch: #fbeaf0;
+  --prio-text: #993556;
+  --arbeit-hauch: #e6f1fb;
+  --arbeit-text: #185fa5;
 
   --auf-violett: #ffffff;
-  --treffer: rgba(106, 90, 205, 0.2);
-  --schleier: rgba(28, 31, 41, 0.32);
+  --treffer: rgba(83, 74, 183, 0.18);
+  --schleier: rgba(43, 42, 39, 0.32);
 
   /* Tagebuch „Papier“ */
   --tb-hintergrund: #f4eee3;
@@ -114,7 +159,7 @@ html {
     position: fixed;
     inset: 0 0 auto 0;
     height: var(--rand-oben);
-    background: #0f1117;
+    background: #1c1b19;
     z-index: 40;
   }
 }
