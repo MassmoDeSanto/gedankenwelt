@@ -986,12 +986,13 @@ Die ganze App (außer dem Tagebuch) hat ein neues Aussehen bekommen: warmes Grau
 
 ### Was sich geändert hat
 - **Farben:** hell `#f3f1ec` (Hintergrund), Karten `#fbfaf7`, Kacheln weiß; dunkel `#1c1b19` / `#262522` / `#302f2b`. Violett bleibt für Gedanke des Tages und Gedankenwelt. Alle Werte stehen als Variablen oben in `src/ui/stil.css`.
-- **To-dos als Kacheln:** jede Aufgabe eine eigene Kachel. Links ein kleines **Kalenderblatt** (Wochentag und Tag; bei mehr als 7 Tagen Abstand steht statt des Wochentags der Monat), daneben ein Farbstreifen. Unter dem Text: Abstand in Worten („seit 2 Tagen“, „heute“, „morgen“, „in 4 Tagen“), Uhrzeit, Priorität, Stand, Wiederholung und Liste.
+- **To-dos als Kacheln:** jede Aufgabe eine eigene Kachel. Oben links ein kleines **Kalenderblatt** (Wochentag und Tag; bei mehr als 7 Tagen Abstand steht statt des Wochentags der Monat). Unter dem Text: Abstand in Worten („seit 2 Tagen“, „heute“, „morgen“, „in 4 Tagen“), Uhrzeit, Priorität, Stand, Wiederholung und Liste.
 - **Farbskala nach Datum** (je näher, desto wärmer): überfällig rot · heute orange · in 1–2 Tagen gelb · in 3–7 Tagen türkis · später grau · ohne Datum leeres, gestricheltes Blatt.
 - **Priorität** als rosa Flagge mit Wort (hoch/mittel/niedrig), **„in Arbeit“** als blaues Schild – auch an zugeklappten Notizen und an den Knöpfen beim Bearbeiten.
-- **Startseite:** Zähl-Chips „1 überfällig · 1 heute · 7 offen“ im Kopf der To-do-Karte; ein Tipp öffnet „Alle Aufgaben“ gleich mit dem passenden Filter. Weiterhin 5 Aufgaben.
+- **Startseite:** Zähl-Chips „1 überfällig · 1 heute · 7 offen“ im Kopf der To-do-Karte; ein Tipp öffnet „Alle Aufgaben“ gleich mit dem passenden Filter. 6 Aufgaben.
 - **Alle Aufgaben:** oben Filter-Chips (Alle, Überfällig, Heute, In Arbeit, Hoch – Chips ohne Treffer werden ausgeblendet), darunter die Aufgaben nach Monaten („November“, „Januar 2027“), „Ohne Datum“ am Ende. Der Filter steht in der Adresse (`#/aufgaben/heute`), die Zurück-Taste funktioniert also.
 - **Gedankenwelt und Listen:** Kacheln weiß wie die To-dos, Unterlisten heben sich ab.
+- **Zweier-Raster (Nachtrag, 23. Nov 2026):** Auf Massimos Wunsch stehen die To-dos auf der Startseite und in „Alle Aufgaben“ als Kästchen in zwei Spalten (Laptop und Handy). Das ganze Kästchen ist in der Farbe des Datums getönt, ohne Datum bleibt es weiß und hat kein Kalenderblatt. Der Farbstreifen links ist dafür entfallen. Startseite zeigt jetzt 6 Aufgaben (geht im Raster auf). Am Handy rückt das Kalenderblatt über den Titel; Titel höchstens zweizeilig, lange Wörter werden mit Bindestrich getrennt (in der Vorschau des Desktop-Programms fehlt das Trennwörterbuch, dort wird ohne Bindestrich umbrochen).
 
 ### Entscheidungen
 - Dringlichkeit (Datum) und Priorität sind bewusst getrennt: Farbe des Kalenderblatts = Datum, rosa Flagge = Priorität. So konkurriert Rot nie mit „wichtig“.

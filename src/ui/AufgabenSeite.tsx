@@ -1,6 +1,6 @@
 /**
  * Sammelansicht „Alle Aufgaben“ im Design „Planer“: oben Filter-Chips (Alle, Überfällig, Heute,
- * In Arbeit, Hoch), darunter die offenen Aufgaben nach Monaten wie in einem Taschenkalender,
+ * In Arbeit, Hoch), darunter die offenen Aufgaben als Zweier-Raster nach Monaten wie in einem Taschenkalender,
  * Aufgaben ohne Datum am Ende. Der Filter steht in der Adresse (#/aufgaben/heute).
  */
 import { useMemo } from 'react';
@@ -67,14 +67,16 @@ export function AufgabenSeite({ filter }: { filter: AufgabenFilter }) {
             {g.titel}
             {g.ohneDatum && ` · ${g.aufgaben.length}`}
           </h2>
-          {g.aufgaben.map((notiz) => (
-            <AufgabenZeile
-              key={notiz.id}
-              notiz={notiz}
-              heute={heute}
-              herkunft={herkunftText(notiz, z.listen, z.tagebuchtage.values())}
-            />
-          ))}
+          <div className="aufgabenraster">
+            {g.aufgaben.map((notiz) => (
+              <AufgabenZeile
+                key={notiz.id}
+                notiz={notiz}
+                heute={heute}
+                herkunft={herkunftText(notiz, z.listen, z.tagebuchtage.values())}
+              />
+            ))}
+          </div>
         </section>
       ))}
     </div>

@@ -295,9 +295,10 @@ function TagesgedankeKarte() {
 // ───────────────────────── To-dos ─────────────────────────
 
 /**
- * Eine offene Aufgabe als Kachel (Design „Planer“): links das Kalenderblatt in der Farbe der
- * Dringlichkeit, in der Mitte der Text und darunter Abstand („morgen“), Priorität, Stand,
- * Wiederholung und Herkunft, rechts das Kästchen zum Abhaken. Ohne `herkunft` steht dort der Listenname.
+ * Eine offene Aufgabe als Kästchen im Raster (Design „Planer“): ganz in der Farbe der
+ * Dringlichkeit getönt, oben links das Kalenderblatt (nur mit Datum), daneben der Titel und
+ * rechts das Abhak-Kästchen; darunter Abstand („morgen“), Priorität, Stand, Wiederholung und
+ * Herkunft. Ohne `herkunft` steht dort der Listenname.
  */
 export function AufgabenZeile({ notiz, heute, herkunft }: { notiz: Notiz; heute: string; herkunft?: string }) {
   const z = useZustand();
@@ -307,27 +308,16 @@ export function AufgabenZeile({ notiz, heute, herkunft }: { notiz: Notiz; heute:
   const uhrzeit = faellig ? faelligUhrzeit(faellig) : null;
   const woher = herkunft ?? z.listen.get(notiz.liste_id)?.name;
   return (
-    <div className={`aufgabenkachel stufe-${dringlichkeitsstufe(faellig, heute)}`}>
-      <span className="kalenderblatt" title={faellig ? formatFaellig(faellig, heute) : 'ohne Datum'}>
-        <span className="blatt-oben">{blatt?.oben ?? '–'}</span>
-        <span className="blatt-zahl">{blatt?.zahl ?? '·'}</span>
-      </span>
-      <div className="aufgabeninhalt">
-        <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
-          <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
-        </a>
-        <span className="aufgabeninfo">
-          {faellig && (
-            <span className="abstand">
-              {abstandText(faellig, heute)}
-              {uhrzeit && ` · ${uhrzeit}`}
-            </span>
-          )}
-          {aufgabe && <PrioStandHinweis aufgabe={aufgabe} />}
-          {aufgabe && <WiederholungsHinweis aufgabe={aufgabe} />}
-          {woher && <span className="herkunftstext">{woher}</span>}
+    <div className={klassen('aufgabenkachel', `stufe-${dringlichkeitsstufe(faellig, heute)}`, !blatt && 'ohne-blatt')}>
+      {faellig && blatt && (
+        <span className="kalenderblatt" title={formatFaellig(faellig, heute)}>
+          <span className="blatt-oben">{blatt.oben}</span>
+          <span className="blatt-zahl">{blatt.zahl}</span>
         </span>
-      </div>
+      )}
+      <a className="aufgabentext" href={adresse({ seite: 'liste', id: notiz.liste_id, notiz: notiz.id })}>
+        <MarkdownAnzeige text={notiz.text} einzeilig ohneLinks />
+      </a>
       <button
         className="kaestchen"
         role="checkbox"
@@ -337,6 +327,17 @@ export function AufgabenZeile({ notiz, heute, herkunft }: { notiz: Notiz; heute:
       >
         <Haken />
       </button>
+      <span className="aufgabeninfo">
+        {faellig && (
+          <span className="abstand">
+            {abstandText(faellig, heute)}
+            {uhrzeit && ` · ${uhrzeit}`}
+          </span>
+        )}
+        {aufgabe && <PrioStandHinweis aufgabe={aufgabe} />}
+        {aufgabe && <WiederholungsHinweis aufgabe={aufgabe} />}
+        {woher && <span className="herkunftstext">{woher}</span>}
+      </span>
     </div>
   );
 }
@@ -378,22 +379,20 @@ function TodoBox() {
         )}
       </div>
 
-      {offen.slice(0, 5).map((notiz) => (
-        <AufgabenZeile key={notiz.id} notiz={notiz} heute={heute} />
-      ))}
+      <div className="aufgabenraster">
+        {offen.slice(0, 6).map((notiz) => (
+          <AufgabenZeile key={notiz.id} notiz={notiz} heute={heute} />
+        ))}
+      </div>
 
       {neu !== null && (
         <form
-          className="aufgabenkachel stufe-ohne"
+          className="aufgabe-neu-kachel"
           onSubmit={(e) => {
             e.preventDefault();
             lege();
           }}
         >
-          <span className="kalenderblatt" aria-hidden="true">
-            <span className="blatt-oben">–</span>
-            <span className="blatt-zahl">·</span>
-          </span>
           <input
             className="aufgabe-neu"
             autoFocus
