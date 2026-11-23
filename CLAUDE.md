@@ -4,7 +4,8 @@
 Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgaben und längere Texte, in Listen sortiert, mit schneller fehlertoleranter Suche. Läuft als installierbare Web-App (PWA) am Ubuntu-Laptop und später am iPhone.
 
 - Konzept und Aufträge: `~/Dokumente/Claude/ideen/Gedankenwelt/KONZEPT.md` und `PHASE-1.md` (liegen bewusst **nicht** in diesem Repo, weil `ideen/` nie in ein Git-Repo kopiert wird). Vor größeren Änderungen dort nachlesen.
-- Aktueller Stand: Phase 4 gebaut (Import aus Apple Notizen: Kurzbefehl-Dateien, Markdown-Export, Text einfügen). Seit 17. Nov 2026 laufen Anmeldung, Drive-Abgleich und Kalender-Selbsttest gegen das echte Google (Laptop). Noch nie getestet: iPhone, echte Exportdateien für den Import – offene Schritte stehen in der README, Abschnitt 9 „Später erledigen“. Aufträge: `~/Downloads/PHASE-2.md`, `~/Downloads/PHASE-3.md`, `~/Downloads/PHASE-4.md`
+- Aktueller Stand (23. Nov 2026): Phasen 1–4 gebaut, dazu To-do-Feld (Priorität/Stand), Notizen mit Namen und kompakte Listen, Tagebuch (Etappen 1–4 plus Ort). Anmeldung, Drive-Abgleich und Kalender laufen am Laptop gegen das echte Google. Noch nie getestet: iPhone, echte Exportdateien für den Import – offene Schritte stehen in der README, Abschnitt 9 „Später erledigen“. Aufträge: `~/Downloads/PHASE-2.md` bis `PHASE-6.md`.
+- **Als Nächstes: Design der ganzen App überarbeiten** (Massimos Wunsch, eigener Chat). Danach Phase 6, dann echter Import, iPhone ganz am Ende.
 
 ## Technik
 - Plattform: Web (PWA), Chrome am Laptop, später Safari am iPhone
@@ -50,10 +51,12 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Neues weiterhin zuerst gegen simuliertes Drive/simulierten Kalender bauen und prüfen; was nur Massimo tun kann, in der README im Abschnitt „Später erledigen“ sammeln.
 
 ## Offene Punkte
-- Siehe `README.md`: Abschnitt 5 (Stand Phase 1), 7 (Phase 2), 8 (Phase 3), 10 (Phase 4), 11 (To-do-Feld) und 9 („Später erledigen“ – alles, was nur Massimo tun kann).
+- Siehe `README.md`: Abschnitt 5 (Stand Phase 1), 7 (Phase 2), 8 (Phase 3), 10 (Phase 4), 11 (To-do-Feld), 12 (Notizen mit Namen), 13 (Tagebuch) und 9 („Später erledigen“ – alles, was nur Massimo tun kann).
+- Design: Die Gestaltung „Nachtlabor“ steht in KONZEPT.md Abschnitt 6, das Tagebuch hat eigene Farben „Papier/Kerzenlicht“ (Abschnitt 13.7). Alle Farben sind Variablen oben in `src/ui/stil.css` (`:root`, `[data-thema='hell']`, Tagebuch unter `[data-raum='tagebuch']`). Das Tagebuch-Design gefällt Massimo.
+- Für Phase 6 vorgemerkt: `npm audit` meldet bekannte Sicherheitslücken in bestehenden Programmbausteinen (gesehen am 22. Nov 2026).
 - Sobald echte Beispieldateien in `import-beispiele/` liegen: Marker-Tabelle und Automatik daran prüfen und anpassen (README, Abschnitt 9, Schritt 7).
 - To-do-Feld überarbeitet am 20. Nov 2026: Priorität (hoch/mittel/niedrig) und Stand (offen/in Arbeit), Entscheidungen in README Abschnitt 11. Deadline = vorhandene Fälligkeit, Kategorie = Tags. Kalender-Probe (README Abschnitt 9, Schritt 4, Punkt 4) am 20. Nov 2026 bestanden.
 - Phase 5 (`[[ ]]`-Links, `~/Downloads/PHASE-5.md`) am 20. Nov 2026 auf Massimos Wunsch zurückgestellt – er braucht Verlinken nicht. Stattdessen: Notizen mit Namen und kompakte Listenansicht (README Abschnitt 12).
-- **Tagebuch** (KONZEPT.md Abschnitt 13, README Abschnitt 13): Etappen 1 bis 4 am 22. Nov 2026 gebaut (Schreib-Erinnerung als täglicher Serientermin mit Kennung `_schreiberinnerung`). „Aufräumen mit Claude“ zurückgestellt. Als Nächstes: Design der ganzen App überarbeiten (Massimos Wunsch), dann Phase 6. „Aufräumen mit Claude“ später. Danach will Massimo das Design der ganzen App überarbeiten.
+- **Tagebuch** (KONZEPT.md Abschnitt 13, README Abschnitt 13): Etappen 1 bis 4 am 22. Nov 2026 gebaut (Schreib-Erinnerung als täglicher Serientermin mit Kennung `_schreiberinnerung`). Massimo ist damit zufrieden (23. Nov 2026). „Aufräumen mit Claude“ zurückgestellt.
 - Tagebuch in Drive liegt unter `_Tagebuch/` (mit Unterstrich, Schutz vor alten App-Versionen). Gewohnheiten und eigene Schreibimpulse stehen deshalb in `_Tagebuch/_tagebuch.json` (nicht in `_meta.json`). Neue Tagebuch-Einstellungen ebenfalls dort ablegen.
 - Geplante Reihenfolge danach: Phase 6 (Härtung, `~/Downloads/PHASE-6.md`) **vor** dem echten Import; iPhone ganz am Ende. Phase 6 setzt noch „Google nicht eingerichtet“ voraus – das ist überholt, der Einrichtungstag umfasst nur noch iPhone und Import.
