@@ -113,3 +113,59 @@ export function kalenderblatt(faellig: string, heute: string): { oben: string; z
   const oben = nah ? KURZ_WOCHENTAGE[new Date(Date.UTC(j, m - 1, t)).getUTCDay()] : KURZ_MONATE[m - 1];
   return { oben, zahl: t };
 }
+
+// ───────── Sammelansicht „Alle Aufgaben“: Filter-Chips und Monatsgruppen ─────────
+
+/** Filter der Chips oben in der Sammelansicht. */
+export type AufgabenFilter = 'alle' | 'ueberfaellig' | 'heute' | 'arbeit' | 'hoch';
+
+export const AUFGABEN_FILTER: AufgabenFilter[] = ['alle', 'ueberfaellig', 'heute', 'arbeit', 'hoch'];
+
+export function passtZuFilter(notiz: Notiz, filter: AufgabenFilter, heute: string): boolean {
+  const a = notiz.aufgabe;
+  if (!a) return false;
+  if (filter === 'ueberfaellig') return dringlichkeitsstufe(a.faellig, heute) === 'ueberfaellig';
+  if (filter === 'heute') return dringlichkeitsstufe(a.faellig, heute) === 'heute';
+  if (filter === 'arbeit') return a.stand === 'in_arbeit';
+  if (filter === 'hoch') return a.prioritaet === 'hoch';
+  return true;
+}
+
+const MONATSNAMEN = [
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+];
+
+export interface Monatsgruppe {
+  /** „November“, in anderen Jahren „Januar 2027“; für Aufgaben ohne Datum „Ohne Datum“ */
+  titel: string;
+  ohneDatum: boolean;
+  aufgaben: Notiz[];
+}
+
+/**
+ * Teilt offene Aufgaben wie in einem Taschenkalender nach Monaten auf: innerhalb des Monats nach
+ * Fälligkeit (gleicher Zeitpunkt: wichtigere zuerst), Aufgaben ohne Datum als letzte Gruppe in der
+ * Reihenfolge, in der sie hereinkommen (offeneAufgaben: Priorität, dann neueste).
+ */
+export function gruppiereNachMonat(offen: Notiz[], heute: string): Monatsgruppe[] {
+  const mitDatum = offen.filter((n) => n.aufgabe?.faellig);
+  const ohne = offen.filter((n) => !n.aufgabe?.faellig);
+  mitDatum.sort((a, b) => {
+    const fa = a.aufgabe!.faellig!;
+    const fb = b.aufgabe!.faellig!;
+    if (fa !== fb) return fa < fb ? -1 : 1;
+    return prioRang(a) - prioRang(b);
+  });
+  const gruppen: Monatsgruppe[] = [];
+  for (const n of mitDatum) {
+    const datum = faelligDatum(n.aufgabe!.faellig!);
+    const name = MONATSNAMEN[Number(datum.slice(5, 7)) - 1];
+    const titel = datum.slice(0, 4) === heute.slice(0, 4) ? name : `${name} ${datum.slice(0, 4)}`;
+    const letzte = gruppen[gruppen.length - 1];
+    if (letzte?.titel === titel) letzte.aufgaben.push(n);
+    else gruppen.push({ titel, ohneDatum: false, aufgaben: [n] });
+  }
+  if (ohne.length > 0) gruppen.push({ titel: 'Ohne Datum', ohneDatum: true, aufgaben: ohne });
+  return gruppen;
+}

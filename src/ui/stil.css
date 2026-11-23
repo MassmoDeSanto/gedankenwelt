@@ -687,6 +687,11 @@ mark {
   border: 1.5px dashed var(--chip);
 }
 
+/* ohne Datum: leeres, gestricheltes Blatt */
+.stufe-ohne .kalenderblatt > span {
+  visibility: hidden;
+}
+
 .blatt-oben {
   font-family: var(--mono);
   font-size: 10px;
@@ -768,6 +773,69 @@ mark {
 .zaehlchip.heute {
   background: var(--heute-hauch);
   color: var(--heute-text);
+}
+
+/* Sammelansicht: Filter-Chips und Monatsgruppen */
+.filterchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.filterchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: var(--chip);
+  color: var(--gedaempft);
+  transition:
+    background var(--kurz),
+    color var(--kurz);
+}
+
+.filterchip .anzahl {
+  font-family: var(--mono);
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.filterchip.filter-ueberfaellig {
+  background: var(--ueberfaellig-hauch);
+  color: var(--ueberfaellig-text);
+}
+
+.filterchip.filter-heute {
+  background: var(--heute-hauch);
+  color: var(--heute-text);
+}
+
+.filterchip.filter-arbeit {
+  background: var(--arbeit-hauch);
+  color: var(--arbeit-text);
+}
+
+.filterchip.filter-hoch {
+  background: var(--prio-hauch);
+  color: var(--prio-text);
+}
+
+/* Gewählter Chip: kräftig gefüllt in Textfarbe */
+.filterchip.an {
+  background: var(--text);
+  color: var(--hintergrund);
+}
+
+.planer-gruppe {
+  margin-top: 22px;
+}
+
+.planer-gruppe .etikett {
+  display: block;
+  margin-bottom: 2px;
 }
 
 /* Priorität als rosa Flagge mit Wort, Stand „in Arbeit“ als blaues Schild */

@@ -4,6 +4,7 @@
  * und später das Hosting auf GitHub Pages ohne Extra-Einstellungen.
  */
 import { useMemo, useSyncExternalStore } from 'react';
+import { AUFGABEN_FILTER, type AufgabenFilter } from '../logik/aufgaben';
 
 export type Route =
   | { seite: 'start' }
@@ -13,7 +14,8 @@ export type Route =
   | { seite: 'tagebuch'; datum?: string; notiz?: string }
   /** Monatsansicht des Tagebuchs: ohne Monat der aktuelle */
   | { seite: 'tagebuchmonat'; monat?: string }
-  | { seite: 'aufgaben' }
+  /** Sammelansicht aller offenen Aufgaben, optional mit Filter (#/aufgaben/heute) */
+  | { seite: 'aufgaben'; filter?: AufgabenFilter }
   | { seite: 'einstellungen' }
   | { seite: 'import' }
   | { seite: 'papierkorb' };
@@ -22,7 +24,10 @@ export function leseRoute(hash: string): Route {
   const [pfad, abfrage = ''] = hash.replace(/^#\/?/, '').split('?');
   const [seite, id] = pfad.split('/');
   if (seite === 'welt') return { seite: 'welt' };
-  if (seite === 'aufgaben') return { seite: 'aufgaben' };
+  if (seite === 'aufgaben') {
+    const filter = AUFGABEN_FILTER.find((f) => f === id && f !== 'alle');
+    return { seite: 'aufgaben', filter };
+  }
   if (seite === 'einstellungen') return { seite: 'einstellungen' };
   if (seite === 'papierkorb') return { seite: 'papierkorb' };
   if (seite === 'import') return { seite: 'import' };
@@ -45,6 +50,7 @@ export function leseRoute(hash: string): Route {
 export function adresse(route: Route): string {
   if (route.seite === 'start') return '#/';
   if (route.seite === 'liste') return `#/liste/${route.id}${route.notiz ? `?n=${route.notiz}` : ''}`;
+  if (route.seite === 'aufgaben') return `#/aufgaben${route.filter && route.filter !== 'alle' ? `/${route.filter}` : ''}`;
   if (route.seite === 'tagebuchmonat') return `#/tagebuch-monat${route.monat ? `/${route.monat}` : ''}`;
   if (route.seite === 'tagebuch') {
     return `#/tagebuch${route.datum ? `/${route.datum}` : ''}${route.notiz ? `?n=${route.notiz}` : ''}`;

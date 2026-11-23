@@ -48,7 +48,7 @@ function seite(route: Route) {
     case 'liste':
       return <Listenansicht id={route.id} notiz={route.notiz} />;
     case 'aufgaben':
-      return <AufgabenSeite />;
+      return <AufgabenSeite filter={route.filter ?? 'alle'} />;
     case 'einstellungen':
       return <Einstellungen />;
     case 'papierkorb':

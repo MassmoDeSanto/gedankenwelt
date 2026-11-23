@@ -362,12 +362,12 @@ function TodoBox() {
         ) : (
           <span className="zaehlchips">
             {gruppen.ueberfaellig.length > 0 && (
-              <a className="zaehlchip ueberfaellig" href={adresse({ seite: 'aufgaben' })}>
+              <a className="zaehlchip ueberfaellig" href={adresse({ seite: 'aufgaben', filter: 'ueberfaellig' })}>
                 {gruppen.ueberfaellig.length} überfällig
               </a>
             )}
             {gruppen.heute.length > 0 && (
-              <a className="zaehlchip heute" href={adresse({ seite: 'aufgaben' })}>
+              <a className="zaehlchip heute" href={adresse({ seite: 'aufgaben', filter: 'heute' })}>
                 {gruppen.heute.length} heute
               </a>
             )}

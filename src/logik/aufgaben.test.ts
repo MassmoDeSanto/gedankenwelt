@@ -4,6 +4,8 @@ import {
   abstandText,
   dringlichkeitsstufe,
   gruppiereAufgaben,
+  gruppiereNachMonat,
+  passtZuFilter,
   kalenderblatt,
   naechsterStand,
   naechstePrioritaet,
@@ -106,5 +108,34 @@ describe('Darstellung „Planer“', () => {
     expect(kalenderblatt('2026-11-30T18:00', heute)).toEqual({ oben: 'MO', zahl: 30 });
     expect(kalenderblatt('2026-12-09', heute)).toEqual({ oben: 'DEZ', zahl: 9 });
     expect(kalenderblatt('2026-10-02', heute)).toEqual({ oben: 'OKT', zahl: 2 });
+  });
+});
+
+describe('Sammelansicht: Filter und Monatsgruppen', () => {
+  const heute = '2026-11-23';
+  const a = aufgabe('A überfällig', { faellig: '2026-11-21', prioritaet: 'hoch' });
+  const b = aufgabe('B heute', { faellig: '2026-11-23T18:00', stand: 'in_arbeit' });
+  const c = aufgabe('C Dezember', { faellig: '2026-12-09' });
+  const d = aufgabe('D Januar', { faellig: '2027-01-04' });
+  const e = aufgabe('E ohne Datum', {});
+  const f = aufgabe('F gleicher Tag, wichtiger', { faellig: '2026-12-09', prioritaet: 'mittel' });
+
+  it('Filter wählen genau die passenden Aufgaben', () => {
+    const alle = [a, b, c, d, e];
+    const titel = (filter: Parameters<typeof passtZuFilter>[1]) =>
+      alle.filter((n) => passtZuFilter(n, filter, heute)).map((n) => n.text);
+    expect(titel('alle')).toHaveLength(5);
+    expect(titel('ueberfaellig')).toEqual(['A überfällig']);
+    expect(titel('heute')).toEqual(['B heute']);
+    expect(titel('arbeit')).toEqual(['B heute']);
+    expect(titel('hoch')).toEqual(['A überfällig']);
+  });
+
+  it('Monate in Datumsfolge, anderes Jahr mit Jahreszahl, ohne Datum zuletzt', () => {
+    const gruppen = gruppiereNachMonat([e, d, c, f, b, a], heute);
+    expect(gruppen.map((g) => g.titel)).toEqual(['November', 'Dezember', 'Januar 2027', 'Ohne Datum']);
+    expect(gruppen[0].aufgaben.map((n) => n.text)).toEqual(['A überfällig', 'B heute']);
+    expect(gruppen[1].aufgaben.map((n) => n.text)).toEqual(['F gleicher Tag, wichtiger', 'C Dezember']);
+    expect(gruppen[3].ohneDatum).toBe(true);
   });
 });
