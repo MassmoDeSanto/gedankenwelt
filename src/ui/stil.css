@@ -39,7 +39,8 @@
   --woche-text: #5dcaa5;
   --spaeter-grund: #444441;
   --spaeter-auf: #d3d1c7;
-  --kachel: #302f2b; /* einzelne To-do-Kachel */
+  --kachel: #302f2b; /* Kacheln: To-dos, Listen */
+  --kachel-hover: #3a3934;
   /* Priorität (Flagge) und Stand „in Arbeit“ */
   --prio-hauch: #4b1528;
   --prio-text: #f4c0d1;
@@ -111,6 +112,7 @@
   --spaeter-grund: #f1efe8;
   --spaeter-auf: #444441;
   --kachel: #ffffff;
+  --kachel-hover: #f6f4ef;
   --prio-hauch: #fbeaf0;
   --prio-text: #993556;
   --arbeit-hauch: #e6f1fb;
@@ -979,13 +981,16 @@ mark {
   gap: 3px;
   padding: 13px 15px;
   border-radius: 12px;
-  background: var(--erhoeht);
+  background: var(--kachel);
   min-width: 0;
   transition: background var(--kurz);
 }
 
 a.kachel:hover,
-.kachel-kopf:hover,
+.kachel-kopf:hover {
+  background: var(--kachel-hover);
+}
+
 .unterkachel:hover {
   background: var(--chip);
 }
@@ -1031,7 +1036,7 @@ a.kachel:hover,
   gap: 8px;
   padding: 6px 11px;
   border-radius: 9px;
-  background: var(--flaeche);
+  background: var(--hintergrund);
   font-size: 13.5px;
   transition: background var(--kurz);
 }
