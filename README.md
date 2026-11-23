@@ -979,3 +979,26 @@ Nicht geprüft: mit dem echten Google Drive, am iPhone (Wischen, Kalender-Auswah
 
 **Wichtig nach dem Update:** Die App auf jedem Gerät einmal neu laden, damit keine alte Version mehr läuft.
 
+
+## 14. Design „Planer“ (23. Nov 2026)
+
+Die ganze App (außer dem Tagebuch) hat ein neues Aussehen bekommen: warmes Grau statt Blaugrau, die To-dos wie in einem Taschenkalender. Ausgesucht hat Massimo es aus mehreren Vorschauen; das Tagebuch-Design „Papier/Kerzenlicht“ bleibt unverändert.
+
+### Was sich geändert hat
+- **Farben:** hell `#f3f1ec` (Hintergrund), Karten `#fbfaf7`, Kacheln weiß; dunkel `#1c1b19` / `#262522` / `#302f2b`. Violett bleibt für Gedanke des Tages und Gedankenwelt. Alle Werte stehen als Variablen oben in `src/ui/stil.css`.
+- **To-dos als Kacheln:** jede Aufgabe eine eigene Kachel. Links ein kleines **Kalenderblatt** (Wochentag und Tag; bei mehr als 7 Tagen Abstand steht statt des Wochentags der Monat), daneben ein Farbstreifen. Unter dem Text: Abstand in Worten („seit 2 Tagen“, „heute“, „morgen“, „in 4 Tagen“), Uhrzeit, Priorität, Stand, Wiederholung und Liste.
+- **Farbskala nach Datum** (je näher, desto wärmer): überfällig rot · heute orange · in 1–2 Tagen gelb · in 3–7 Tagen türkis · später grau · ohne Datum leeres, gestricheltes Blatt.
+- **Priorität** als rosa Flagge mit Wort (hoch/mittel/niedrig), **„in Arbeit“** als blaues Schild – auch an zugeklappten Notizen und an den Knöpfen beim Bearbeiten.
+- **Startseite:** Zähl-Chips „1 überfällig · 1 heute · 7 offen“ im Kopf der To-do-Karte; ein Tipp öffnet „Alle Aufgaben“ gleich mit dem passenden Filter. Weiterhin 5 Aufgaben.
+- **Alle Aufgaben:** oben Filter-Chips (Alle, Überfällig, Heute, In Arbeit, Hoch – Chips ohne Treffer werden ausgeblendet), darunter die Aufgaben nach Monaten („November“, „Januar 2027“), „Ohne Datum“ am Ende. Der Filter steht in der Adresse (`#/aufgaben/heute`), die Zurück-Taste funktioniert also.
+- **Gedankenwelt und Listen:** Kacheln weiß wie die To-dos, Unterlisten heben sich ab.
+
+### Entscheidungen
+- Dringlichkeit (Datum) und Priorität sind bewusst getrennt: Farbe des Kalenderblatts = Datum, rosa Flagge = Priorität. So konkurriert Rot nie mit „wichtig“.
+- Die Reihenfolge der Aufgaben auf der Startseite bleibt wie bisher (erst Priorität, dann Fälligkeit). In „Alle Aufgaben“ wird nach Datum sortiert, bei gleichem Zeitpunkt die wichtigere zuerst.
+- Die Logik (Farbstufe, Abstandstext, Kalenderblatt, Filter, Monatsgruppen) steht mit Tests in `src/logik/aufgaben.ts`.
+- `KONZEPT.md` (Abschnitt 6 beschreibt noch „Nachtlabor“) liegt außerhalb des Repos und wurde nicht geändert; maßgeblich für das Aussehen ist jetzt dieser Abschnitt.
+
+### Geprüft und nicht geprüft
+- Geprüft in der Vorschau mit Beispieldaten: Laptop- und Handy-Breite, hell und dunkel; Startseite, Alle Aufgaben mit Filtern, Gedankenwelt, Listen, Einstellungen.
+- Nicht geprüft: echtes iPhone (kommt am Ende, README Abschnitt 9).
