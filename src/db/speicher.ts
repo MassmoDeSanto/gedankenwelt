@@ -9,6 +9,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { abgelaufen } from '../logik/papierkorb';
+import { schreibFehlerText } from '../logik/speicherfehler';
 import { Suchindex } from '../logik/suche';
 import {
   EINGANG_ID,
@@ -98,8 +99,46 @@ export function setzeAbgleichHaken(aenderung: ((ids: string[]) => void) | null, 
   nachErsetzen = ersetzen;
 }
 
+// ───────────────────────── Fehler beim Speichern ─────────────────────────
+
+/**
+ * Schlägt das Speichern in der Browser-Datenbank fehl (Speicher voll, Browser verweigert …),
+ * bleibt die Änderung im Arbeitsspeicher und die Oberfläche zeigt eine Warnung, bis
+ * „Erneut speichern“ geklappt hat. So geht nichts still verloren.
+ */
+let speicherProblem: string | null = null;
+const problemHoerer = new Set<() => void>();
+
+function setzeSpeicherProblem(text: string | null): void {
+  speicherProblem = text;
+  for (const h of problemHoerer) h();
+}
+
+export function useSpeicherProblem(): string | null {
+  return useSyncExternalStore(
+    (h) => {
+      problemHoerer.add(h);
+      return () => problemHoerer.delete(h);
+    },
+    () => speicherProblem,
+  );
+}
+
 function meldeFehler(fehler: unknown): void {
   console.error('Speichern in der Browser-Datenbank ist fehlgeschlagen:', fehler);
+  setzeSpeicherProblem(schreibFehlerText(fehler));
+}
+
+/** Schreibt den ganzen Stand aus dem Arbeitsspeicher noch einmal in die Datenbank. */
+export async function speichereAllesErneut(): Promise<boolean> {
+  try {
+    await schreibeAllesInDatenbank(alsBestand());
+    setzeSpeicherProblem(null);
+    return true;
+  } catch (fehler) {
+    meldeFehler(fehler);
+    return false;
+  }
 }
 
 // ───────────────────────── Schreiben ─────────────────────────
@@ -347,16 +386,15 @@ export function alsBestand(): Datenbestand {
   };
 }
 
-/** Ersetzt alles durch einen anderen Datenbestand (Import oder „Alles löschen“). */
-export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
-  const listen = [...bestand.listen];
-  if (!listen.some((l) => l.id === EINGANG_ID)) listen.push(eingangsListe());
-  if (!listen.some((l) => l.id === TAGEBUCH_ID)) listen.push(tagebuchListe());
-
+/**
+ * Schreibt einen ganzen Datenbestand in die Datenbank – in einem Rutsch („Transaktion“):
+ * Klappt etwas nicht, bleibt der alte Inhalt vollständig erhalten.
+ */
+async function schreibeAllesInDatenbank(bestand: Datenbestand): Promise<void> {
   await db.transaction('rw', db.notizen, db.listen, db.meta, async () => {
     await Promise.all([db.notizen.clear(), db.listen.clear(), db.meta.clear()]);
     await db.notizen.bulkPut(bestand.notizen);
-    await db.listen.bulkPut(listen);
+    await db.listen.bulkPut(bestand.listen);
     await db.meta.bulkPut([
       { schluessel: 'einstellungen', wert: bestand.einstellungen },
       { schluessel: 'tagesgedanke_verlauf', wert: bestand.tagesgedanke_verlauf },
@@ -367,6 +405,16 @@ export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
       { schluessel: 'schreiberinnerung', wert: bestand.schreiberinnerung ?? null },
     ]);
   });
+}
+
+/** Ersetzt alles durch einen anderen Datenbestand (Import oder „Alles löschen“). */
+export async function ersetzeAlles(bestand: Datenbestand): Promise<void> {
+  const listen = [...bestand.listen];
+  if (!listen.some((l) => l.id === EINGANG_ID)) listen.push(eingangsListe());
+  if (!listen.some((l) => l.id === TAGEBUCH_ID)) listen.push(tagebuchListe());
+
+  await schreibeAllesInDatenbank({ ...bestand, listen });
+  setzeSpeicherProblem(null);
 
   zustand = {
     geladen: true,

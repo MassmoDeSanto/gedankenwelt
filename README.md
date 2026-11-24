@@ -1012,7 +1012,7 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - **Etappe A – §1 Datensicherheit, §2 Sicherheit** (begonnen 24. Nov 2026)
   - [x] Formatversion und Migrationen (Drive-Dateien und lokale Datenbank)
   - [x] Kaputte Dateien in Drive: lesen, was geht, nichts Unlesbares überschreiben, Kopie, Hinweis
-  - [ ] Meldungen bei vollem Speicher und Datenbankfehlern
+  - [x] Meldungen bei vollem Speicher und Datenbankfehlern
   - [ ] Alle Lösch- und Überschreibstellen durchgesehen
   - [ ] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
   - [ ] Anmelde-Token: Speicherort geprüft und begründet
@@ -1034,3 +1034,10 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Jetzt gilt: Unlesbar ist eine Datei mit halbem oder falschem JSON oder mit einem Dateikopf, der mit `---` beginnt und nie endet. Eine solche Datei wird **zuerst** in den Drive-Ordner `_Sicherung/` kopiert (Name: Ortszeit + Pfad, z. B. `2026-11-24 11-11 Reise – Geld.md`). Danach wird vorsichtig zusammengeführt, wie bei leerem Drive: Nichts gilt als gelöscht. Erst am Ende der Runde ersetzt die App die kaputte Datei durch eine saubere. Gelingt die Kopie nicht, bricht die Runde ab und nichts wird verändert.
 - Das Wolken-Symbol zeigt dann ein Warnzeichen und einen Hinweis mit Dateiname, Grund und Ort der Kopie. Der Hinweis bleibt auch nach einem Neustart, bis du auf „Verstanden“ tippst. Den Ordner `_Sicherung/` liest und löscht die App nie.
 - Im Browser prüfen (nur Entwicklung): Mit `gedankenwelt.testdrive = 1` steht das simulierte Drive als `window.gedankenweltTestDrive` bereit, z. B. `gedankenweltTestDrive.bearbeiteVonHand('_meta.json', () => '{ kaputt')`.
+
+**Speicher voll und Fehler der Browser-Datenbank** (`src/logik/speicherfehler.ts` mit Tests, `src/db/speicher.ts`, `src/ui/SpeicherWarnung.tsx`, `src/ui/SpeicherStand.tsx`)
+- Gefundene Lücke, jetzt behoben: Schlug das Speichern fehl, stand das bisher nur in der Entwicklerkonsole. Die Änderung war nach dem Schließen weg, ohne dass man es merkte.
+- Jetzt erscheint oben eine rote Warnleiste mit der Ursache (z. B. „Speicher auf diesem Gerät ist voll“) und zwei Knöpfen: **Als ZIP sichern** und **Erneut speichern**. „Erneut speichern“ schreibt den ganzen Stand aus dem Arbeitsspeicher in einem Rutsch neu. Klappt das nicht, bleibt der alte Inhalt vollständig erhalten. Die Leiste bleibt, bis das Speichern gelungen ist.
+- Kann die App beim Start ihre Daten nicht laden, startet sie gar nicht erst, also auch kein Abgleich, der etwas überschreiben könnte. Es erscheint eine Erklärung je nach Ursache: Datenbank von neuerer App-Version, Speicher voll, privates Fenster bzw. Website-Daten blockiert, sonstiges. Ein Fehler beim Start des Abgleichs verdeckt die App nicht mehr.
+- Einstellungen → Daten → **Speicher auf diesem Gerät**: zeigt, ob der Browser die Daten dauerhaft aufbewahrt, wie viel belegt und frei ist, und hat einen Knopf „Dauerhaft erlauben“. Ohne Drive-Verbindung steht dort die Warnung, regelmäßig als ZIP zu exportieren.
+- Geprüft in der Vorschau: voller Speicher (nachgestellt), Warnleiste, „Erneut speichern“, Speicher-Zeile. Nicht im Browser geprüft: die Startmeldung (nur per Test), weil man dafür die Datenbank der Vorschau dauerhaft verstellen müsste.

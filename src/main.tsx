@@ -11,6 +11,7 @@ import { nutzeTestDrive, nutzeTestKalender, starteAbgleichDienst } from './db/ab
 import { verarbeiteRueckkehr } from './db/anmeldung';
 import { ladeAlles } from './db/speicher';
 import { GOOGLE_CLIENT_ID } from './konfig';
+import { ladeFehlerText } from './logik/speicherfehler';
 import { App } from './ui/App';
 
 // Kommt die Seite gerade von der Google-Anmeldung zurück? Dann die Antwort auswerten,
@@ -56,16 +57,28 @@ document.addEventListener('visibilitychange', () => {
 // Den Browser bitten, die Daten nicht von sich aus zu löschen (wichtig am iPhone).
 void navigator.storage?.persist?.();
 
-createRoot(document.getElementById('app')!).render(
+const wurzel = createRoot(document.getElementById('app')!);
+wurzel.render(
   <StrictMode>
     <App />
   </StrictMode>,
 );
 
-ladeAlles()
-  .then(starteAbgleichDienst)
-  .catch((fehler) => {
+ladeAlles().then(
+  () =>
+    // Ein Fehler beim Start des Abgleichs darf die App nicht verdecken: Die Daten sind ja geladen.
+    starteAbgleichDienst().catch((fehler) => console.error('Abgleich konnte nicht starten:', fehler)),
+  (fehler) => {
+    // Ohne geladene Daten startet weder die Oberfläche noch der Abgleich – so wird nichts überschrieben.
     console.error(fehler);
-    document.getElementById('app')!.textContent =
-      'Die Daten konnten nicht geladen werden. Bitte die Seite neu laden. Hilft das nicht: Ist im Browser das Speichern von Website-Daten erlaubt?';
-  });
+    wurzel.render(
+      <main className="seite ladefehler" role="alert">
+        <h1>Gedankenwelt</h1>
+        <p>{ladeFehlerText(fehler)}</p>
+        <button className="knopf haupt" onClick={() => location.reload()}>
+          Seite neu laden
+        </button>
+      </main>,
+    );
+  },
+);

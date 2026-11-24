@@ -8,6 +8,7 @@ import { ImportSeite } from './ImportSeite';
 import { Listenansicht } from './Listenansicht';
 import { Papierkorb } from './Papierkorb';
 import { Meldungsleiste } from './Meldungsleiste';
+import { SpeicherWarnung } from './SpeicherWarnung';
 import { useRoute, type Route } from './router';
 import { Start } from './Start';
 import { TagebuchMonat } from './TagebuchMonat';
@@ -35,6 +36,7 @@ export function App() {
 
   return (
     <>
+      <SpeicherWarnung />
       {seite(route)}
       <Meldungsleiste />
     </>

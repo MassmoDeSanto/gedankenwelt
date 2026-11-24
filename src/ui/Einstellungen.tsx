@@ -1,13 +1,14 @@
 /** Einstellungen: Hell/Dunkel, Tagebuch, Google Drive, Erinnerungen, Import, Papierkorb, Export/Import als ZIP, Beispieldaten. */
 import { useRef, useState } from 'react';
-import { exportiereZip, importiereZip, ladeBeispieldaten, loescheAlles, setzeThema } from '../db/aktionen';
+import { importiereZip, ladeBeispieldaten, loescheAlles, setzeThema } from '../db/aktionen';
 import { useAbgleichStatus } from '../db/abgleichDienst';
 import { useZustand } from '../db/speicher';
-import { lokalesDatum } from '../logik/zeit';
+import { ladeZipHerunter } from './download';
 import { BestaetigungsDialog, Kopfzeile, Segment } from './Bausteine';
 import { DriveBereich } from './DriveBereich';
 import { ErinnerungenBereich } from './ErinnerungenBereich';
 import { ImportBereich } from './ImportBereich';
+import { SpeicherStand } from './SpeicherStand';
 import { adresse } from './router';
 import { TagebuchBereich } from './TagebuchBereich';
 
@@ -23,13 +24,7 @@ export function Einstellungen() {
     [...z.notizen.values()].filter((n) => n.geloescht).length + [...z.listen.values()].filter((l) => l.geloescht).length;
 
   const exportiere = () => {
-    // Die ZIP-Datei wird im Browser erzeugt und wie ein normaler Download gespeichert.
-    const url = URL.createObjectURL(new Blob([exportiereZip() as BlobPart], { type: 'application/zip' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `gedankenwelt-${lokalesDatum()}.zip`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    ladeZipHerunter();
     setMeldung('Export gespeichert. Die Datei liegt in deinem Download-Ordner.');
   };
 
@@ -109,6 +104,7 @@ export function Einstellungen() {
             }}
           />
         </div>
+        <SpeicherStand verbunden={verbunden} />
         <div className="einstellung">
           <span>
             Beispieldaten laden
