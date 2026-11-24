@@ -32,6 +32,17 @@ class Datenbank extends Dexie {
   constructor() {
     super('gedankenwelt');
     // Hier stehen nur die Felder, nach denen die Datenbank suchen können soll.
+    //
+    // Versionen und Migrationen (PHASE-6.md, Abschnitt 1): Die Zahl in `version(n)` ist die
+    // Formatversion der Datenbank auf diesem Gerät. Ändert sich das Datenmodell, kommt eine NEUE
+    // Version dazu – bestehende Zeilen hier werden nie geändert oder gelöscht. Müssen vorhandene
+    // Daten umgebaut werden, gehört das in `.upgrade(...)` der neuen Version und ruft eine reine
+    // Funktion aus `src/logik/` auf (dort mit Test), zum Beispiel:
+    //   this.version(4).stores({}).upgrade((tx) => tx.table('notizen').toCollection().modify(notizV4));
+    // Dexie führt die Schritte beim Öffnen der Reihe nach aus, auch wenn Versionen übersprungen wurden.
+    // Ist die Datenbank NEUER als diese App (alte App-Version im Zwischenspeicher), verweigert Dexie
+    // das Öffnen; die App zeigt dann eine Meldung (siehe `src/db/speicher.ts`) und verändert nichts.
+    // Version 2 gab es nie; das ist kein Fehler.
     this.version(1).stores({
       notizen: 'id, liste_id',
       listen: 'id',

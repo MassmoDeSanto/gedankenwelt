@@ -39,6 +39,15 @@ import { leseAufgabenPraefix, mitAufgabenPraefix, type Umgebung } from './absatz
 import { leseTags } from './tags';
 import { TAGEBUCH_DATEI, istBewertung, monatAusPfad, monatVon, monatsPfad, tagebuchtagId } from './tagebuch';
 import { datumVon } from './zeit';
+import {
+  FORMATVERSION,
+  FormatZuNeu,
+  MARKDOWN_MIGRATIONEN,
+  META_MIGRATIONEN,
+  TAGEBUCH_MIGRATIONEN,
+  migriere,
+  pruefeDatei,
+} from './format';
 import { leseRegel, schreibeRegel } from './wiederholung';
 
 /** Pfad → Inhalt. Pfade sind relativ zum Ordner „Gedankenwelt/“ und nutzen „/“. */
@@ -205,7 +214,7 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   const gewohnheiten = (bestand.gewohnheiten ?? []).filter((g) => !g.geloescht);
   if (gewohnheiten.length > 0 || bestand.impulse || bestand.schreiberinnerung) {
     const inhalt = {
-      version: 1,
+      version: FORMATVERSION,
       gewohnheiten: [...gewohnheiten].sort(nachId),
       ...(bestand.impulse ? { impulse: bestand.impulse } : {}),
       ...(bestand.schreiberinnerung ? { schreiberinnerung: bestand.schreiberinnerung } : {}),
@@ -215,7 +224,7 @@ export function zuDateienMitVerzeichnis(bestand: Datenbestand): {
   }
 
   const meta = {
-    version: 1,
+    version: FORMATVERSION,
     einstellungen: bestand.einstellungen,
     tagesgedanke_verlauf: bestand.tagesgedanke_verlauf,
     listen: verzeichnis.sort(nachId),
@@ -380,6 +389,20 @@ function leseTagebuch(inhalt: string, monat: string, umg: Umgebung): { notizen: 
 
 // ───────────────────────── Lesen: Dateien → Datenbestand ─────────────────────────
 
+/**
+ * Prüft die Formatversion einer Datei und bringt ältere Dateien auf den aktuellen Stand
+ * (siehe `format.ts`). Neuere Dateien werden abgelehnt, statt sie falsch zu lesen.
+ * Unlesbares bleibt, wie es ist – darum kümmern sich die Lesefunktionen und der Abgleich.
+ */
+function aufAktuellemStand(pfad: string, inhalt: string): string {
+  const pruefung = pruefeDatei(pfad, inhalt);
+  if (pruefung.art === 'zu-neu') throw new FormatZuNeu(pfad, pruefung.version);
+  if (pruefung.art !== 'ok' || pruefung.version === FORMATVERSION) return inhalt;
+  if (!pfad.endsWith('.json')) return migriere(inhalt, pruefung.version, MARKDOWN_MIGRATIONEN);
+  const tabelle = pfad === TAGEBUCH_DATEI ? TAGEBUCH_MIGRATIONEN : META_MIGRATIONEN;
+  return JSON.stringify(migriere(JSON.parse(inhalt), pruefung.version, tabelle));
+}
+
 function leseKopf(inhalt: string): { felder: Map<string, string>; rumpf: string } {
   const text = inhalt.replace(/\r\n?/g, '\n');
   const felder = new Map<string, string>();
@@ -535,12 +558,12 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
 
   for (const [pfad, inhalt] of dateien) {
     if (pfad === TAGEBUCH_DATEI) {
-      ({ gewohnheiten, impulse, schreiberinnerung } = leseTagebuchDatei(inhalt));
+      ({ gewohnheiten, impulse, schreiberinnerung } = leseTagebuchDatei(aufAktuellemStand(pfad, inhalt)));
       continue;
     }
     const monat = monatAusPfad(pfad);
     if (monat) {
-      const gelesen = leseTagebuch(inhalt, monat, umg);
+      const gelesen = leseTagebuch(aufAktuellemStand(pfad, inhalt), monat, umg);
       notizen.push(...gelesen.notizen);
       tagebuchtage.push(...gelesen.tage);
       continue;
@@ -554,7 +577,7 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
     if (istOrdnerListe && teile.length === 0) continue;
 
     const ordner = teile.join('/');
-    const { felder, rumpf } = leseKopf(inhalt);
+    const { felder, rumpf } = leseKopf(aufAktuellemStand(pfad, inhalt));
     const erstellt = felder.get('erstellt') ?? umg.jetzt;
     const schalter = felder.get('tagesgedanke');
     const position = Number(felder.get('position'));
@@ -629,13 +652,15 @@ export function ausDateien(dateien: Dateien, umg: Umgebung, protokoll?: LeseProt
 
   // Papierkorb
   const papierkorb = dateien.get(PAPIERKORB_DATEI);
-  if (papierkorb) notizen.push(...baueNotizen(papierkorb.replace(/\r\n?/g, '\n'), null, umg));
+  if (papierkorb) notizen.push(...baueNotizen(aufAktuellemStand(PAPIERKORB_DATEI, papierkorb).replace(/\r\n?/g, '\n'), null, umg));
 
   // Meta: Einstellungen, Verlauf, gelöschte Listen
   let einstellungen: Einstellungen = { ...STANDARD_EINSTELLUNGEN };
   let tagesgedanke_verlauf: VerlaufEintrag[] = [];
   let importe: ImportEintrag[] = [];
-  const metaText = dateien.get(META_DATEI);
+  const metaRoh = dateien.get(META_DATEI);
+  // Außerhalb von try: Eine zu neue Meta-Datei darf nicht als „beschädigt“ übergangen werden.
+  const metaText = metaRoh ? aufAktuellemStand(META_DATEI, metaRoh) : undefined;
   if (metaText) {
     try {
       const meta = JSON.parse(metaText);
