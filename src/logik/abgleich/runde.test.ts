@@ -10,8 +10,9 @@ import { alsKarte } from '../listen';
 import { tagebuchtagId } from '../tagebuch';
 import * as papierkorb from '../papierkorb';
 import { mitTerminId } from '../kalender/abgleich';
+import { FormatZuNeu } from '../format';
 import { KeineVerbindung } from './drive';
-import { abgleiche, type CacheEintrag, type Geraet } from './runde';
+import { abgleiche, kopieName, type CacheEintrag, type Geraet } from './runde';
 import { SimuliertesDrive } from './simuliertesDrive';
 
 const T0 = '2026-11-01T08:00:00Z';
@@ -145,11 +146,13 @@ function erwarteGleichstand(): void {
   expect(b.lokal.listen).toEqual(a.lokal.listen);
 }
 
-/** Kein Pfad doppelt, keine Datei mit derselben Listen-ID doppelt. */
+/** Kein Pfad doppelt, keine Datei mit derselben Listen-ID doppelt (Kopien in _Sicherung zählen nicht). */
 function erwarteKeineDoppelten(): void {
   const pfade = drive.pfade();
   expect(new Set(pfade).size).toBe(pfade.length);
-  const ids = [...drive.dateien().values()].map((inhalt) => /^id: (\S+)$/m.exec(inhalt)?.[1]).filter(Boolean);
+  const ids = [...drive.dateien()]
+    .filter(([pfad]) => !pfad.startsWith('_Sicherung/'))
+    .map(([, inhalt]) => inhalt).map((inhalt) => /^id: (\S+)$/m.exec(inhalt)?.[1]).filter(Boolean);
   expect(new Set(ids).size).toBe(ids.length);
 }
 
@@ -200,8 +203,8 @@ describe('Erstes Verbinden', () => {
 
   it('ohne Änderungen passiert beim nächsten Abgleich nichts', async () => {
     await grundaufbau();
-    expect(await gleicheAb(a, um('11:00'))).toEqual({ heruntergeladen: 0, hochgeladen: 0 });
-    expect(await gleicheAb(b, um('11:00'))).toEqual({ heruntergeladen: 0, hochgeladen: 0 });
+    expect(await gleicheAb(a, um('11:00'))).toEqual({ heruntergeladen: 0, hochgeladen: 0, gesichert: [] });
+    expect(await gleicheAb(b, um('11:00'))).toEqual({ heruntergeladen: 0, hochgeladen: 0, gesichert: [] });
   });
 });
 
@@ -455,7 +458,7 @@ describe('Datei direkt in Google Drive bearbeitet', () => {
     expect(drive.dateien().get('Reise/_liste.md')).toContain(`id:${neu.id}`);
 
     // Weitere Abgleiche erzeugen keine Doppelten, und B bekommt dieselbe Notiz mit derselben ID.
-    expect(await gleicheAb(a, um('11:05'))).toEqual({ heruntergeladen: 0, hochgeladen: 0 });
+    expect(await gleicheAb(a, um('11:05'))).toEqual({ heruntergeladen: 0, hochgeladen: 0, gesichert: [] });
     await gleicheAb(b, um('11:10'));
     expect(b.notiz(neu.id).text).toBe('Von Hand in Drive ergänzt #neu');
     expect(b.texte(reise.id)).toHaveLength(4);
@@ -606,6 +609,96 @@ describe('Sicherheit: bei unklarem Zustand wird nichts gelöscht', () => {
     expect(drive.pfade()).toContain('_import/Apple-Notiz.txt');
     expect(drive.pfade()).toContain('Urlaubsfoto.jpg');
     expect(a.lokal.listen.some((l) => l.name === '_import')).toBe(false);
+  });
+});
+
+describe('Kaputte oder unerwartete Dateien in Drive (Phase 6)', () => {
+  it('Name der Kopie: Ortszeit und Pfad, Ordner mit Gedankenstrich getrennt', () => {
+    expect(kopieName('Reise/Geld.md', um('11:00'))).toMatch(/^2026-11-0[12] \d{2}-\d{2} Reise – Geld\.md$/);
+  });
+
+  it('beschädigte _meta.json: Kopie in _Sicherung, gelöschte Listen und Einstellungen bleiben, danach wieder gültig', async () => {
+    const { geld, n3 } = await grundaufbau();
+    a.loescheListe(geld.id, um('10:00'));
+    a.lokal = { ...a.lokal, einstellungen: { thema: 'hell', geaendert: um('10:00') } };
+    await alleAbgleichen(um('10:10'));
+    expect(b.liste(geld.id).geloescht).toBe(um('10:00'));
+
+    const kaputt = drive.dateien().get('_meta.json')!.slice(0, 40); // halb gespeichert
+    drive.bearbeiteVonHand('_meta.json', () => kaputt);
+
+    const ergebnis = await gleicheAb(b, um('11:00'));
+
+    expect(ergebnis.gesichert).toEqual([
+      { pfad: '_meta.json', kopie: `_Sicherung/${kopieName('_meta.json', um('11:00'))}`, grund: expect.stringContaining('JSON') },
+    ]);
+    expect(drive.dateien().get(`_Sicherung/${kopieName('_meta.json', um('11:00'))}`)).toBe(kaputt);
+    // Die gelöschte Liste liegt weiter im Papierkorb, ihre Notiz auch – nichts ist verschwunden.
+    expect(b.liste(geld.id).geloescht).toBe(um('10:00'));
+    expect(b.notiz(n3.id).geloescht).toBe(um('10:00'));
+    expect(b.lokal.einstellungen.thema).toBe('hell');
+    // _meta.json ist wieder vollständig, genau einmal vorhanden, und die Kopie bleibt liegen.
+    const meta = JSON.parse(drive.dateien().get('_meta.json')!);
+    expect(meta.geloeschte_listen.map((l: Liste) => l.id)).toEqual([geld.id]);
+    erwarteKeineDoppelten();
+
+    await alleAbgleichen(um('11:10'));
+    expect(drive.pfade().filter((p) => p.startsWith('_Sicherung/'))).toHaveLength(1);
+    expect(a.liste(geld.id).geloescht).toBe(um('10:00'));
+    erwarteGleichstand();
+  });
+
+  it('Listendatei mit abgebrochenem Dateikopf: Kopie mit dem ganzen Inhalt, lokal bleibt alles', async () => {
+    const { reise, geld, n3 } = await grundaufbau();
+    const kaputt = '---\nid: ' + geld.id + '\nname: Ge';
+    drive.bearbeiteVonHand('Reise/Geld.md', () => kaputt);
+
+    const ergebnis = await gleicheAb(a, um('11:00'));
+
+    expect(ergebnis.gesichert.map((g) => g.kopie)).toEqual([`_Sicherung/${kopieName('Reise/Geld.md', um('11:00'))}`]);
+    expect(drive.dateien().get(`_Sicherung/${kopieName('Reise/Geld.md', um('11:00'))}`)).toBe(kaputt);
+    expect(a.liste(geld.id).geloescht).toBeNull();
+    expect(a.notiz(n3.id).geloescht).toBeNull();
+    expect(a.texte(reise.id)).toEqual(['Erste Notiz', 'Zweite Notiz']);
+    // Die Datei ist wieder sauber geschrieben, nicht doppelt, und die Kopie wird nicht als Liste gelesen.
+    expect(drive.dateien().get('Reise/Geld.md')).toContain('Affiliate-Links');
+    erwarteKeineDoppelten();
+    await alleAbgleichen(um('11:10'));
+    expect(b.lokal.listen.filter((l) => !l.geloescht).map((l) => l.name).sort()).toEqual(['Eingang', 'Geld', 'Reise', 'Tagebuch']);
+    erwarteGleichstand();
+  });
+
+  it('Datei einer neueren App-Version: Abgleich hält an, nichts wird geschrieben', async () => {
+    const { n1 } = await grundaufbau();
+    drive.bearbeiteVonHand('_meta.json', (alt) => JSON.stringify({ ...JSON.parse(alt), version: 99 }));
+    a.bearbeite(n1.id, 'Offline geändert', um('10:30'));
+    const vorherDrive = new Map(drive.dateien());
+    const vorherLokal = structuredClone(a.lokal);
+    const schreibvorgaenge = drive.schreibvorgaenge;
+
+    await expect(gleicheAb(a, um('11:00'))).rejects.toThrow(FormatZuNeu);
+
+    expect(drive.schreibvorgaenge).toBe(schreibvorgaenge);
+    expect(drive.dateien()).toEqual(vorherDrive);
+    expect(a.lokal).toEqual(vorherLokal);
+  });
+
+  it('gelingt die Kopie nicht, bleibt die kaputte Datei unverändert und lokal ändert sich nichts', async () => {
+    const { geld } = await grundaufbau();
+    a.loescheListe(geld.id, um('10:00'));
+    await alleAbgleichen(um('10:10'));
+    drive.bearbeiteVonHand('_meta.json', () => '{ kaputt');
+    const vorherLokal = structuredClone(b.lokal);
+
+    drive.abbruchNach = 0; // Verbindung bricht beim ersten Schreiben ab
+    await expect(gleicheAb(b, um('11:00'))).rejects.toThrow(KeineVerbindung);
+    expect(drive.dateien().get('_meta.json')).toBe('{ kaputt');
+    expect(b.lokal).toEqual(vorherLokal);
+
+    drive.abbruchNach = null;
+    await gleicheAb(b, um('11:05'));
+    expect(drive.dateien().get(`_Sicherung/${kopieName('_meta.json', um('11:05'))}`)).toBe('{ kaputt');
+    expect(b.liste(geld.id).geloescht).toBe(um('10:00'));
   });
 });
 

@@ -14,6 +14,13 @@
  *
  * Die Runde verändert nichts „halb“: Bricht sie ab, bleibt alles lokal erhalten und
  * die nächste Runde stellt aus den drei Ständen wieder dasselbe Ziel her.
+ *
+ * Kaputte oder unerwartete Dateien (PHASE-6.md, Abschnitt 1):
+ *  - Datei einer neueren App-Version → die Runde hält an, bevor irgendetwas geschrieben wird.
+ *  - Unlesbare Datei (halbes JSON, nicht beendeter Dateikopf) → zuerst eine Kopie nach
+ *    `_Sicherung/`, dann vorsichtig zusammenführen (nichts gilt als „in Drive gelöscht“),
+ *    und erst ganz am Ende wird die kaputte Datei durch eine saubere ersetzt.
+ *    Gelingt die Kopie nicht, bricht die Runde ab und die Datei bleibt, wie sie ist.
  */
 import { EINGANG_ID, type Datenbestand, type Zeitstempel } from '../../modell/typen';
 import { festeId, neueId } from '../../modell/ulid';
@@ -28,7 +35,9 @@ import {
   type Dateien,
   type LeseProtokoll,
 } from '../markdown';
+import { FormatZuNeu, pruefeDatei } from '../format';
 import { TAGEBUCH_DATEI, monatAusPfad } from '../tagebuch';
+import { lokalJetzt } from '../zeit';
 import { VersionsKonflikt, type Drive, type DriveEintrag } from './drive';
 import { verschmelze } from './verschmelzen';
 
@@ -54,6 +63,26 @@ export interface RundenErgebnis {
   heruntergeladen: number;
   /** Schreibvorgänge in Drive (Inhalt, Anlegen, Umbenennen, Verschieben, Löschen) */
   hochgeladen: number;
+  /** Unlesbare Dateien, die vor dem Ersetzen nach `_Sicherung/` kopiert wurden */
+  gesichert: GesicherteDatei[];
+}
+
+export interface GesicherteDatei {
+  /** Wo die kaputte Datei lag, z. B. `_meta.json` */
+  pfad: string;
+  /** Wo die Kopie jetzt liegt, z. B. `_Sicherung/2026-11-24 10-15 _meta.json` */
+  kopie: string;
+  /** Was mit der Datei nicht stimmte */
+  grund: string;
+}
+
+/** Ordner für Kopien unlesbarer Dateien. Wie alles mit „_“ davor liest und löscht die App ihn nie. */
+export const SICHERUNGS_ORDNER = '_Sicherung';
+
+/** Name der Kopie: Ortszeit und ursprünglicher Pfad, z. B. „2026-11-24 10-15 Reise – Karte.md“. */
+export function kopieName(pfad: string, jetzt: Zeitstempel): string {
+  const zeit = lokalJetzt(new Date(jetzt)).replace('T', ' ').replace(':', '-');
+  return `${zeit} ${pfad.split('/').join(' – ')}`;
 }
 
 const ordnerVon = (pfad: string) => (pfad.includes('/') ? pfad.slice(0, pfad.lastIndexOf('/')) : '');
@@ -122,12 +151,20 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
   const dateiJePfad = new Map<string, CacheEintrag>();
   const ordnerJePfad = new Map<string, CacheEintrag>();
   const ueberzaehlig: CacheEintrag[] = [];
+  const unlesbar: { e: CacheEintrag; pfad: string; grund: string }[] = [];
 
   for (const e of cache.values()) {
     const pfad = pfade.get(e.id)!;
     if (e.ordner) {
       if (!ordnerJePfad.has(pfad)) ordnerJePfad.set(pfad, e);
     } else if (e.inhalt !== undefined) {
+      const pruefung = pruefeDatei(pfad, e.inhalt);
+      // Neueres Format: anhalten, bevor lokal oder in Drive irgendetwas verändert wird.
+      if (pruefung.art === 'zu-neu') throw new FormatZuNeu(pfad, pruefung.version);
+      if (pruefung.art === 'unlesbar') {
+        unlesbar.push({ e, pfad, grund: pruefung.grund });
+        continue;
+      }
       if (!dateiJePfad.has(pfad)) {
         dateiJePfad.set(pfad, e);
         dateien.set(pfad, e.inhalt);
@@ -141,13 +178,41 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
   const protokoll: LeseProtokoll = { listeJePfad: new Map(), ordnerJePfad: new Map() };
   const fernHatMeta = dateien.has(META_DATEI);
   const fern = ausDateien(dateien, umg, protokoll);
+
+  // Unlesbare Dateien sichern, bevor irgendetwas verändert wird. Am Ende der Runde werden sie
+  // durch saubere Dateien ersetzt; ihr Inhalt bleibt in der Kopie erhalten.
+  let hochgeladen = 0;
+  const gesichert: GesicherteDatei[] = [];
+  if (unlesbar.length > 0) {
+    let sicherung = ordnerJePfad.get(SICHERUNGS_ORDNER);
+    if (!sicherung) {
+      sicherung = await drive.erstelleOrdner(SICHERUNGS_ORDNER, wurzel);
+      cache.set(sicherung.id, sicherung);
+      pfade.set(sicherung.id, SICHERUNGS_ORDNER);
+      hochgeladen++;
+    }
+    for (const { e, pfad, grund } of unlesbar) {
+      const name = kopieName(pfad, jetzt);
+      const kopie = await drive.erstelleDatei(name, sicherung.id, e.inhalt!);
+      cache.set(kopie.id, { ...kopie });
+      pfade.set(kopie.id, `${SICHERUNGS_ORDNER}/${name}`);
+      hochgeladen++;
+      gesichert.push({ pfad, kopie: `${SICHERUNGS_ORDNER}/${name}`, grund });
+      ueberzaehlig.push(e);
+    }
+    await geraet.schreibeCache(cache);
+  }
   // Steht der Eingang (noch) nicht in Drive, darf der beim Lesen ergänzte leere Eingang den lokalen nicht verdrängen.
   if (![...protokoll.listeJePfad.values()].includes(EINGANG_ID)) {
     fern.listen = fern.listen.filter((l) => l.id !== EINGANG_ID);
   }
 
   // ── 2. Zusammenführen: lesen, verschmelzen und lokal schreiben ohne Pause dazwischen ──
-  const ergebnis = verschmelze(geraet.leseLokal(), fern, geraet.leseBasis(), jetzt, { fernHatMeta });
+  // Fehlt eine unlesbare Datei im Drive-Stand, darf ihr Inhalt nicht als „gelöscht“ gelten:
+  // Dann wird so vorsichtig zusammengeführt wie bei einem leeren Drive (nichts geht verloren).
+  const ergebnis = verschmelze(geraet.leseLokal(), fern, geraet.leseBasis(), jetzt, {
+    fernHatMeta: fernHatMeta && unlesbar.length === 0,
+  });
   geraet.schreibeLokal(ergebnis);
 
   // ── 3. Drive angleichen ──
@@ -178,8 +243,6 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
     { kennung: '_papierkorb', pfad: PAPIERKORB_DATEI },
     { kennung: '_meta', pfad: META_DATEI },
   ].map((s) => ({ ...s, inhalt: ziel.get(s.pfad)! }));
-
-  let hochgeladen = 0;
 
   // 3a. Inhalte bestehender Dateien (zuerst, damit der neue Zeitstempel einer Liste vor ihrem Umzug in Drive steht)
   for (const s of soll) {
@@ -275,7 +338,7 @@ async function eineRunde(drive: Drive, geraet: Geraet, jetzt: Zeitstempel): Prom
 
   await geraet.schreibeCache(cache);
   await geraet.schreibeBasis(ergebnis);
-  return { heruntergeladen, hochgeladen };
+  return { heruntergeladen, hochgeladen, gesichert };
 }
 
 /**

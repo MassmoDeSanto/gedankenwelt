@@ -1010,8 +1010,8 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 
 ### Fortschritt
 - **Etappe A – §1 Datensicherheit, §2 Sicherheit** (begonnen 24. Nov 2026)
-  - [ ] Formatversion und Migrationen (Drive-Dateien und lokale Datenbank)
-  - [ ] Kaputte Dateien in Drive: lesen, was geht, nichts Unlesbares überschreiben, Kopie, Hinweis
+  - [x] Formatversion und Migrationen (Drive-Dateien und lokale Datenbank)
+  - [x] Kaputte Dateien in Drive: lesen, was geht, nichts Unlesbares überschreiben, Kopie, Hinweis
   - [ ] Meldungen bei vollem Speicher und Datenbankfehlern
   - [ ] Alle Lösch- und Überschreibstellen durchgesehen
   - [ ] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
@@ -1020,3 +1020,17 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [ ] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
 - **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen
 - **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
+
+### Etappe A: Ergebnisse
+
+**Formatversion und Migrationen** (`src/logik/format.ts`, Tests in `format.test.ts`)
+- Die App schreibt Format **1**. `_meta.json` und `_Tagebuch/_tagebuch.json` tragen das schon als `"version": 1`. Markdown-Dateien (Listen, Tagebuch-Monate) bekommen ein Feld `format:` im Dateikopf erst ab Format 2. Fehlt es, gilt 1. So mussten die echten Dateien in Drive nicht angefasst werden.
+- Ändert sich das Format: `FORMATVERSION` erhöhen und einen Schritt „alt → neu“ in die passende Tabelle eintragen (`META_MIGRATIONEN`, `TAGEBUCH_MIGRATIONEN`, `MARKDOWN_MIGRATIONEN`). Ältere Dateien werden beim Lesen Schritt für Schritt umgebaut. Ein Test spielt das mit einer erfundenen Version 2 durch.
+- Eine Datei mit **neuerer** Version (z. B. das iPhone hat schon eine neuere App) wird nie gelesen oder überschrieben. Der Abgleich hält an, bevor irgendetwas geschrieben wird, und sagt: App neu laden. Ein ZIP-Import mit neuerem Format wird ebenso abgelehnt.
+- Lokale Datenbank (Dexie): Die Zahl in `version(n)` ist ihre Formatversion. Die Regeln für neue Versionen stehen als Kommentar in `src/db/db.ts`.
+
+**Kaputte Dateien in Drive** (`src/logik/abgleich/runde.ts`, Tests „Kaputte oder unerwartete Dateien“ in `runde.test.ts`)
+- Gefundene Lücke, jetzt behoben: Eine beschädigte `_meta.json` wurde bisher still übergangen. Beim Zusammenführen galten dann die Listen im Papierkorb als „in Drive endgültig gelöscht“ und verschwanden.
+- Jetzt gilt: Unlesbar ist eine Datei mit halbem oder falschem JSON oder mit einem Dateikopf, der mit `---` beginnt und nie endet. Eine solche Datei wird **zuerst** in den Drive-Ordner `_Sicherung/` kopiert (Name: Ortszeit + Pfad, z. B. `2026-11-24 11-11 Reise – Geld.md`). Danach wird vorsichtig zusammengeführt, wie bei leerem Drive: Nichts gilt als gelöscht. Erst am Ende der Runde ersetzt die App die kaputte Datei durch eine saubere. Gelingt die Kopie nicht, bricht die Runde ab und nichts wird verändert.
+- Das Wolken-Symbol zeigt dann ein Warnzeichen und einen Hinweis mit Dateiname, Grund und Ort der Kopie. Der Hinweis bleibt auch nach einem Neustart, bis du auf „Verstanden“ tippst. Den Ordner `_Sicherung/` liest und löscht die App nie.
+- Im Browser prüfen (nur Entwicklung): Mit `gedankenwelt.testdrive = 1` steht das simulierte Drive als `window.gedankenweltTestDrive` bereit, z. B. `gedankenweltTestDrive.bearbeiteVonHand('_meta.json', () => '{ kaputt')`.

@@ -21,7 +21,10 @@ verarbeiteRueckkehr();
 // simuliertes Drive im Arbeitsspeicher – zum Ausprobieren ohne Google-Konto.
 if (import.meta.env.DEV && localStorage.getItem('gedankenwelt.testdrive') === '1') {
   const { SimuliertesDrive } = await import('./logik/abgleich/simuliertesDrive');
-  nutzeTestDrive(new SimuliertesDrive());
+  const testDrive = new SimuliertesDrive();
+  nutzeTestDrive(testDrive);
+  // Für Tests im Browser (z. B. eine Datei „von Hand“ beschädigen): window.gedankenweltTestDrive
+  (window as unknown as { gedankenweltTestDrive: unknown }).gedankenweltTestDrive = testDrive;
 }
 
 // Nur in der Entwicklung (`npm run dev`): Solange keine Google-Client-ID eingetragen ist, laufen die

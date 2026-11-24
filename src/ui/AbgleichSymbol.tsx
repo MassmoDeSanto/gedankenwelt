@@ -3,7 +3,7 @@
  * Antippen öffnet eine kurze Erklärung. Ist kein Abgleich eingerichtet, ist es unsichtbar.
  */
 import { starteWeiterleitung } from '../db/anmeldung';
-import { gleicheAb, useAbgleichStatus, type AbgleichZustand } from '../db/abgleichDienst';
+import { gleicheAb, useAbgleichStatus, verwerfeDriveHinweis, type AbgleichZustand } from '../db/abgleichDienst';
 import { Menue } from './Bausteine';
 import { WolkeAchtung, WolkeAus, WolkeFertig, WolkeHoch } from './Symbole';
 
@@ -17,7 +17,8 @@ const KURZ: Record<AbgleichZustand, string> = {
   fehler: 'Abgleich fehlgeschlagen',
 };
 
-function symbolFuer(zustand: AbgleichZustand) {
+function symbolFuer(zustand: AbgleichZustand, hinweis: boolean) {
+  if (hinweis) return <WolkeAchtung />;
   if (zustand === 'abgeglichen') return <WolkeFertig />;
   if (zustand === 'offline') return <WolkeAus />;
   if (zustand === 'anmeldung' || zustand === 'fehler') return <WolkeAchtung />;
@@ -41,7 +42,7 @@ export function AbgleichSymbol() {
 
   return (
     <Menue
-      knopf={symbolFuer(status.zustand)}
+      knopf={symbolFuer(status.zustand, status.driveHinweis !== null)}
       beschriftung={`Google Drive: ${KURZ[status.zustand]}`}
       knopfKlasse={`symbolknopf abgleich ${status.zustand}`}
     >
@@ -50,6 +51,16 @@ export function AbgleichSymbol() {
           <div className="etikett">Google Drive · {KURZ[status.zustand]}</div>
           <p>{status.meldung}</p>
           {status.kalenderHinweis && <p className="bernstein">Erinnerungen: {status.kalenderHinweis}</p>}
+          {status.driveHinweis && (
+            <div className="bernstein drive-hinweis">
+              {status.driveHinweis.split('\n\n').map((absatz, i) => (
+                <p key={i}>{absatz}</p>
+              ))}
+              <button className="knopf" onClick={verwerfeDriveHinweis}>
+                Verstanden
+              </button>
+            </div>
+          )}
           <p className="mono meta">
             Letzter Abgleich: {vorWieLange(status.letzterAbgleich)}
             {status.offen > 0 && ` · ${status.offen} offen`}

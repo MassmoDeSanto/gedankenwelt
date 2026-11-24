@@ -12,7 +12,8 @@
  */
 import { useSyncExternalStore } from 'react';
 import { KeineVerbindung, NichtAngemeldet, VersionsKonflikt, type Drive } from '../logik/abgleich/drive';
-import { abgleiche, type CacheEintrag, type Geraet } from '../logik/abgleich/runde';
+import { abgleiche, type CacheEintrag, type Geraet, type GesicherteDatei } from '../logik/abgleich/runde';
+import { FormatZuNeu } from '../logik/format';
 import { gleicheKalenderAb, mitTerminId, schreibErinnerungTermin } from '../logik/kalender/abgleich';
 import {
   KALENDER_NAME,
@@ -80,6 +81,8 @@ export interface AbgleichStatus {
   offen: number;
   /** Wenn bei den Erinnerungen etwas nicht stimmt: Erklärung dazu, sonst null */
   kalenderHinweis: string | null;
+  /** Wenn in Drive beschädigte Dateien gesichert und ersetzt wurden: Erklärung dazu, bis „Verstanden“ */
+  driveHinweis: string | null;
 }
 
 const MELDUNGEN: Record<Exclude<AbgleichZustand, 'fehler'>, string> = {
@@ -92,7 +95,14 @@ const MELDUNGEN: Record<Exclude<AbgleichZustand, 'fehler'>, string> = {
     'Die Anmeldung bei Google ist abgelaufen. Tippe auf „Neu anmelden“. Bis dahin bleibt alles auf diesem Gerät gespeichert, es geht nichts verloren.',
 };
 
-let status: AbgleichStatus = { zustand: 'aus', meldung: MELDUNGEN.aus, letzterAbgleich: null, offen: 0, kalenderHinweis: null };
+let status: AbgleichStatus = {
+  zustand: 'aus',
+  meldung: MELDUNGEN.aus,
+  letzterAbgleich: null,
+  offen: 0,
+  kalenderHinweis: null,
+  driveHinweis: null,
+};
 const hoerer = new Set<() => void>();
 
 function setze(zustand: AbgleichZustand, meldung?: string, teil: Partial<AbgleichStatus> = {}): void {
@@ -346,6 +356,7 @@ export async function gleicheAb(anlass: Anlass = 'hand', kalenderAufraeumen = fa
   const start = Date.now();
   try {
     const drive_ = mitDrive ? await abgleiche(drive, geraet, () => jetztStempel()) : null;
+    if (drive_?.gesichert.length) merkeDriveHinweis(driveHinweisText(drive_.gesichert));
 
     // Kalender: nur, wenn sich etwas getan haben kann (nicht bei jedem Takt ohne Änderung).
     let kalenderFertig = true;
@@ -367,6 +378,7 @@ export async function gleicheAb(anlass: Anlass = 'hand', kalenderAufraeumen = fa
   } catch (fehler) {
     if (fehler instanceof KeineVerbindung) zeige('offline');
     else if (fehler instanceof NichtAngemeldet) await erneuereAnmeldung(anlass);
+    else if (fehler instanceof FormatZuNeu) zeige('fehler', `${fehler.message} Deine Daten auf diesem Gerät sind sicher.`);
     else if (fehler instanceof VersionsKonflikt) {
       zeige('ausstehend', 'Google Drive wurde gleichzeitig von einem anderen Gerät geändert. Der Abgleich wird gleich wiederholt.');
       nochmal = true;
@@ -440,6 +452,7 @@ export async function starteAbgleichDienst(): Promise<void> {
     setze(offeneIds.size > 0 ? 'ausstehend' : 'abgeglichen', undefined, {
       letzterAbgleich: (wert('letzterAbgleich') as number | undefined) ?? null,
       offen: offeneIds.size,
+      driveHinweis: (wert('driveHinweis') as string | undefined) ?? null,
     });
   }
 
@@ -452,6 +465,30 @@ export async function starteAbgleichDienst(): Promise<void> {
   }
 
   void gleicheAb('start');
+}
+
+// ───────────────────────── Hinweis auf beschädigte Dateien ─────────────────────────
+
+function driveHinweisText(gesichert: GesicherteDatei[]): string {
+  const teile = gesichert.map((g) => `„${g.pfad}“: ${g.grund} Kopie: „${g.kopie}“.`);
+  return (
+    `In Google Drive ${gesichert.length === 1 ? 'war eine Datei' : `waren ${gesichert.length} Dateien`} beschädigt. ${teile.join(' ')} ` +
+    'Die App hat vorher eine Kopie im Drive-Ordner „Gedankenwelt“ angelegt und die Datei dann mit deinem Stand neu geschrieben. ' +
+    'Es ist nichts gelöscht worden. Hattest du die Datei von Hand bearbeitet, findest du deine Änderung in der Kopie.'
+  );
+}
+
+/** Merkt sich den Hinweis (auch über einen Neustart hinweg), bis er mit „Verstanden“ weggeklickt wird. */
+function merkeDriveHinweis(text: string): void {
+  const bisher = status.driveHinweis;
+  const neu = bisher ? `${bisher}\n\n${text}` : text;
+  setze(status.zustand, status.meldung, { driveHinweis: neu });
+  db.abgleich.put({ schluessel: 'driveHinweis', wert: neu }).catch(meldeFehler);
+}
+
+export function verwerfeDriveHinweis(): void {
+  setze(status.zustand, status.meldung, { driveHinweis: null });
+  db.abgleich.delete('driveHinweis').catch(meldeFehler);
 }
 
 // ───────────────────────── Erstes Verbinden, Trennen, Neuaufbau ─────────────────────────
