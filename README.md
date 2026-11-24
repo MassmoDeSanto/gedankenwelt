@@ -1025,8 +1025,9 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
   - [x] Anmelde-Token: Speicherort geprüft und begründet
   - [x] Content-Security-Policy (am echten Google noch zu prüfen: Abschnitt 9, Schritt 4a)
-  - [ ] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
-- **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen
+  - [x] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
+  - **Etappe A abgeschlossen am 24. Nov 2026.** Offen daraus nur: Prüfung mit echtem Google (Abschnitt 9, Schritt 4a).
+- **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen. Hilfreich dafür: In der Entwicklungsversion steht das simulierte Drive als `window.gedankenweltTestDrive` bereit (siehe Ergebnisse von Etappe A).
 - **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
 
 ### Etappe A: Ergebnisse
@@ -1088,3 +1089,13 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - GitHub Pages erlaubt keine eigenen Server-Kopfzeilen, darum steht die Regel als `<meta>` in der Seite. Erlaubt sind nur: eigene Dateien, Googles Anmeldebibliothek (`accounts.google.com/gsi`), die Google-Schnittstellen (`www.googleapis.com`), Schriften und Bilder aus der App selbst. Verboten sind eingebettete Skripte, Plugins (`object`) und Formulare. Dazu kommt `referrer: no-referrer`: Beim Klick auf einen Link erfährt die Zielseite nicht, woher man kommt.
 - Nicht per `<meta>` möglich (Grenze von GitHub Pages): `frame-ancestors`, also Schutz davor, dass eine fremde Seite die App in einen Rahmen lädt. Für eine App ohne Knöpfe zum Bezahlen o. Ä. ist das ein geringes Risiko.
 - Geprüft in der gebauten Version (Port 4173): Alle Seiten laden ohne Verstoß. Ein absichtlich eingeschleustes Skript wird blockiert. Die Anmeldung mit echtem Google ist noch nicht geprüft (Abschnitt 9, Schritt 4a).
+
+**Abhängigkeiten** (`npm audit`, 24. Nov 2026)
+- Was die App im Browser mitbringt (`npm audit --omit=dev`): **0 bekannte Lücken.**
+- 4 Meldungen „moderate“ betreffen nur das Bauwerkzeug: `vite-plugin-pwa` → `workbox-build` → `glob`/`minimatch`. Sie laufen nur beim Bauen auf dem Laptop bzw. bei GitHub, mit eigenen Dateien, und landen nicht in der App. Die angebotene „Reparatur“ (`npm audit fix --force`) wäre ein Rückschritt auf `vite-plugin-pwa` 1.1.0 und könnte Offline-Betrieb und Updates verändern. Darum **nicht** eingespielt. Wieder prüfen, sobald `vite-plugin-pwa` eine neuere Version hat.
+- Gefahrlos aktualisiert: `vitest` 5.1.0 → 5.1.1 (nur Tests).
+
+**Keine Geheimnisse und keine echten Daten** (24. Nov 2026)
+- Im Repository und im ganzen Git-Verlauf gesucht: keine `.env`-Datei, kein Client-Secret (`GOCSPX-…`), kein Google-Token (`ya29.…`), keine privaten Schlüssel, keine echten E-Mail-Adressen (nur erfundene wie `…@group.calendar.google.com` in Tests). Alle Commits tragen nur die noreply-Adresse.
+- In der gebauten App: nur die öffentliche Client-ID (darf drinstehen). Simuliertes Drive und simulierter Kalender sind nicht enthalten.
+- `import-beispiele/` steht in `.gitignore` und ist leer. `src/logik/import/testdaten/` enthält nur die erfundenen Dateien aus Phase 4.

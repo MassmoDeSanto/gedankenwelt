@@ -6,7 +6,7 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Konzept und Aufträge: `~/Dokumente/Claude/ideen/Gedankenwelt/KONZEPT.md` und `PHASE-1.md` (liegen bewusst **nicht** in diesem Repo, weil `ideen/` nie in ein Git-Repo kopiert wird). Vor größeren Änderungen dort nachlesen.
 - Aktueller Stand (23. Nov 2026): Phasen 1–4 gebaut, dazu To-do-Feld (Priorität/Stand), Notizen mit Namen und kompakte Listen, Tagebuch (Etappen 1–4 plus Ort), Design „Planer“. Anmeldung, Drive-Abgleich und Kalender laufen am Laptop gegen das echte Google. Noch nie getestet: iPhone, echte Exportdateien für den Import – offene Schritte stehen in der README, Abschnitt 9 „Später erledigen“. Aufträge: `~/Downloads/PHASE-2.md` bis `PHASE-6.md`.
 - Design „Planer“ am 23. Nov 2026 gebaut und veröffentlicht (README Abschnitt 14): warmes Grau, To-dos als Zweier-Raster mit nach Datum getönten Kästchen und Kalenderblatt, Filter-Chips in „Alle Aufgaben“. Massimo ist damit zufrieden (24. Nov 2026).
-- **Als Nächstes:** Phase 6, dann echter Import, iPhone ganz am Ende.
+- **Als Nächstes:** Phase 6 – Etappe A (Datensicherheit, Sicherheit) am 24. Nov 2026 erledigt, weiter mit Etappe B (README Abschnitt 15). Dann echter Import, iPhone ganz am Ende.
 
 ## Technik
 - Plattform: Web (PWA), Chrome am Laptop, später Safari am iPhone
