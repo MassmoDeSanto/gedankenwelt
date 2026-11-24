@@ -60,4 +60,17 @@ Persönliche Notiz-App für genau einen Nutzer (Massimo): kurze Gedanken, Aufgab
 - Phase 5 (`[[ ]]`-Links, `~/Downloads/PHASE-5.md`) am 20. Nov 2026 auf Massimos Wunsch zurückgestellt – er braucht Verlinken nicht. Stattdessen: Notizen mit Namen und kompakte Listenansicht (README Abschnitt 12).
 - **Tagebuch** (KONZEPT.md Abschnitt 13, README Abschnitt 13): Etappen 1 bis 4 am 22. Nov 2026 gebaut (Schreib-Erinnerung als täglicher Serientermin mit Kennung `_schreiberinnerung`). Massimo ist damit zufrieden (23. Nov 2026). „Aufräumen mit Claude“ zurückgestellt.
 - Tagebuch in Drive liegt unter `_Tagebuch/` (mit Unterstrich, Schutz vor alten App-Versionen). Gewohnheiten und eigene Schreibimpulse stehen deshalb in `_Tagebuch/_tagebuch.json` (nicht in `_meta.json`). Neue Tagebuch-Einstellungen ebenfalls dort ablegen.
-- Geplante Reihenfolge danach: Phase 6 (Härtung, `~/Downloads/PHASE-6.md`) **vor** dem echten Import; iPhone ganz am Ende. Phase 6 setzt noch „Google nicht eingerichtet“ voraus – das ist überholt, der Einrichtungstag umfasst nur noch iPhone und Import.
+- Geplante Reihenfolge danach: Phase 6 (Härtung, `~/Downloads/PHASE-6.md`) **vor** dem echten Import; iPhone ganz am Ende.
+
+## Phase 6: Was am Auftrag überholt ist (Stand 24. Nov 2026)
+`~/Downloads/PHASE-6.md` wurde am 20. Nov geschrieben. Seitdem hat sich einiges geändert; beim Abarbeiten so lesen:
+- **§0 Ausgangslage:** Google ist eingerichtet. Laptop ist mit dem echten Drive und Kalender verbunden. Echte Daten können also schon in Drive liegen – jede Änderung am Format muss bestehende Dateien sicher weiterlesen. Gebaut und getestet wird trotzdem gegen simuliertes Drive/Kalender (`localStorage` `gedankenwelt.testdrive = 1`, `gedankenwelt.testkalender = 1`).
+- **§0 „Frag mich nach nichts“:** gilt für Dinge, die Massimo einrichten oder testen müsste. Die globale Regel bleibt: vor jedem größeren Teilschritt kurz den Plan zeigen und auf „go“ warten, danach in kleinen, geprüften Commits arbeiten.
+- **§1 Versionierung:** betrifft `_meta.json` **und** `_Tagebuch/_tagebuch.json` sowie die Tagebuch-Monatsdateien. Lokale Dexie-Datenbank hat schon Versionen – dort ansetzen.
+- **§3 Ende-zu-Ende-Tests:** „Verlinken“ entfällt (Phase 5 zurückgestellt). Dazu kommen: To-do-Feld (Priorität/Stand), Notizen mit Namen/zugeklappte Listen, Tagebuch (Tagesseite, Monat, Gewohnheiten, Schreibimpulse, Ort) und „Alle Aufgaben“ mit Filter-Chips (Design „Planer“).
+- **§4 Leistung:** Testdatenbestand nur lokal erzeugen (z. B. im Scratchpad oder per Skript im Browser), nie ins Repo.
+- **§5 Bedienbarkeit:** Kontraste vor allem der Dringlichkeitsfarben und Schilder im Design „Planer“ prüfen (hell ist Massimos Hauptmodus). Das Aussehen selbst nicht umgestalten – Massimo ist damit zufrieden.
+- **§2:** `npm audit` meldet bekannte Lücken (gesehen am 22. Nov 2026).
+- **§6 Einrichtungstag:** Google Cloud, Client-ID, Laptop verbinden und Kalender-Probe sind erledigt. Die Anleitung umfasst nur noch: iPhone installieren und anmelden, Erinnerungen am iPhone, Selbsttests, Import-Beispiele exportieren, Import kalibrieren, echter Import.
+- **§7 Aufräumen:** `KONZEPT.md` liegt außerhalb des Repos (`~/Dokumente/Claude/ideen/Gedankenwelt/`, nie committen). Abschnitt 6 dort beschreibt noch „Nachtlabor“ → auf „Planer“ (README §14) nachtragen, aber nur nach kurzer Rückfrage bei Massimo.
+- **Umfang:** Phase 6 ist groß. Massimos Nutzungslimit ist begrenzt – sinnvoll in Etappen, je eigener Chat: (A) §1 Datensicherheit + §2 Sicherheit, (B) §3 Ende-zu-Ende-Tests + §5 Bedienbarkeit, (C) §4 Leistung + §6 Einrichtungstag + §7 Aufräumen + §8 Zusammenfassung. Fortschritt jeweils in der README (neuer Abschnitt „Phase 6“) festhalten, damit der nächste Chat dort weitermacht.
