@@ -1003,3 +1003,20 @@ Die ganze App (außer dem Tagebuch) hat ein neues Aussehen bekommen: warmes Grau
 ### Geprüft und nicht geprüft
 - Geprüft in der Vorschau mit Beispieldaten: Laptop- und Handy-Breite, hell und dunkel; Startseite, Alle Aufgaben mit Filtern, Gedankenwelt, Listen, Einstellungen.
 - Nicht geprüft: echtes iPhone (kommt am Ende, README Abschnitt 9).
+
+## 15. Phase 6: Härtung (ab 24. Nov 2026)
+
+Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md` („Phase 6: Was am Auftrag überholt ist“). Keine neuen Funktionen, nur Robustheit. Gearbeitet wird in drei Etappen, je eigener Chat. Jeder Chat trägt hier ein, was erledigt ist, damit der nächste dort weitermacht.
+
+### Fortschritt
+- **Etappe A – §1 Datensicherheit, §2 Sicherheit** (begonnen 24. Nov 2026)
+  - [ ] Formatversion und Migrationen (Drive-Dateien und lokale Datenbank)
+  - [ ] Kaputte Dateien in Drive: lesen, was geht, nichts Unlesbares überschreiben, Kopie, Hinweis
+  - [ ] Meldungen bei vollem Speicher und Datenbankfehlern
+  - [ ] Alle Lösch- und Überschreibstellen durchgesehen
+  - [ ] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
+  - [ ] Anmelde-Token: Speicherort geprüft und begründet
+  - [ ] Content-Security-Policy
+  - [ ] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
+- **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen
+- **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
