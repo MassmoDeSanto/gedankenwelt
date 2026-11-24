@@ -525,6 +525,14 @@ Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. Punkt 4 am 20
 
 Meldet der Selbsttest einen Fehler, schick mir den Wortlaut. Das ist die Stelle, an der sich zeigt, ob die Anbindung an das echte Google stimmt.
 
+### 4a. Nach Phase 6, Etappe A: kurz am Laptop prüfen (neu seit 24. Nov 2026)
+
+Die veröffentlichte App hat jetzt eine Content-Security-Policy, eine Liste, mit welchen Servern sie reden darf (README Abschnitt 15). Getestet ist sie nur ohne echtes Google. Bitte einmal in der installierten App am Laptop:
+1. App öffnen (bei Bedarf einmal schließen und wieder öffnen, damit die neue Version da ist).
+2. Wolken-Symbol → „Jetzt abgleichen“. Es sollte „Abgeglichen“ zeigen.
+3. Einstellungen → Erinnerungen → „Kalender-Selbsttest starten“. Er sollte durchlaufen.
+4. Klappt etwas nicht: Mit Strg+Umschalt+J die Konsole öffnen. Steht dort „Content Security Policy“, schick mir die Zeile.
+
 ### 5. iPhone
 
 1. App installieren und verbinden: Abschnitt 7, „iPhone“. Danach **Abgleich einschalten**.
@@ -1015,8 +1023,8 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] Meldungen bei vollem Speicher und Datenbankfehlern
   - [x] Alle Lösch- und Überschreibstellen durchgesehen
   - [x] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
-  - [ ] Anmelde-Token: Speicherort geprüft und begründet
-  - [ ] Content-Security-Policy
+  - [x] Anmelde-Token: Speicherort geprüft und begründet
+  - [x] Content-Security-Policy (am echten Google noch zu prüfen: Abschnitt 9, Schritt 4a)
   - [ ] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
 - **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen
 - **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
@@ -1066,3 +1074,17 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Anklickbar werden nur `http`, `https` und `mailto`. Das prüfen das Suchmuster und zusätzlich `istSichereAdresse`.
 - Alle Links nach außen öffnen in einem neuen Tab mit `rel="noopener noreferrer"`: Notiz-Links, Kartenlink im Tagebuch, Anleitungs-Links beim Import (dort fehlte bisher `noopener`; `noreferrer` schloss es zwar schon ein, jetzt steht es einheitlich da).
 - Tests für Oberflächen-Bausteine (`*.test.tsx`) laufen jetzt mit `npm test` mit.
+
+**Anmelde-Token: Wo liegt er und warum dort?** (`src/db/anmeldung.ts`)
+- Google gibt einer App ohne eigenen Server nur einen Zugangsschlüssel („Access Token“), der etwa **1 Stunde** gilt. Einen Schlüssel zum dauerhaften Verlängern („Refresh Token“) gibt es nicht. Die App speichert also nie etwas, das länger als eine Stunde Zugriff erlaubt.
+- Berechtigungen so eng wie möglich: `drive.file` (nur Dateien, die die App selbst angelegt hat, nicht dein ganzes Drive) und `calendar.app.created` (nur der eigene Kalender „Gedankenwelt“).
+- Abgewogen wurden drei Speicherorte:
+  - **Nur im Arbeitsspeicher:** Nach jedem Neuladen wäre eine neue Anmeldung nötig.
+  - **`sessionStorage`** (gilt nur, solange der Tab bzw. die App offen ist): Am iPhone und in der installierten App müsste die App bei jedem Start einmal zu Google und zurück springen. Das widerspricht „nicht ständig neu anmelden“ und ist am iPhone das unsicherste Stück der ganzen Anmeldung.
+  - **`localStorage`** (bleibt auf dem Gerät): Gewinnt ein fremdes Skript Zugriff auf die Seite, könnte es den Schlüssel lesen. Es könnte dann aber ohnehin alles tun, was die App tut.
+- **Entscheidung: `localStorage` bleibt.** Der Schutz kommt von der anderen Seite: Kein fremdes Skript darf in die Seite. Dafür sorgen die Markdown-Tests und die Content-Security-Policy unten. Der Schlüssel gilt höchstens eine Stunde und ist auf eigene Dateien beschränkt. „Trennen“ löscht ihn sofort.
+
+**Content-Security-Policy** (`vite.config.ts`, nur in der veröffentlichten Version)
+- GitHub Pages erlaubt keine eigenen Server-Kopfzeilen, darum steht die Regel als `<meta>` in der Seite. Erlaubt sind nur: eigene Dateien, Googles Anmeldebibliothek (`accounts.google.com/gsi`), die Google-Schnittstellen (`www.googleapis.com`), Schriften und Bilder aus der App selbst. Verboten sind eingebettete Skripte, Plugins (`object`) und Formulare. Dazu kommt `referrer: no-referrer`: Beim Klick auf einen Link erfährt die Zielseite nicht, woher man kommt.
+- Nicht per `<meta>` möglich (Grenze von GitHub Pages): `frame-ancestors`, also Schutz davor, dass eine fremde Seite die App in einen Rahmen lädt. Für eine App ohne Knöpfe zum Bezahlen o. Ä. ist das ein geringes Risiko.
+- Geprüft in der gebauten Version (Port 4173): Alle Seiten laden ohne Verstoß. Ein absichtlich eingeschleustes Skript wird blockiert. Die Anmeldung mit echtem Google ist noch nicht geprüft (Abschnitt 9, Schritt 4a).
