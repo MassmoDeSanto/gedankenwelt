@@ -8,7 +8,9 @@
  * Die Oberfläche „abonniert“ den Speicher und zeichnet sich bei jeder Änderung neu.
  */
 import { useSyncExternalStore } from 'react';
+import { zuDateien } from '../logik/markdown';
 import { abgelaufen } from '../logik/papierkorb';
+import { packe } from '../logik/zip';
 import { schreibFehlerText } from '../logik/speicherfehler';
 import { Suchindex } from '../logik/suche';
 import {
@@ -405,6 +407,30 @@ async function schreibeAllesInDatenbank(bestand: Datenbestand): Promise<void> {
       { schluessel: 'schreiberinnerung', wert: bestand.schreiberinnerung ?? null },
     ]);
   });
+}
+
+/** Automatische Sicherung, bevor der ganze Bestand ersetzt wird (ZIP-Import, „Neu aus Drive laden“). */
+export interface AutoSicherung {
+  zeit: number;
+  /** z. B. „vor dem ZIP-Import“ */
+  anlass: string;
+  zip: Uint8Array;
+}
+
+// Liegt in der Tabelle „abgleich“, weil `ersetzeAlles` die Tabelle „meta“ leert.
+const AUTO_SICHERUNG = 'sicherung-vor-ersetzen';
+
+/**
+ * Sichert den jetzigen Stand als ZIP in der Browser-Datenbank (nur die jeweils letzte).
+ * Schlägt das fehl, wirft die Funktion – dann darf auch nichts ersetzt werden.
+ */
+export async function sichereVorErsetzen(anlass: string): Promise<void> {
+  const sicherung: AutoSicherung = { zeit: Date.now(), anlass, zip: packe(zuDateien(alsBestand())) };
+  await db.abgleich.put({ schluessel: AUTO_SICHERUNG, wert: sicherung });
+}
+
+export async function leseAutoSicherung(): Promise<AutoSicherung | null> {
+  return ((await db.abgleich.get(AUTO_SICHERUNG))?.wert as AutoSicherung | undefined) ?? null;
 }
 
 /** Ersetzt alles durch einen anderen Datenbestand (Import oder „Alles löschen“). */

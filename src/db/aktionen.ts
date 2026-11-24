@@ -41,6 +41,7 @@ import { neueId } from '../modell/ulid';
 import { beispieldaten } from './beispieldaten';
 import {
   alsBestand,
+  sichereVorErsetzen,
   entferneEndgueltig,
   ersetzeAlles,
   leseZustand,
@@ -494,6 +495,8 @@ export async function importiereZip(zip: Uint8Array): Promise<{ listen: number; 
     throw new Error('In der ZIP-Datei wurden keine Markdown-Dateien gefunden.');
   }
   const bestand = ausDateien(dateien, umgebung());
+  // Erst sichern, dann ersetzen: Ohne gelungene Sicherung bleibt alles, wie es ist.
+  await sichereVorErsetzen('vor dem ZIP-Import');
   await ersetzeAlles(bestand);
   return {
     listen: bestand.listen.filter((l) => !l.geloescht).length,

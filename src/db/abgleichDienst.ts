@@ -49,6 +49,7 @@ import {
   setzeAbgleichHaken,
   sichereEinstellungen,
   sichereNotizen,
+  sichereVorErsetzen,
   uebernimmAbgleich,
 } from './speicher';
 
@@ -548,6 +549,17 @@ export async function trenne(): Promise<void> {
  */
 export async function ladeNeuAusDrive(): Promise<void> {
   if (!istVerbunden()) return;
+  // Ohne Internet bliebe die App bis zum nächsten Abgleich leer – dann lieber gar nicht erst anfangen.
+  if (!navigator.onLine) {
+    setze('offline', 'Ohne Internet kann nicht neu aus Drive geladen werden. Auf diesem Gerät wurde nichts verändert.');
+    return;
+  }
+  try {
+    await sichereVorErsetzen('vor „Neu aus Drive laden“');
+  } catch (fehler) {
+    setze('fehler', `Vor dem Neuladen konnte keine Sicherung angelegt werden, darum wurde nichts verändert. ${fehlertext(fehler)}`);
+    return;
+  }
   const einstellungen = leseZustand().einstellungen;
   await ersetzeAlles({
     listen: [eingangsListe()],

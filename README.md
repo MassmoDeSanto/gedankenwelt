@@ -1013,7 +1013,7 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] Formatversion und Migrationen (Drive-Dateien und lokale Datenbank)
   - [x] Kaputte Dateien in Drive: lesen, was geht, nichts Unlesbares überschreiben, Kopie, Hinweis
   - [x] Meldungen bei vollem Speicher und Datenbankfehlern
-  - [ ] Alle Lösch- und Überschreibstellen durchgesehen
+  - [x] Alle Lösch- und Überschreibstellen durchgesehen
   - [ ] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
   - [ ] Anmelde-Token: Speicherort geprüft und begründet
   - [ ] Content-Security-Policy
@@ -1041,3 +1041,21 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Kann die App beim Start ihre Daten nicht laden, startet sie gar nicht erst, also auch kein Abgleich, der etwas überschreiben könnte. Es erscheint eine Erklärung je nach Ursache: Datenbank von neuerer App-Version, Speicher voll, privates Fenster bzw. Website-Daten blockiert, sonstiges. Ein Fehler beim Start des Abgleichs verdeckt die App nicht mehr.
 - Einstellungen → Daten → **Speicher auf diesem Gerät**: zeigt, ob der Browser die Daten dauerhaft aufbewahrt, wie viel belegt und frei ist, und hat einen Knopf „Dauerhaft erlauben“. Ohne Drive-Verbindung steht dort die Warnung, regelmäßig als ZIP zu exportieren.
 - Geprüft in der Vorschau: voller Speicher (nachgestellt), Warnleiste, „Erneut speichern“, Speicher-Zeile. Nicht im Browser geprüft: die Startmeldung (nur per Test), weil man dafür die Datenbank der Vorschau dauerhaft verstellen müsste.
+
+**Durchsicht: Wo werden Daten gelöscht oder überschrieben?** (Stand 24. Nov 2026)
+
+| Stelle | Was passiert | Randfälle und Schutz | Ergebnis |
+|---|---|---|---|
+| Notiz/Liste löschen | landet im Papierkorb (`geloescht` mit Zeitstempel) | wiederherstellbar, wandert so auch nach Drive | in Ordnung |
+| Papierkorb leeren | endgültig weg, auf allen Geräten | Bestätigungsdialog | in Ordnung |
+| Papierkorb nach 30 Tagen (beim Start und beim Abgleich) | endgültig weg | Geht die Uhr des Geräts weit vor, verschwindet der Papierkorb zu früh. Betrifft nur schon Gelöschtes, darum hingenommen. | hingenommen |
+| Abgleich übernimmt das Ergebnis (`uebernimmAbgleich`) | entfernt lokal, was nach dem Zusammenführen fehlt | „Fehlt in Drive“ gilt nur als gelöscht, wenn es seit dem letzten Abgleich unverändert war, und landet dann im Papierkorb. Ist Drive leer, eine Datei kaputt oder kein gemeinsamer Stand da, wird nichts als gelöscht gedeutet (Tests in `runde.test.ts`). | in Ordnung, Lücke bei kaputter `_meta.json` behoben (siehe oben) |
+| Abgleich löscht Dateien in Drive | doppelte Dateien, Dateien gelöschter Listen, leere Ordner | Erst ganz am Ende der Runde, wenn alles andere geschrieben ist. Inhalte gelöschter Listen stehen dann schon in `_papierkorb.md`. Ordner mit `_` (z. B. `_import`, `_Sicherung`) werden nie angefasst. Abbruch an jeder Stelle getestet. | in Ordnung |
+| Abgleich überschreibt Dateien in Drive | neuer Inhalt | Versionsprüfung: Hat ein anderes Gerät dazwischen geschrieben, beginnt die Runde neu. Unlesbare Dateien werden vorher gesichert, neuere Formate nie überschrieben. | in Ordnung |
+| ZIP-Import | ersetzt alles auf dem Gerät | Bestätigungsdialog. Unlesbare ZIP oder neueres Format: Abbruch vor dem Ersetzen. Ersetzen in einem Rutsch (Transaktion). Mit Drive verbunden wird danach nur vereinigt. | **ergänzt:** automatische ZIP-Sicherung davor (Einstellungen → Daten → „Automatische Sicherung“) |
+| „Neu aus Drive laden“ | leert das Gerät, lädt aus Drive | Bestätigungsdialog warnt bei nicht hochgeladenen Änderungen | **ergänzt:** startet nicht ohne Internet (die App wäre sonst leer) und legt vorher eine automatische ZIP-Sicherung an. Ohne gelungene Sicherung wird nichts verändert. |
+| „Alle Daten löschen“ | leert alles | nur ohne Drive-Verbindung sichtbar, Bestätigungsdialog „lässt sich nicht rückgängig machen“ | in Ordnung (bewusst ohne Sicherung) |
+| Mit Drive verbinden (Beispieldaten entfernen) | löscht nur erkannte Beispieldaten | ZIP-Sicherung vorher („Sicherung vom ersten Verbinden“) | in Ordnung |
+| Trennen | vergisst Abgleich-Daten und Warteschlange | Notizen bleiben auf dem Gerät und in Drive. Beim erneuten Verbinden wird nur vereinigt. | in Ordnung |
+| Import aus Apple Notizen rückgängig | entfernt die importierten Einträge | eigene Sicherung vor dem Import (README Abschnitt 10) | in Ordnung |
+| Schreiben in die Browser-Datenbank | jede Änderung | Fehler werden jetzt angezeigt statt verschluckt (siehe oben) | behoben |

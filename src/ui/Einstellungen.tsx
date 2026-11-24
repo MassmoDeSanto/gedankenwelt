@@ -8,7 +8,7 @@ import { BestaetigungsDialog, Kopfzeile, Segment } from './Bausteine';
 import { DriveBereich } from './DriveBereich';
 import { ErinnerungenBereich } from './ErinnerungenBereich';
 import { ImportBereich } from './ImportBereich';
-import { SpeicherStand } from './SpeicherStand';
+import { AutoSicherungZeile, SpeicherStand } from './SpeicherStand';
 import { adresse } from './router';
 import { TagebuchBereich } from './TagebuchBereich';
 
@@ -105,6 +105,7 @@ export function Einstellungen() {
           />
         </div>
         <SpeicherStand verbunden={verbunden} />
+        <AutoSicherungZeile />
         <div className="einstellung">
           <span>
             Beispieldaten laden

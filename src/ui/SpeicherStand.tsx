@@ -3,6 +3,8 @@
  * Platz sie brauchen (PHASE-6.md, Abschnitt 1: „Browser verweigert dauerhaften Speicher“).
  */
 import { useEffect, useState } from 'react';
+import { leseAutoSicherung, useZustand, type AutoSicherung } from '../db/speicher';
+import { lokalesDatum } from '../logik/zeit';
 
 interface Stand {
   /** null = Browser kann es nicht sagen */
@@ -74,6 +76,43 @@ export function SpeicherStand({ verbunden }: { verbunden: boolean }) {
           Dauerhaft erlauben
         </button>
       )}
+    </div>
+  );
+}
+
+/** Die letzte automatische Sicherung (vor ZIP-Import oder „Neu aus Drive laden“) zum Herunterladen. */
+export function AutoSicherungZeile() {
+  const [sicherung, setSicherung] = useState<AutoSicherung | null>(null);
+  const z = useZustand();
+
+  // Nach einem Import oder Neuladen ist der Bestand neu – dann auch die Sicherung neu lesen.
+  useEffect(() => {
+    void leseAutoSicherung().then(setSicherung);
+  }, [z.listen]);
+
+  if (!sicherung) return null;
+  const zeit = new Date(sicherung.zeit);
+  return (
+    <div className="einstellung">
+      <span>
+        Automatische Sicherung
+        <span className="hinweis klein">
+          Stand vom {zeit.toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}, {sicherung.anlass}.
+        </span>
+      </span>
+      <button
+        className="knopf"
+        onClick={() => {
+          const url = URL.createObjectURL(new Blob([sicherung.zip as BlobPart], { type: 'application/zip' }));
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `gedankenwelt-sicherung-${lokalesDatum(zeit)}.zip`;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 10_000);
+        }}
+      >
+        Herunterladen
+      </button>
     </div>
   );
 }
