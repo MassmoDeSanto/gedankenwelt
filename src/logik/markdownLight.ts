@@ -32,6 +32,19 @@ const MUSTER = new RegExp(
   'gu',
 );
 
+/**
+ * Nur Adressen, die beim Anklicken nichts in der App ausführen können: Webseiten und E-Mail.
+ * `javascript:`, `data:`, `file:` usw. bleiben normaler Text (PHASE-6.md, Abschnitt 2).
+ * Das Muster oben lässt ohnehin nur diese zu – die Prüfung hier ist die zweite Sicherung.
+ */
+export function istSichereAdresse(url: string): boolean {
+  try {
+    return ['http:', 'https:', 'mailto:'].includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}
+
 /** Zerlegt eine Textzeile in normale und ausgezeichnete Stücke. Nicht geschlossene Zeichen bleiben Text. */
 export function leseInline(text: string): Inline[] {
   const teile: Inline[] = [];
@@ -42,8 +55,8 @@ export function leseInline(text: string): Inline[] {
     if (m[1]) teile.push({ art: 'code', text: m[1].slice(1, -1) });
     else if (m[2]) teile.push({ art: 'fett', kinder: leseInline(m[3]) });
     else if (m[4]) teile.push({ art: 'kursiv', kinder: leseInline(m[5]) });
-    else if (m[6]) teile.push({ art: 'link', text: m[7], url: m[8] });
-    else if (m[9]) teile.push({ art: 'link', text: m[9], url: m[9] });
+    else if (m[6]) teile.push(istSichereAdresse(m[8]) ? { art: 'link', text: m[7], url: m[8] } : { art: 'text', text: m[0] });
+    else if (m[9]) teile.push(istSichereAdresse(m[9]) ? { art: 'link', text: m[9], url: m[9] } : { art: 'text', text: m[0] });
     else teile.push({ art: 'tag', text: m[10] });
     ende = start + m[0].length;
   }

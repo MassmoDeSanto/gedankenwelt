@@ -250,7 +250,7 @@ export function ImportSeite() {
             <button className="knopf haupt" onClick={() => dateiwahl.current?.click()}>
               Dateien auswählen
             </button>
-            <a className="textknopf" href={`${ANLEITUNG}weg-a-kurzbefehl`} target="_blank" rel="noreferrer">
+            <a className="textknopf" href={`${ANLEITUNG}weg-a-kurzbefehl`} target="_blank" rel="noopener noreferrer">
               Anleitung
             </a>
           </div>
@@ -266,7 +266,7 @@ export function ImportSeite() {
             <button className="knopf haupt" onClick={() => dateiwahl.current?.click()}>
               Dateien auswählen
             </button>
-            <a className="textknopf" href={`${ANLEITUNG}weg-b-als-markdown-exportieren`} target="_blank" rel="noreferrer">
+            <a className="textknopf" href={`${ANLEITUNG}weg-b-als-markdown-exportieren`} target="_blank" rel="noopener noreferrer">
               Anleitung
             </a>
           </div>
@@ -279,7 +279,7 @@ export function ImportSeite() {
             <button className="knopf" onClick={() => setS((alt) => ({ ...alt, stufe: 'text' }))}>
               Text einfügen
             </button>
-            <a className="textknopf" href={`${ANLEITUNG}weg-c-text-in-die-app-kopieren`} target="_blank" rel="noreferrer">
+            <a className="textknopf" href={`${ANLEITUNG}weg-c-text-in-die-app-kopieren`} target="_blank" rel="noopener noreferrer">
               Anleitung
             </a>
           </div>

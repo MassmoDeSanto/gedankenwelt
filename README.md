@@ -1014,7 +1014,7 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] Kaputte Dateien in Drive: lesen, was geht, nichts Unlesbares überschreiben, Kopie, Hinweis
   - [x] Meldungen bei vollem Speicher und Datenbankfehlern
   - [x] Alle Lösch- und Überschreibstellen durchgesehen
-  - [ ] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
+  - [x] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
   - [ ] Anmelde-Token: Speicherort geprüft und begründet
   - [ ] Content-Security-Policy
   - [ ] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
@@ -1059,3 +1059,10 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 | Trennen | vergisst Abgleich-Daten und Warteschlange | Notizen bleiben auf dem Gerät und in Drive. Beim erneuten Verbinden wird nur vereinigt. | in Ordnung |
 | Import aus Apple Notizen rückgängig | entfernt die importierten Einträge | eigene Sicherung vor dem Import (README Abschnitt 10) | in Ordnung |
 | Schreiben in die Browser-Datenbank | jede Änderung | Fehler werden jetzt angezeigt statt verschluckt (siehe oben) | behoben |
+
+**Markdown-Anzeige und Links** (`src/ui/MarkdownAnzeige.test.tsx`, `src/logik/markdownLight.ts`)
+- Die App fügt nirgends fremdes HTML ein (kein `innerHTML`, kein `dangerouslySetInnerHTML`, im ganzen Code gesucht). Notiztexte werden in Bausteine zerlegt und von React als Text gezeichnet. `<script>` und Ähnliches erscheint darum nur als sichtbarer Text.
+- Tests mit bösartigen Texten prüfen das fertige HTML: `<script>`, `<img onerror=…>`, `<svg onload=…>`, `<iframe>`, `<style>`, `javascript:`/`data:`/`vbscript:`/`file:`-Links, Anführungszeichen in Adressen, Suchtreffer-Markierung.
+- Anklickbar werden nur `http`, `https` und `mailto`. Das prüfen das Suchmuster und zusätzlich `istSichereAdresse`.
+- Alle Links nach außen öffnen in einem neuen Tab mit `rel="noopener noreferrer"`: Notiz-Links, Kartenlink im Tagebuch, Anleitungs-Links beim Import (dort fehlte bisher `noopener`; `noreferrer` schloss es zwar schon ein, jetzt steht es einheitlich da).
+- Tests für Oberflächen-Bausteine (`*.test.tsx`) laufen jetzt mit `npm test` mit.
