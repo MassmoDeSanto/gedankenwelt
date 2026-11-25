@@ -125,6 +125,7 @@ export function TagebuchSeite({ datum, notiz }: { datum?: string; notiz?: string
         }
       />
 
+      <h1 className="nur-vorlesen">Tagebuch</h1>
       <div className="tb-datum">
         <span className="tb-tageszahl">{teile.tageszahl}</span>
         <a

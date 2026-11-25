@@ -37,7 +37,8 @@ export function App() {
   return (
     <>
       <SpeicherWarnung />
-      {seite(route)}
+      {/* <main>: Hauptbereich, an dem sich Bildschirmleser orientieren */}
+      <main>{seite(route)}</main>
       <Meldungsleiste />
     </>
   );

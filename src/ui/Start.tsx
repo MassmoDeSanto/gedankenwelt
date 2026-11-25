@@ -57,6 +57,7 @@ export function Start() {
 
   return (
     <div className="seite">
+      <h1 className="nur-vorlesen">Start</h1>
       <header className="startkopf">
         <span className="mono">{formatKopfdatum()}</span>
         <span className="startkopf-rechts">

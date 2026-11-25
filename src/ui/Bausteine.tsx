@@ -1,5 +1,5 @@
 /** Wiederverwendbare Bausteine der Oberfläche: Dialoge, Menüs, Umschalter. */
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as TastenEreignis, type ReactNode, type RefObject } from 'react';
 import { useZustand } from '../db/speicher';
 import { kinderVon, pfadText } from '../logik/listen';
 import type { Liste } from '../modell/typen';
@@ -49,6 +49,9 @@ export function Kopfzeile({ zurueck, titel, rechts }: { zurueck: Route; titel: R
   );
 }
 
+/** Was in einem Dialog per Tab erreichbar ist. */
+const FOKUSZIELE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
 /** Fenster über der Seite. Schließt mit Escape oder Klick daneben. */
 export function Dialog({
   titel,
@@ -61,9 +64,49 @@ export function Dialog({
 }) {
   const fenster = useRef<HTMLDivElement>(null);
   useAussenklick(fenster, true, onSchliessen);
+
+  // Tastatur: Fokus in das Fenster holen und beim Schließen zurückgeben.
+  // Gemerkt wird schon beim ersten Zeichnen, bevor `autoFocus` im Fenster den Fokus nimmt.
+  const [vorher] = useState(() => document.activeElement);
+  useEffect(() => {
+    const f = fenster.current;
+    if (f && !f.contains(document.activeElement)) f.focus();
+    return () => {
+      // Hängt das Fenster noch in der Seite, war es kein echtes Schließen (React prüft so in der Entwicklung).
+      if (f?.isConnected) return;
+      // Nicht in ein Textfeld zurück: Am iPhone würde sonst die Tastatur aufspringen.
+      if (vorher instanceof HTMLElement && vorher.isConnected && !vorher.matches('textarea, input')) vorher.focus();
+    };
+  }, [vorher]);
+
+  // Tab bleibt im Fenster (springt vom letzten zum ersten Element und umgekehrt).
+  const beiTaste = (e: TastenEreignis) => {
+    if (e.key !== 'Tab' || !fenster.current) return;
+    const ziele = [...fenster.current.querySelectorAll<HTMLElement>(FOKUSZIELE)].filter((el) => el.offsetParent !== null);
+    if (!ziele.length) return;
+    const erstes = ziele[0];
+    const letztes = ziele[ziele.length - 1];
+    const jetzt = document.activeElement;
+    if (e.shiftKey && (jetzt === erstes || jetzt === fenster.current)) {
+      e.preventDefault();
+      letztes.focus();
+    } else if (!e.shiftKey && jetzt === letztes) {
+      e.preventDefault();
+      erstes.focus();
+    }
+  };
+
   return (
     <div className="dialog-hintergrund">
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={titel} ref={fenster}>
+      <div
+        className="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label={titel}
+        ref={fenster}
+        tabIndex={-1}
+        onKeyDown={beiTaste}
+      >
         <div className="dialog-kopf">
           <h2>{titel}</h2>
           <button className="symbolknopf" onClick={onSchliessen} aria-label="Schließen">
