@@ -1032,8 +1032,9 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] 2. Übrige Abläufe getestet (25. Nov 2026): Tag-Dropdown, Suche mit Filtern, Aufgaben und Wiederholungen, To-do-Feld (Priorität/Stand), „Alle Aufgaben“ mit Filter-Chips, Gedankenwelt mit Kacheln, Unterlisten, Anheften, Verschieben, Notizen mit Namen, Papierkorb, Import mit Testdateien, Tagebuch, Hell/Dunkel, Offline, Abgleich mit simuliertem Drive und Kalender
   - [~] 3. Safari-Probleme: WebKit läuft am Laptop, alle Tests bestehen dort. Ein Fehler gefunden und behoben (Knöpfe „In den Papierkorb“ und „Verschieben nach …“ am Handy). Am echten iPhone noch nicht geprüft.
   - [x] 4. Ende-zu-Ende-Tests in GitHub Actions vor dem Bauen (25. Nov 2026, siehe „Ende-zu-Ende-Tests bei GitHub“)
-  - [ ] 5. Bedienbarkeit: Kontraste (Skript über `stil.css`, WCAG AA), `axe-core`-Prüfung, Tastatur und Fokus, Durchsicht der Texte. Farb- und Textänderungen zuerst Massimo zeigen.
-  - [ ] 6. Diesen Abschnitt nachführen
+  - [x] 5. Bedienbarkeit (25. Nov 2026): Kontraste nach WCAG AA, `axe-core`-Prüfung, Tastatur und Fokus, Durchsicht der Texte (siehe „Bedienbarkeit“ unten)
+  - [x] 6. Diesen Abschnitt nachgeführt
+  - **Etappe B abgeschlossen am 25. Nov 2026.** Offen bleibt nur die Probe am echten iPhone (Schritt 3, gehört zum Einrichtungstag).
   - Wird das Nutzungslimit knapp: B1 = Schritte 1–4, B2 = Schritt 5 in einem neuen Chat.
 - **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
 
@@ -1132,6 +1133,7 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 | `darstellung.spec.ts` | Hell/Dunkel umschalten, bleibt nach Neuladen |
 | `offline.spec.ts` | App startet ohne Internet, Geschriebenes bleibt |
 | `abgleich.spec.ts` | Notiz landet in Drive, Änderung in Drive kommt an, kaputte `_meta.json` (Kopie in `_Sicherung/`, Hinweis, „Verstanden“), Erinnerung wird Termin und verschwindet nach Abhaken |
+| `bedienbarkeit.spec.ts` | axe-Prüfung aller Hauptseiten (Hell/Dunkel), Fokusrahmen, Dialog per Tastatur, „1 Eintrag“ (seit Schritt 5) |
 
 - Ergebnis 25. Nov 2026: **31 Tests, je in Chromium und WebKit, 62 von 62 bestanden**. Die Chromium-Läufe zweimal hintereinander ohne Ausreißer.
 - Beim Schreiben der Tests aufgefallen, aber gewollt: Mehrzeilige Notizen klappen beim Verlassen zu. Bei offener Tag-Liste übernimmt Enter den Tag. Eine wiederkehrende Aufgabe bleibt nach dem Abhaken offen und springt aufs nächste Datum. Am Handy stehen die Knöpfe nur an der Notiz mit dem Cursor.
@@ -1153,3 +1155,27 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Erster Lauf bei GitHub (25. Nov 2026) scheiterte am Offline-Test: Ein Neuladen direkt nach dem Tippen schnitt den letzten Tastendruck ab, weil das Speichern ein paar Millisekunden dauert. Kein Fehler der App (sie speichert jeden Tastendruck sofort), sondern ein zu schneller Test. Seitdem laden alle Tests mit `ladeNeu()` neu, das vorher auf die Browser-Datenbank wartet. Am Laptop unter Last geprüft (dreifach, 12 Browser gleichzeitig: 186 von 186).
 - Zweiter Lauf bei GitHub: 386 Logik-Tests und 62 Ende-zu-Ende-Tests bestanden, veröffentlicht. Ein ganzer Lauf dauert jetzt etwa 2 Minuten.
 - Neue Ende-zu-Ende-Tests, die neu laden: immer `ladeNeu(page)` statt `page.reload()` verwenden.
+
+**Bedienbarkeit** (25. Nov 2026, PHASE-6.md Abschnitt 5)
+
+*Kontraste* (`werkzeuge/kontraste.mjs`, Aufruf `node werkzeuge/kontraste.mjs`)
+- Das Skript liest die Farben oben aus `src/ui/stil.css` und misst 114 Paare aus Schrift und Fläche, die in der App wirklich vorkommen (Hell, Dunkel, Tagebuch Papier und Kerzenlicht). Grenzen nach WCAG AA: Text 4,5 : 1, Bedienelemente und Fokusrahmen 3 : 1. Fällt ein Paar durch, endet es mit Fehlercode 1.
+- Vorher fielen 25 Paare durch, vor allem die graue Nebeninfo `--meta` (Datum, Herkunft unter To-dos, Zähler) mit 2,6 bis 4,1. Dazu kamen das rote Kalenderblatt „überfällig“ (3,9), im Dunkeln „bald“ und der Filter-Chip, im Tagebuch „Papier“ die gedämpfte Schrift und der Akzent.
+- Massimo hat Variante A gewählt: Jede Farbe wird nur so weit dunkler bzw. heller, bis sie 4,5 : 1 schafft. Der Farbton bleibt. Geändert: `--meta` (hell `#6e6d67`, dunkel `#989690`), `--ueberfaellig-grund` `#de3534`, dunkel `--gedaempft` `#a4a29a` und `--bald-grund` `#804c0b`, `--tb-gedaempft` `#6c5f53`, `--tb-meta` (hell `#716456`, dunkel `#928675`), `--tb-akzent` hell `#97543e`. Danach: 0 Paare unter der Grenze.
+- Neue Farben bitte mit dem Skript prüfen. Neue Paare (welche Schrift auf welcher Fläche) unten im Skript eintragen.
+
+*Bildschirmleser* (`e2e/bedienbarkeit.spec.ts`, läuft mit `npm run test:e2e` und bei GitHub)
+- `@axe-core/playwright` prüft alle Hauptseiten in Hell und Dunkel: Start, Liste, Aufgaben, Gedankenwelt, Tagebuch, Einstellungen, Import, Papierkorb. Die Kontrastregel von axe ist dort aus, weil das Skript oben genauer misst.
+- Gefunden und behoben: Es fehlte ein Hauptbereich (`<main>`, `src/ui/App.tsx`), und Start und Tagebuch hatten keine Hauptüberschrift. Beide haben jetzt eine `<h1>` mit der Klasse `nur-vorlesen`: unsichtbar, aber vorgelesen. Knöpfe ohne Namen, Felder ohne Beschriftung o. Ä. fand axe nicht.
+
+*Tastatur und Fokus*
+- Von Hand geprüft: Mit Tab erreicht man auf der Startseite alle Knöpfe und Links in sinnvoller Reihenfolge. Alle bekommen den violetten Fokusrahmen (`:focus-visible`). Textfelder zeigen statt eines Rahmens den Cursor. Escape schließt alle Dialoge, Menüs, die Tag-Liste und die Suche.
+- Verbessert (`Dialog` in `src/ui/Bausteine.tsx`): Tab bleibt im offenen Dialog. Nach dem Schließen kehrt der Fokus zum auslösenden Knopf zurück. In Textfelder kehrt er bewusst nicht zurück, sonst springt am iPhone die Tastatur auf.
+- Test: Fokusrahmen sichtbar, Dialog „Papierkorb leeren“ mit Enter öffnen, Fokus auf „Abbrechen“, Tab bleibt im Dialog, Escape schließt, Fokus zurück auf „Leeren“.
+
+*Texte*
+- Alle einzeiligen Texte aus `src/` per Skript gesammelt und gelesen, mehrzeilige stichprobenartig. Der Ton ist durchweg ruhig und einheitlich.
+- Geändert (nach Massimos „go“): Einzahl statt fester Mehrzahl („1 Eintrag“, „1 Liste und 3 Notizen“, „von 1 Tag geschrieben“, gemeinsame Hilfe `src/logik/mehrzahl.ts`). Ohne Fachbegriffe: kein „JSON“, „Anmelde-Bibliothek“, „Drive API“, „Phase 1“ mehr in Meldungen. Erinnerungen „einschalten/ausschalten“ statt „aktivieren/deaktivieren“, wie schon „Abgleich einschalten“. „Gedanke des Tages“: Knopf „Wie darüber“ statt „Erben“.
+- Bewusst gelassen: Texte im Bereich „Diagnose“ und reine Entwicklermeldungen (z. B. fehlende Client-ID), Fehlercodes in Klammern, das Wort „Markdown“. Gewohnheiten im Tagebuch heißen weiter „Aktivieren/Deaktivieren“ (nicht Teil der Liste).
+
+- Ergebnis 25. Nov 2026: 34 Ende-zu-Ende-Tests, je in Chromium und WebKit, **68 von 68 bestanden**, dazu 386 Logik-Tests.
