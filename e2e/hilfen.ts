@@ -41,9 +41,27 @@ export async function schreibeInEingang(page: Page, text: string) {
   await tippe(page, text);
 }
 
-/** Alle Notiz-Textfelder der offenen Liste (ohne das leere Feld „Neue Notiz“), als Text. */
+/**
+ * Alle Notiz-Textfelder der offenen Liste (ohne das leere Feld „Neue Notiz“), als Text.
+ * Leerzeichen am Rand fallen weg: Das Textfeld behält z. B. nach einem Tag eins, gespeichert wird ohne.
+ */
 export async function notizTexte(page: Page): Promise<string[]> {
   return page.getByRole('textbox', { name: 'Notiz', exact: true }).evaluateAll((felder) =>
-    felder.map((f) => (f as HTMLTextAreaElement).value),
+    felder.map((f) => (f as HTMLTextAreaElement).value.trim()),
   );
+}
+
+/** Datum „heute + tage“ als JJJJ-MM-TT, so wie der Browser es sieht (Ortszeit). */
+export async function datumIn(page: Page, tage: number): Promise<string> {
+  return page.evaluate((t) => {
+    const d = new Date();
+    d.setDate(d.getDate() + t);
+    const zwei = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${zwei(d.getMonth() + 1)}-${zwei(d.getDate())}`;
+  }, tage);
+}
+
+/** Das Textfeld der n-ten Notiz in der offenen Liste (ab 0). */
+export function notizFeld(page: Page, n: number) {
+  return page.getByRole('textbox', { name: 'Notiz', exact: true }).nth(n);
 }
