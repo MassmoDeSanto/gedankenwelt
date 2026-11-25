@@ -24,3 +24,7 @@ key.properties
 
 # Echte Beispieldateien aus Apple Notizen für den Import (PHASE-4.md) – nie ins Repository
 import-beispiele/
+
+# Ergebnisse der Ende-zu-Ende-Tests (Playwright)
+test-results/
+playwright-report/

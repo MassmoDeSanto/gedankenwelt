@@ -1027,7 +1027,14 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] Content-Security-Policy (mit echtem Google geprüft am 25. Nov 2026: Abgleich und Kalender-Selbsttest laufen)
   - [x] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
   - **Etappe A abgeschlossen am 24. Nov 2026**, Prüfung mit echtem Google am 25. Nov 2026 bestanden.
-- **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen. Hilfreich dafür: In der Entwicklungsversion steht das simulierte Drive als `window.gedankenweltTestDrive` bereit (siehe Ergebnisse von Etappe A).
+- **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit** (begonnen 25. Nov 2026). Plan in sechs Schritten:
+  - [x] 1. Playwright eingerichtet, erste Tests: Schreiben nach der Absatz-Regel, Suche (siehe „Etappe B: Ergebnisse“)
+  - [ ] 2. Übrige Abläufe: Tag-Dropdown, Suche mit Filtern, Aufgaben und Wiederholungen, To-do-Feld (Priorität/Stand), „Alle Aufgaben“ mit Filter-Chips, Gedankenwelt mit Kacheln, Notizen mit Namen/zugeklappte Listen, Papierkorb, Import mit Testdateien, Tagebuch (Tagesseite, Monat, Gewohnheiten, Schreibimpulse, Ort), Hell/Dunkel, Offline (gegen die gebaute Version), Abgleich mit simuliertem Drive und Kalender
+  - [ ] 3. Safari-Probleme beheben, die WebKit zeigt. **Wartet auf Massimo:** WebKit fehlen zwei Systembausteine (siehe Ergebnisse).
+  - [ ] 4. Ende-zu-Ende-Tests in GitHub Actions vor dem Bauen
+  - [ ] 5. Bedienbarkeit: Kontraste (Skript über `stil.css`, WCAG AA), `axe-core`-Prüfung, Tastatur und Fokus, Durchsicht der Texte. Farb- und Textänderungen zuerst Massimo zeigen.
+  - [ ] 6. Diesen Abschnitt nachführen
+  - Wird das Nutzungslimit knapp: B1 = Schritte 1–4, B2 = Schritt 5 in einem neuen Chat.
 - **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
 
 ### Etappe A: Ergebnisse
@@ -1099,3 +1106,19 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Im Repository und im ganzen Git-Verlauf gesucht: keine `.env`-Datei, kein Client-Secret (`GOCSPX-…`), kein Google-Token (`ya29.…`), keine privaten Schlüssel, keine echten E-Mail-Adressen (nur erfundene wie `…@group.calendar.google.com` in Tests). Alle Commits tragen nur die noreply-Adresse.
 - In der gebauten App: nur die öffentliche Client-ID (darf drinstehen). Simuliertes Drive und simulierter Kalender sind nicht enthalten.
 - `import-beispiele/` steht in `.gitignore` und ist leer. `src/logik/import/testdaten/` enthält nur die erfundenen Dateien aus Phase 4.
+
+### Etappe B: Ergebnisse
+
+**Ende-zu-Ende-Tests mit Playwright** (`e2e/`, Einstellungen in `playwright.config.ts`)
+- Playwright steuert einen echten Browser durch die App, tippt, klickt und prüft, was zu sehen ist. Es ist nur ein Entwicklungsbaustein und landet nicht in der App.
+- Starten: `npm run test:e2e` (beide Durchläufe) oder `npm run test:e2e -- --project=desktop` (nur Chromium). Die Tests starten ihre eigene Entwicklungsversion auf Port **5174**, ein laufendes `npm run dev` (5173) stört also nicht.
+- Zwei Durchläufe: `desktop` (Chromium, Laptop-Größe) und `iphone` (WebKit, Größe eines iPhone 15).
+- Jeder Test beginnt mit leerem Browser und schaltet simuliertes Drive und simulierten Kalender ein (`e2e/hilfen.ts`). Echtes Google wird nie berührt, echte Notizen kommen nie vor.
+- Schlägt ein Test fehl, liegt unter `test-results/` eine Aufzeichnung (ansehen mit `npx playwright show-trace <Datei>`). Der Ordner steht in `.gitignore`.
+- Bisher (25. Nov 2026): `schreiben.spec.ts` (1× / 2× Enter, keine leeren Notizen, bleibt nach Neuladen, Zusammenführen mit Rücktaste, Teilen mitten im Text) und `suche.spec.ts` (Tippfehler, Markierung, Sprung zur Notiz, kein Treffer, Suche leeren). In Chromium 7 von 7 bestanden, dreimal hintereinander ohne Ausreißer.
+- Beim Schreiben der Tests aufgefallen, kein Fehler: Eine mehrzeilige Notiz klappt zu, sobald der Cursor sie verlässt (Notiz mit Namen, Abschnitt 12). Die Tests klappen sie dafür auf.
+
+**WebKit am Laptop** (Stand 25. Nov 2026)
+- Chromium und WebKit sind heruntergeladen (`~/.cache/ms-playwright`). WebKit startet aber erst, wenn zwei Ubuntu-Bausteine installiert sind. Das braucht Administrator-Rechte, darum kann nur Massimo es tun:
+  `sudo apt-get install libevent-2.1-7t64 libmanette-0.2-0`
+- Bei GitHub Actions ist das kein Problem: Dort installiert `npx playwright install --with-deps` die Bausteine selbst.

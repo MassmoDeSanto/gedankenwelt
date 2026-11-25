@@ -1,0 +1,49 @@
+/**
+ * Gemeinsame Hilfen für die Ende-zu-Ende-Tests.
+ *
+ * `test` ersetzt das gleichnamige Playwright-`test`: Vor jedem Seitenaufruf werden simuliertes Drive
+ * und simulierter Kalender eingeschaltet (siehe `src/main.tsx`). Jeder Test hat ein eigenes, leeres
+ * Browserprofil – also eigene Datenbank und eigenen localStorage.
+ */
+import { test as basis, expect, type Page } from '@playwright/test';
+
+export { expect };
+
+export const test = basis.extend({
+  page: async ({ page }, use) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('gedankenwelt.testdrive', '1');
+      localStorage.setItem('gedankenwelt.testkalender', '1');
+    });
+    await use(page);
+  },
+});
+
+/** Die Liste „Eingang“ hat immer dieselbe ID. */
+export const EINGANG = '/#/liste/00000000000000000000000000';
+
+/**
+ * Tippt Text so, wie ein Mensch es täte: in das Feld, das gerade den Cursor hat.
+ * Ein „\n“ im Text ist ein Druck auf Enter.
+ */
+export async function tippe(page: Page, text: string) {
+  const zeilen = text.split('\n');
+  for (let i = 0; i < zeilen.length; i++) {
+    if (i > 0) await page.keyboard.press('Enter');
+    if (zeilen[i]) await page.keyboard.type(zeilen[i]);
+  }
+}
+
+/** Öffnet den Eingang und schreibt dort Text in das Feld „Neue Notiz“. */
+export async function schreibeInEingang(page: Page, text: string) {
+  await page.goto(EINGANG);
+  await page.getByRole('textbox', { name: 'Neue Notiz' }).click();
+  await tippe(page, text);
+}
+
+/** Alle Notiz-Textfelder der offenen Liste (ohne das leere Feld „Neue Notiz“), als Text. */
+export async function notizTexte(page: Page): Promise<string[]> {
+  return page.getByRole('textbox', { name: 'Notiz', exact: true }).evaluateAll((felder) =>
+    felder.map((f) => (f as HTMLTextAreaElement).value),
+  );
+}
