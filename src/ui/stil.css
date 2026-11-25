@@ -10,8 +10,8 @@
   --erhoeht: #302f2b;
   --chip: #3a3934;
   --text: #ecebe6;
-  --gedaempft: #a19f97;
-  --meta: #7d7b74;
+  --gedaempft: #a4a29a;
+  --meta: #989690;
   --linie: rgba(255, 255, 255, 0.07);
 
   /* Akzente mit fester Bedeutung */
@@ -23,7 +23,7 @@
 
   /* Dringlichkeit nach Datum (To-dos): Grund = Kalenderblatt, auf = Schrift darauf,
      text = Hinweis wie „morgen“, hauch = zarte Fläche (Chips) */
-  --ueberfaellig-grund: #e24b4a;
+  --ueberfaellig-grund: #de3534;
   --ueberfaellig-auf: #ffffff;
   --ueberfaellig-text: #f09595;
   --ueberfaellig-hauch: #501313;
@@ -31,7 +31,7 @@
   --heute-auf: #412402;
   --heute-text: #fac775;
   --heute-hauch: #412402;
-  --bald-grund: #854f0b;
+  --bald-grund: #804c0b;
   --bald-auf: #fac775;
   --bald-text: #fac775;
   --woche-grund: #085041;
@@ -72,7 +72,7 @@
   --tb-linie: #2e281f;
   --tb-text: #ece3d3;
   --tb-gedaempft: #a39684;
-  --tb-meta: #7d7263;
+  --tb-meta: #928675;
   --tb-akzent: #e0a45c;
   --tb-treffer: rgba(224, 164, 92, 0.22);
   --tb-stufe-1: #3a2f22;
@@ -91,7 +91,7 @@
   --chip: #e6e3db;
   --text: #2b2a27;
   --gedaempft: #5f5e5a;
-  --meta: #888780;
+  --meta: #6e6d67;
   --linie: rgba(60, 50, 30, 0.1);
 
   --violett: #534ab7;
@@ -100,7 +100,7 @@
   --blau: #185fa5;
   --rot: #a32d2d;
 
-  --ueberfaellig-grund: #e24b4a;
+  --ueberfaellig-grund: #de3534;
   --ueberfaellig-auf: #ffffff;
   --ueberfaellig-text: #a32d2d;
   --ueberfaellig-hauch: #fcebeb;
@@ -137,9 +137,9 @@
   --tb-chip: #e3d9c8;
   --tb-linie: #e3d9c8;
   --tb-text: #2e2620;
-  --tb-gedaempft: #7d6e60;
-  --tb-meta: #9a8b7a;
-  --tb-akzent: #b5654a;
+  --tb-gedaempft: #6c5f53;
+  --tb-meta: #716456;
+  --tb-akzent: #97543e;
   --tb-treffer: rgba(181, 101, 74, 0.18);
   --tb-stufe-1: #e6cfc0;
   --tb-stufe-2: #d9a891;
