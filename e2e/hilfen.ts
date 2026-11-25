@@ -84,3 +84,30 @@ export async function driveDateien(page: Page): Promise<Record<string, string>> 
     return Object.fromEntries(drive.dateien());
   });
 }
+
+/**
+ * Lädt die Seite neu, aber erst, wenn alles Getippte in der Browser-Datenbank angekommen ist.
+ * Die App speichert jeden Tastendruck sofort, das Schreiben selbst dauert aber ein paar Millisekunden.
+ * Ein Neuladen direkt danach (schneller, als ein Mensch es je täte) könnte den letzten Tastendruck
+ * abschneiden. Trick: Die Datenbank führt Schreibvorgänge strikt nacheinander aus. Ist unser eigener,
+ * leerer Schreibvorgang fertig, sind es alle vorherigen auch.
+ */
+export async function ladeNeu(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((fertig, fehler) => {
+        const anfrage = indexedDB.open('gedankenwelt');
+        anfrage.onerror = () => fehler(anfrage.error);
+        anfrage.onsuccess = () => {
+          const db = anfrage.result;
+          const tx = db.transaction([...db.objectStoreNames], 'readwrite');
+          tx.oncomplete = () => {
+            db.close();
+            fertig();
+          };
+          tx.onerror = () => fehler(tx.error);
+        };
+      }),
+  );
+  await page.reload();
+}

@@ -1,5 +1,5 @@
 /** Tagebuch: Tagesseite (Überschrift, Ort, Bewertung, Gewohnheiten), Schreibimpulse, Monat. */
-import { expect, test, tippe } from './hilfen';
+import { expect, ladeNeu, test, tippe } from './hilfen';
 
 test('Tagesseite: Überschrift, Ort, Bewertung, Gewohnheit und Text bleiben gespeichert', async ({ page }) => {
   await page.goto('/#/einstellungen');
@@ -22,7 +22,7 @@ test('Tagesseite: Überschrift, Ort, Bewertung, Gewohnheit und Text bleiben gesp
   await expect(karte).toHaveAttribute('href', /M%C3%BCnchen|München/);
   await expect(karte).toHaveAttribute('rel', 'noopener noreferrer');
 
-  await page.reload();
+  await ladeNeu(page);
   await expect(page.getByRole('textbox', { name: 'Überschrift des Tages' })).toHaveValue('Ein ruhiger Tag');
   await expect(page.getByRole('textbox', { name: 'Ort des Tages' })).toHaveValue('München');
   await expect(page.getByRole('radio', { name: '4 · gut' })).toBeChecked();

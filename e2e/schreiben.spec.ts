@@ -1,5 +1,5 @@
 /** Schreiben nach der Absatz-Regel: 1× Enter = neue Zeile, 2× Enter = neue Notiz. */
-import { expect, notizTexte, schreibeInEingang, test, tippe } from './hilfen';
+import { expect, ladeNeu, notizTexte, schreibeInEingang, test, tippe } from './hilfen';
 
 test('einmal Enter bleibt in der Notiz, zweimal Enter beginnt eine neue', async ({ page }) => {
   await schreibeInEingang(page, 'Erste Zeile\nzweite Zeile\n\nNeue Notiz');
@@ -17,7 +17,7 @@ test('mehr als zweimal Enter erzeugt keine leeren Notizen', async ({ page }) => 
 test('Notizen sind nach dem Neuladen noch da', async ({ page }) => {
   await schreibeInEingang(page, 'Bleibt gespeichert\n\nAuch das');
   await expect.poll(() => notizTexte(page)).toHaveLength(2);
-  await page.reload();
+  await ladeNeu(page);
   await expect.poll(() => notizTexte(page)).toEqual(['Bleibt gespeichert', 'Auch das']);
   // Jede Notiz trägt ihr Erstelldatum.
   await expect(page.getByText(/^\d{1,2}\. \w{3}/).first()).toBeVisible();

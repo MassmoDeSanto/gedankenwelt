@@ -1,5 +1,5 @@
 /** Aufgaben: Kästchen, Termin, Wiederholung, Priorität und Stand, „Alle Aufgaben“ mit Filter-Chips. */
-import { datumIn, expect, notizFeld, notizTexte, schreibeInEingang, test } from './hilfen';
+import { datumIn, expect, ladeNeu, notizFeld, notizTexte, schreibeInEingang, test } from './hilfen';
 
 const TERMIN = 'Fälligkeit, Erinnerung und Wiederholung';
 
@@ -9,7 +9,7 @@ test('„[ ] “ wird zum Kästchen, Abhaken und wieder öffnen', async ({ page 
   await page.getByRole('checkbox', { name: 'Abhaken' }).click();
   const erledigt = page.getByRole('checkbox', { name: 'Als offen markieren' });
   await expect(erledigt).toBeChecked();
-  await page.reload();
+  await ladeNeu(page);
   await erledigt.click();
   await expect(page.getByRole('checkbox', { name: 'Abhaken' })).not.toBeChecked();
 });
@@ -48,7 +48,7 @@ test('Priorität geht reihum, Stand wechselt zwischen offen und in Arbeit', asyn
   await expect(stand).toHaveAccessibleName('Offen – tippen für in Arbeit');
   await stand.click();
   await expect(stand).toHaveAccessibleName('In Arbeit – tippen für offen');
-  await page.reload();
+  await ladeNeu(page);
   await notizFeld(page, 0).click();
   await expect(stand).toHaveAccessibleName('In Arbeit – tippen für offen');
 });

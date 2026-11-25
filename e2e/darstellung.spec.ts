@@ -1,5 +1,5 @@
 /** Hell und Dunkel: Umschalten in den Einstellungen, bleibt nach dem Neuladen. */
-import { expect, test } from './hilfen';
+import { expect, ladeNeu, test } from './hilfen';
 
 test('Farbschema Hell/Dunkel umschalten', async ({ page }) => {
   await page.goto('/#/einstellungen');
@@ -15,7 +15,7 @@ test('Farbschema Hell/Dunkel umschalten', async ({ page }) => {
   await expect.poll(hintergrund).not.toBe(dunkel);
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f3f1ec');
 
-  await page.reload();
+  await ladeNeu(page);
   await expect(wurzel).toHaveAttribute('data-thema', 'hell');
   await expect(page.getByRole('radio', { name: 'Hell' })).toBeChecked();
 });
