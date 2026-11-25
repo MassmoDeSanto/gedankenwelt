@@ -525,7 +525,7 @@ Ergebnis: Erinnerungen aktiviert, Kalender-Selbsttest ohne Fehler. Punkt 4 am 20
 
 Meldet der Selbsttest einen Fehler, schick mir den Wortlaut. Das ist die Stelle, an der sich zeigt, ob die Anbindung an das echte Google stimmt.
 
-### 4a. Nach Phase 6, Etappe A: kurz am Laptop prüfen (neu seit 24. Nov 2026)
+### 4a. Nach Phase 6, Etappe A: kurz am Laptop prüfen – erledigt am 25. Nov 2026
 
 Die veröffentlichte App hat jetzt eine Content-Security-Policy, eine Liste, mit welchen Servern sie reden darf (README Abschnitt 15). Getestet ist sie nur ohne echtes Google. Bitte einmal in der installierten App am Laptop:
 1. App öffnen (bei Bedarf einmal schließen und wieder öffnen, damit die neue Version da ist).
@@ -1024,9 +1024,9 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] Alle Lösch- und Überschreibstellen durchgesehen
   - [x] Markdown-Anzeige gegen eingeschleustes HTML/Skripte getestet
   - [x] Anmelde-Token: Speicherort geprüft und begründet
-  - [x] Content-Security-Policy (am echten Google noch zu prüfen: Abschnitt 9, Schritt 4a)
+  - [x] Content-Security-Policy (mit echtem Google geprüft am 25. Nov 2026: Abgleich und Kalender-Selbsttest laufen)
   - [x] `npm audit`, Repo und gebaute App auf Geheimnisse geprüft
-  - **Etappe A abgeschlossen am 24. Nov 2026.** Offen daraus nur: Prüfung mit echtem Google (Abschnitt 9, Schritt 4a).
+  - **Etappe A abgeschlossen am 24. Nov 2026**, Prüfung mit echtem Google am 25. Nov 2026 bestanden.
 - **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit:** noch nicht begonnen. Hilfreich dafür: In der Entwicklungsversion steht das simulierte Drive als `window.gedankenweltTestDrive` bereit (siehe Ergebnisse von Etappe A).
 - **Etappe C – §4 Leistung, §6 Einrichtungstag, §7 Aufräumen, §8 Zusammenfassung:** noch nicht begonnen
 
@@ -1088,7 +1088,7 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 **Content-Security-Policy** (`vite.config.ts`, nur in der veröffentlichten Version)
 - GitHub Pages erlaubt keine eigenen Server-Kopfzeilen, darum steht die Regel als `<meta>` in der Seite. Erlaubt sind nur: eigene Dateien, Googles Anmeldebibliothek (`accounts.google.com/gsi`), die Google-Schnittstellen (`www.googleapis.com`), Schriften und Bilder aus der App selbst. Verboten sind eingebettete Skripte, Plugins (`object`) und Formulare. Dazu kommt `referrer: no-referrer`: Beim Klick auf einen Link erfährt die Zielseite nicht, woher man kommt.
 - Nicht per `<meta>` möglich (Grenze von GitHub Pages): `frame-ancestors`, also Schutz davor, dass eine fremde Seite die App in einen Rahmen lädt. Für eine App ohne Knöpfe zum Bezahlen o. Ä. ist das ein geringes Risiko.
-- Geprüft in der gebauten Version (Port 4173): Alle Seiten laden ohne Verstoß. Ein absichtlich eingeschleustes Skript wird blockiert. Die Anmeldung mit echtem Google ist noch nicht geprüft (Abschnitt 9, Schritt 4a).
+- Geprüft in der gebauten Version (Port 4173): Alle Seiten laden ohne Verstoß. Ein absichtlich eingeschleustes Skript wird blockiert. Mit echtem Google am Laptop geprüft am 25. Nov 2026: Abgleich und Kalender-Selbsttest laufen.
 
 **Abhängigkeiten** (`npm audit`, 24. Nov 2026)
 - Was die App im Browser mitbringt (`npm audit --omit=dev`): **0 bekannte Lücken.**
