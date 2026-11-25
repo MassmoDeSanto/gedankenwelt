@@ -1031,7 +1031,7 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - [x] 1. Playwright eingerichtet, erste Tests: Schreiben nach der Absatz-Regel, Suche (siehe „Etappe B: Ergebnisse“)
   - [x] 2. Übrige Abläufe getestet (25. Nov 2026): Tag-Dropdown, Suche mit Filtern, Aufgaben und Wiederholungen, To-do-Feld (Priorität/Stand), „Alle Aufgaben“ mit Filter-Chips, Gedankenwelt mit Kacheln, Unterlisten, Anheften, Verschieben, Notizen mit Namen, Papierkorb, Import mit Testdateien, Tagebuch, Hell/Dunkel, Offline, Abgleich mit simuliertem Drive und Kalender
   - [~] 3. Safari-Probleme: WebKit läuft am Laptop, alle Tests bestehen dort. Ein Fehler gefunden und behoben (Knöpfe „In den Papierkorb“ und „Verschieben nach …“ am Handy). Am echten iPhone noch nicht geprüft.
-  - [ ] 4. Ende-zu-Ende-Tests in GitHub Actions vor dem Bauen
+  - [x] 4. Ende-zu-Ende-Tests in GitHub Actions vor dem Bauen (25. Nov 2026, siehe „Ende-zu-Ende-Tests bei GitHub“)
   - [ ] 5. Bedienbarkeit: Kontraste (Skript über `stil.css`, WCAG AA), `axe-core`-Prüfung, Tastatur und Fokus, Durchsicht der Texte. Farb- und Textänderungen zuerst Massimo zeigen.
   - [ ] 6. Diesen Abschnitt nachführen
   - Wird das Nutzungslimit knapp: B1 = Schritte 1–4, B2 = Schritt 5 in einem neuen Chat.
@@ -1144,3 +1144,9 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 **WebKit am Laptop**
 - Chromium und WebKit liegen in `~/.cache/ms-playwright`. WebKit brauchte zwei Ubuntu-Bausteine, die Massimo am 25. Nov 2026 installiert hat (`sudo apt-get install libevent-2.1-7t64 libmanette-0.2-0`). Auf einem neuen Laptop wieder nötig.
 - Bei GitHub Actions installiert `npx playwright install --with-deps` die Bausteine selbst.
+
+**Ende-zu-Ende-Tests bei GitHub** (`.github/workflows/veroeffentlichen.yml`)
+- Bei jedem Push auf `main`: Logik-Tests, dann `npx playwright install --with-deps chromium webkit` und `npm run test:e2e`, erst danach bauen und veröffentlichen. Schlägt ein Test fehl, wird nicht veröffentlicht.
+- Bei GitHub gilt `CI`: jeder fehlgeschlagene Test bekommt einen zweiten Versuch, falls er nur zufällig zu langsam war. Die Meldungen erscheinen direkt in der Übersicht des Laufs.
+- Schlägt ein Test fehl, liegen die Aufzeichnungen 7 Tage lang auf der Seite des Laufs unter „Artifacts“ (`e2e-ergebnisse`). Herunterladen, entpacken, ansehen mit `npx playwright show-trace <trace.zip>`.
+- Am Laptop mit `CI=1 npm run test:e2e` vorab geprüft: 62 von 62.
