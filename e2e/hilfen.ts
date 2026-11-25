@@ -65,3 +65,22 @@ export async function datumIn(page: Page, tage: number): Promise<string> {
 export function notizFeld(page: Page, n: number) {
   return page.getByRole('textbox', { name: 'Notiz', exact: true }).nth(n);
 }
+
+/**
+ * Wechselt innerhalb der App die Seite, ohne neu zu laden (nur der Teil hinter „#“ ändert sich).
+ * Wichtig für das simulierte Drive: Es lebt nur im Arbeitsspeicher und wäre nach einem Neuladen leer.
+ */
+export async function gehe(page: Page, hash: string) {
+  await page.evaluate((h) => {
+    location.hash = h;
+  }, hash);
+}
+
+/** Pfade und Inhalte aller Dateien im simulierten Drive (`window.gedankenweltTestDrive`). */
+export async function driveDateien(page: Page): Promise<Record<string, string>> {
+  return page.evaluate(() => {
+    const drive = (window as unknown as { gedankenweltTestDrive: { dateien(): Map<string, string> } })
+      .gedankenweltTestDrive;
+    return Object.fromEntries(drive.dateien());
+  });
+}

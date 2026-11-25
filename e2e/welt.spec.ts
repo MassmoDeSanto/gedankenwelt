@@ -52,11 +52,11 @@ test('Notiz mit Namen: zugeklappt, aufklappen, wieder zuklappen', async ({ page 
 test('Papierkorb: löschen, wiederherstellen, leeren', async ({ page }) => {
   await schreibeInEingang(page, 'Wird gerettet\n\nKommt weg');
   await expect.poll(() => notizTexte(page)).toHaveLength(2);
-  // Die Knöpfe einer Notiz sind erst bedienbar, wenn der Cursor in ihr steht.
-  await notizFeld(page, 1).click();
-  await page.getByRole('button', { name: 'In den Papierkorb' }).nth(1).click();
-  await notizFeld(page, 0).click();
-  await page.getByRole('button', { name: 'In den Papierkorb' }).nth(0).click();
+  // Die Knöpfe einer Notiz sind erst bedienbar (am Handy: sichtbar), wenn der Cursor in ihr steht.
+  for (const n of [1, 0]) {
+    await notizFeld(page, n).click();
+    await page.locator('.notiz').nth(n).getByRole('button', { name: 'In den Papierkorb' }).click();
+  }
   await expect.poll(() => notizTexte(page)).toHaveLength(0);
 
   await page.goto('/#/papierkorb');
@@ -71,4 +71,24 @@ test('Papierkorb: löschen, wiederherstellen, leeren', async ({ page }) => {
 
   await page.goto(EINGANG);
   await expect.poll(() => notizTexte(page)).toEqual(['Wird gerettet']);
+});
+
+test('Notiz in eine andere Liste verschieben', async ({ page }) => {
+  await page.goto('/#/welt');
+  await page.getByRole('button', { name: 'Liste' }).click();
+  await page.getByRole('textbox', { name: 'Name der Liste' }).fill('Reisen');
+  await page.getByRole('dialog').getByRole('button', { name: 'Anlegen' }).click();
+  await expect(page.getByRole('heading', { name: 'Reisen', level: 1 })).toBeVisible();
+
+  await schreibeInEingang(page, 'Gehört zu Reisen');
+  await page.getByRole('button', { name: 'Verschieben nach …' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Notiz verschieben nach …' });
+  await dialog.getByRole('textbox', { name: 'Liste suchen …' }).fill('Rei');
+  await dialog.getByRole('button', { name: /Reisen/ }).click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => notizTexte(page)).toEqual([]);
+
+  await page.goto('/#/welt');
+  await page.getByRole('link', { name: /^Reisen/ }).click();
+  await expect.poll(() => notizTexte(page)).toEqual(['Gehört zu Reisen']);
 });

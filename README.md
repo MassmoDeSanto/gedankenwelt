@@ -1029,8 +1029,8 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
   - **Etappe A abgeschlossen am 24. Nov 2026**, Prüfung mit echtem Google am 25. Nov 2026 bestanden.
 - **Etappe B – §3 Ende-zu-Ende-Tests, §5 Bedienbarkeit** (begonnen 25. Nov 2026). Plan in sechs Schritten:
   - [x] 1. Playwright eingerichtet, erste Tests: Schreiben nach der Absatz-Regel, Suche (siehe „Etappe B: Ergebnisse“)
-  - [ ] 2. Übrige Abläufe: Tag-Dropdown, Suche mit Filtern, Aufgaben und Wiederholungen, To-do-Feld (Priorität/Stand), „Alle Aufgaben“ mit Filter-Chips, Gedankenwelt mit Kacheln, Notizen mit Namen/zugeklappte Listen, Papierkorb, Import mit Testdateien, Tagebuch (Tagesseite, Monat, Gewohnheiten, Schreibimpulse, Ort), Hell/Dunkel, Offline (gegen die gebaute Version), Abgleich mit simuliertem Drive und Kalender
-  - [ ] 3. Safari-Probleme beheben, die WebKit zeigt. **Wartet auf Massimo:** WebKit fehlen zwei Systembausteine (siehe Ergebnisse).
+  - [x] 2. Übrige Abläufe getestet (25. Nov 2026): Tag-Dropdown, Suche mit Filtern, Aufgaben und Wiederholungen, To-do-Feld (Priorität/Stand), „Alle Aufgaben“ mit Filter-Chips, Gedankenwelt mit Kacheln, Unterlisten, Anheften, Verschieben, Notizen mit Namen, Papierkorb, Import mit Testdateien, Tagebuch, Hell/Dunkel, Offline, Abgleich mit simuliertem Drive und Kalender
+  - [~] 3. Safari-Probleme: WebKit läuft am Laptop, alle Tests bestehen dort. Ein Fehler gefunden und behoben (Knöpfe „In den Papierkorb“ und „Verschieben nach …“ am Handy). Am echten iPhone noch nicht geprüft.
   - [ ] 4. Ende-zu-Ende-Tests in GitHub Actions vor dem Bauen
   - [ ] 5. Bedienbarkeit: Kontraste (Skript über `stil.css`, WCAG AA), `axe-core`-Prüfung, Tastatur und Fokus, Durchsicht der Texte. Farb- und Textänderungen zuerst Massimo zeigen.
   - [ ] 6. Diesen Abschnitt nachführen
@@ -1115,10 +1115,32 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Zwei Durchläufe: `desktop` (Chromium, Laptop-Größe) und `iphone` (WebKit, Größe eines iPhone 15).
 - Jeder Test beginnt mit leerem Browser und schaltet simuliertes Drive und simulierten Kalender ein (`e2e/hilfen.ts`). Echtes Google wird nie berührt, echte Notizen kommen nie vor.
 - Schlägt ein Test fehl, liegt unter `test-results/` eine Aufzeichnung (ansehen mit `npx playwright show-trace <Datei>`). Der Ordner steht in `.gitignore`.
-- Bisher (25. Nov 2026): `schreiben.spec.ts` (1× / 2× Enter, keine leeren Notizen, bleibt nach Neuladen, Zusammenführen mit Rücktaste, Teilen mitten im Text) und `suche.spec.ts` (Tippfehler, Markierung, Sprung zur Notiz, kein Treffer, Suche leeren). In Chromium 7 von 7 bestanden, dreimal hintereinander ohne Ausreißer.
-- Beim Schreiben der Tests aufgefallen, kein Fehler: Eine mehrzeilige Notiz klappt zu, sobald der Cursor sie verlässt (Notiz mit Namen, Abschnitt 12). Die Tests klappen sie dafür auf.
+- Der Offline-Test läuft gegen die gebaute Version (Port **4174**, Ordner `dist-e2e/`, steht in `.gitignore`), weil nur sie einen Service Worker hat. Playwright baut sie dafür bei jedem Lauf selbst (dauert etwa 20 Sekunden).
+- Durchläufe: `desktop`, `iphone` (alle Tests außer Offline) sowie `offline-desktop`, `offline-iphone`.
+- Das simulierte Drive lebt nur im Arbeitsspeicher. Die Abgleich-Tests wechseln darum die Seite mit `gehe()` (nur der Teil hinter `#`), nie mit Neuladen.
+- Daten in Tests werden ab „heute“ gerechnet (`datumIn()`), damit die Tests an jedem Tag und bei GitHub laufen.
 
-**WebKit am Laptop** (Stand 25. Nov 2026)
-- Chromium und WebKit sind heruntergeladen (`~/.cache/ms-playwright`). WebKit startet aber erst, wenn zwei Ubuntu-Bausteine installiert sind. Das braucht Administrator-Rechte, darum kann nur Massimo es tun:
-  `sudo apt-get install libevent-2.1-7t64 libmanette-0.2-0`
-- Bei GitHub Actions ist das kein Problem: Dort installiert `npx playwright install --with-deps` die Bausteine selbst.
+| Datei | Was geprüft wird |
+|---|---|
+| `schreiben.spec.ts` | 1× / 2× Enter, keine leeren Notizen, bleibt nach Neuladen, Zusammenführen mit Rücktaste, Teilen mitten im Text |
+| `suche.spec.ts` | Tippfehler, Markierung, Sprung zur Notiz, kein Treffer, Suche leeren |
+| `tags-filter.spec.ts` | Tag-Dropdown (Vorschlag, Enter, Escape, Tag-Knopf), Suchfilter Liste/Tag/Aufgaben/Datum |
+| `aufgaben.spec.ts` | `[ ] ` wird Kästchen, Abhaken, tägliche Wiederholung mit Rückgängig, Priorität reihum, Stand, „Alle Aufgaben“ mit Chips, To-do-Box |
+| `welt.spec.ts` | Liste und Unterliste anlegen, Kacheln, Pfad, Anheften, Notiz mit Namen auf/zu, Verschieben, Papierkorb (löschen, wiederherstellen, leeren) |
+| `import.spec.ts` | Kurzbefehl-Dateien: Vorschau, Nachfrage ohne Google, Import, Suche, To-dos, Rückgängig. Weg C (Text einfügen) |
+| `tagebuch.spec.ts` | Überschrift, Ort mit Kartenlink, Bewertung, Gewohnheit, Text, Startseiten-Karte, Schreibimpulse (übernehmen, andere Frage, eigene), vorheriger Tag, Monat |
+| `darstellung.spec.ts` | Hell/Dunkel umschalten, bleibt nach Neuladen |
+| `offline.spec.ts` | App startet ohne Internet, Geschriebenes bleibt |
+| `abgleich.spec.ts` | Notiz landet in Drive, Änderung in Drive kommt an, kaputte `_meta.json` (Kopie in `_Sicherung/`, Hinweis, „Verstanden“), Erinnerung wird Termin und verschwindet nach Abhaken |
+
+- Ergebnis 25. Nov 2026: **31 Tests, je in Chromium und WebKit, 62 von 62 bestanden**. Die Chromium-Läufe zweimal hintereinander ohne Ausreißer.
+- Beim Schreiben der Tests aufgefallen, aber gewollt: Mehrzeilige Notizen klappen beim Verlassen zu. Bei offener Tag-Liste übernimmt Enter den Tag. Eine wiederkehrende Aufgabe bleibt nach dem Abhaken offen und springt aufs nächste Datum. Am Handy stehen die Knöpfe nur an der Notiz mit dem Cursor.
+- Für Schritt 5 (Texte) vorgemerkt: Einstellungen → Papierkorb zeigt „1 Einträge“ statt „1 Eintrag“.
+
+**Gefundener Safari-Fehler, behoben** (`src/ui/Schreibbereich.tsx`)
+- Am Handy erscheinen die Knöpfe einer Notiz nur, solange der Cursor in ihr steht. In Safari wird ein angetippter Knopf nicht selbst aktiv, darum verlor das Textfeld beim Antippen zuerst den Cursor. Die Knöpfe verschwanden, der Tipp ging ins Leere. Betroffen waren **„In den Papierkorb“** und **„Verschieben nach …“**. Tag-, Aufgaben-, Prio- und Termin-Knopf hielten den Cursor schon fest.
+- Jetzt halten alle Knöpfe an der Notiz den Cursor fest. Chrome war nicht betroffen, weil es den Knopf selbst aktiv macht.
+
+**WebKit am Laptop**
+- Chromium und WebKit liegen in `~/.cache/ms-playwright`. WebKit brauchte zwei Ubuntu-Bausteine, die Massimo am 25. Nov 2026 installiert hat (`sudo apt-get install libevent-2.1-7t64 libmanette-0.2-0`). Auf einem neuen Laptop wieder nötig.
+- Bei GitHub Actions installiert `npx playwright install --with-deps` die Bausteine selbst.

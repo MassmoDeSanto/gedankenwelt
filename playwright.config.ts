@@ -7,11 +7,16 @@
  *   simulierten Kalender an (siehe `e2e/hilfen.ts`). Echtes Google wird nie berührt.
  * - Zwei Durchläufe: Desktop mit Chromium und iPhone-Größe mit WebKit (die Engine von Safari).
  *
- * Starten: `npm run test:e2e` (beide) oder `npm run test:e2e -- --project=desktop`.
+ * - Der Offline-Test läuft gegen die gebaute Version (Port 4174, Ordner `dist-e2e/`), weil nur sie
+ *   einen Service Worker hat.
+ *
+ * Starten: `npm run test:e2e` (alle) oder `npm run test:e2e -- --project=desktop`.
  */
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 5174;
+/** Gebaute Version (mit Service Worker) für den Offline-Test. */
+const PORT_GEBAUT = 4174;
 /** Läuft der Test bei GitHub Actions? (Dort ist die Umgebungsvariable CI gesetzt.) */
 const CI = !!(globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI;
 
@@ -30,13 +35,33 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'iphone', use: { ...devices['iPhone 15'] } },
+    { name: 'desktop', testIgnore: /offline/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'iphone', testIgnore: /offline/, use: { ...devices['iPhone 15'] } },
+    // Offline-Betrieb gibt es nur in der gebauten Version (Service Worker), darum eigener Server.
+    {
+      name: 'offline-desktop',
+      testMatch: /offline/,
+      use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${PORT_GEBAUT}` },
+    },
+    {
+      name: 'offline-iphone',
+      testMatch: /offline/,
+      use: { ...devices['iPhone 15'], baseURL: `http://localhost:${PORT_GEBAUT}` },
+    },
   ],
-  webServer: {
-    command: `npx vite --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: `npx vite --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}`,
+      reuseExistingServer: !CI,
+      timeout: 60_000,
+    },
+    {
+      // Eigener Ausgabeordner, damit `dist/` vom normalen Bauen unberührt bleibt.
+      command: `npx vite build --outDir dist-e2e --emptyOutDir && npx vite preview --outDir dist-e2e --port ${PORT_GEBAUT} --strictPort`,
+      url: `http://localhost:${PORT_GEBAUT}`,
+      reuseExistingServer: !CI,
+      timeout: 180_000,
+    },
+  ],
 });

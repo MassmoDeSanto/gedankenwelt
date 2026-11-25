@@ -1,6 +1,7 @@
 # Abhängigkeiten und Bau-Ergebnisse
 node_modules/
 dist/
+dist-e2e/
 dev-dist/
 coverage/
 *.tsbuildinfo
