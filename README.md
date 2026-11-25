@@ -1150,3 +1150,6 @@ Auftrag: `~/Downloads/PHASE-6.md`. Was daran überholt ist, steht in `CLAUDE.md`
 - Bei GitHub gilt `CI`: jeder fehlgeschlagene Test bekommt einen zweiten Versuch, falls er nur zufällig zu langsam war. Die Meldungen erscheinen direkt in der Übersicht des Laufs.
 - Schlägt ein Test fehl, liegen die Aufzeichnungen 7 Tage lang auf der Seite des Laufs unter „Artifacts“ (`e2e-ergebnisse`). Herunterladen, entpacken, ansehen mit `npx playwright show-trace <trace.zip>`.
 - Am Laptop mit `CI=1 npm run test:e2e` vorab geprüft: 62 von 62.
+- Erster Lauf bei GitHub (25. Nov 2026) scheiterte am Offline-Test: Ein Neuladen direkt nach dem Tippen schnitt den letzten Tastendruck ab, weil das Speichern ein paar Millisekunden dauert. Kein Fehler der App (sie speichert jeden Tastendruck sofort), sondern ein zu schneller Test. Seitdem laden alle Tests mit `ladeNeu()` neu, das vorher auf die Browser-Datenbank wartet. Am Laptop unter Last geprüft (dreifach, 12 Browser gleichzeitig: 186 von 186).
+- Zweiter Lauf bei GitHub: 386 Logik-Tests und 62 Ende-zu-Ende-Tests bestanden, veröffentlicht. Ein ganzer Lauf dauert jetzt etwa 2 Minuten.
+- Neue Ende-zu-Ende-Tests, die neu laden: immer `ladeNeu(page)` statt `page.reload()` verwenden.
