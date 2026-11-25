@@ -62,7 +62,7 @@ export class TerminFehlt extends Error {
 /** Die App darf (noch) nicht auf den Kalender zugreifen. */
 export class KeineKalenderBerechtigung extends Error {
   constructor() {
-    super('Die Berechtigung für den Kalender fehlt. Aktiviere die Erinnerungen in den Einstellungen erneut.');
+    super('Die Berechtigung für den Kalender fehlt. Schalte die Erinnerungen in den Einstellungen erneut ein.');
     this.name = 'KeineKalenderBerechtigung';
   }
 }

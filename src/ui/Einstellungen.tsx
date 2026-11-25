@@ -11,6 +11,7 @@ import { ImportBereich } from './ImportBereich';
 import { AutoSicherungZeile, SpeicherStand } from './SpeicherStand';
 import { adresse } from './router';
 import { TagebuchBereich } from './TagebuchBereich';
+import { mehrzahl } from '../logik/mehrzahl';
 
 export function Einstellungen() {
   const z = useZustand();
@@ -31,7 +32,7 @@ export function Einstellungen() {
   const importiere = async (datei: File) => {
     try {
       const ergebnis = await importiereZip(new Uint8Array(await datei.arrayBuffer()));
-      setMeldung(`Import fertig: ${ergebnis.listen} Listen und ${ergebnis.notizen} Notizen.`);
+      setMeldung(`Import fertig: ${mehrzahl(ergebnis.listen, 'Liste', 'Listen')} und ${mehrzahl(ergebnis.notizen, 'Notiz', 'Notizen')}.`);
     } catch (fehler) {
       setMeldung(`Import fehlgeschlagen: ${fehler instanceof Error ? fehler.message : 'Die Datei ließ sich nicht lesen.'}`);
     }
@@ -65,7 +66,7 @@ export function Einstellungen() {
         <div className="etikett">Papierkorb</div>
         <a className="einstellung link" href={adresse({ seite: 'papierkorb' })}>
           <span>Papierkorb öffnen</span>
-          <span className="mono meta">{imPapierkorb === 0 ? 'leer' : `${imPapierkorb} Einträge`}</span>
+          <span className="mono meta">{imPapierkorb === 0 ? 'leer' : mehrzahl(imPapierkorb, 'Eintrag', 'Einträge')}</span>
         </a>
         <p className="hinweis klein">Gelöschtes bleibt 30 Tage und lässt sich so lange wiederherstellen.</p>
       </section>

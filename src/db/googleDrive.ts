@@ -57,7 +57,7 @@ function alsEintrag(d: DriveDatei): DriveEintrag {
 function erklaere(status: number, grund: string): string {
   if (status === 403 && /storageQuota/i.test(grund)) return 'Dein Google Drive ist voll.';
   if (status === 403 && /rateLimit/i.test(grund)) return 'Google Drive bremst gerade (zu viele Anfragen). Es wird später erneut versucht.';
-  if (status === 403) return 'Google Drive verweigert den Zugriff. Ist die Google Drive API im Cloud-Projekt eingeschaltet?';
+  if (status === 403) return 'Google Drive verweigert den Zugriff. Melde dich bitte neu an. Hilft das nicht, ist in der Google Cloud die Drive-Schnittstelle ausgeschaltet.';
   if (status === 404) return 'Eine Datei wurde in Google Drive nicht gefunden. Beim nächsten Abgleich wird neu eingelesen.';
   if (status >= 500) return 'Google Drive hat gerade eine Störung. Es wird später erneut versucht.';
   return `Google Drive meldet einen Fehler (${status}).`;

@@ -95,7 +95,7 @@ export function pruefeDatei(pfad: string, inhalt: string): Pruefung {
     try {
       roh = JSON.parse(inhalt);
     } catch {
-      return { art: 'unlesbar', grund: 'Die Datei ist kein gültiges JSON (vielleicht unvollständig gespeichert).' };
+      return { art: 'unlesbar', grund: 'Die Datei ist unvollständig oder beschädigt.' };
     }
     if (typeof roh !== 'object' || roh === null || Array.isArray(roh)) {
       return { art: 'unlesbar', grund: 'Die Datei hat nicht den erwarteten Aufbau.' };

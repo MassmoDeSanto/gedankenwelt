@@ -95,7 +95,7 @@ function SchreibErinnerungEinstellung() {
       <p className="hinweis klein">
         Ein täglicher Termin „Tagebuch schreiben“ im Kalender „Gedankenwelt“; die Mitteilung kommt über die
         Kalender-App.
-        {an && !erinnerungenAktiv() && ' Wirkt erst, wenn unten die Erinnerungen aktiviert sind.'}
+        {an && !erinnerungenAktiv() && ' Wirkt erst, wenn unten die Erinnerungen eingeschaltet sind.'}
       </p>
     </>
   );

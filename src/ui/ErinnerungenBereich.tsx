@@ -62,7 +62,7 @@ export function ErinnerungenBereich() {
       {!aktiv && (
         <div className="einstellung">
           <span>
-            Erinnerungen aktivieren
+            Erinnerungen einschalten
             <span className="hinweis klein">
               {verfuegbar
                 ? 'Aufgaben mit Uhrzeit erscheinen als Termine in einem eigenen Kalender „Gedankenwelt“ und melden sich per Benachrichtigung. Deine übrigen Kalender bleiben unberührt.'
@@ -71,7 +71,7 @@ export function ErinnerungenBereich() {
             </span>
           </span>
           <button className="knopf haupt" disabled={!verfuegbar || arbeitet} onClick={() => tue(aktiviereErinnerungen)}>
-            Aktivieren
+            Einschalten
           </button>
         </div>
       )}
@@ -87,7 +87,7 @@ export function ErinnerungenBereich() {
               </span>
             </span>
             <button className="knopf" disabled={arbeitet} onClick={() => setFragtAus(true)}>
-              Deaktivieren
+              Ausschalten
             </button>
           </div>
           <div className="einstellung">
@@ -165,7 +165,7 @@ export function ErinnerungenBereich() {
       )}
 
       {fragtAus && (
-        <Dialog titel="Erinnerungen deaktivieren" onSchliessen={() => setFragtAus(false)}>
+        <Dialog titel="Erinnerungen ausschalten" onSchliessen={() => setFragtAus(false)}>
           <p className="dialog-text">
             Soll der Kalender „Gedankenwelt“ samt allen Terminen darin gelöscht werden? Wenn du ihn behältst, bleiben
             die bisherigen Termine stehen und erinnern dich weiter, werden aber nicht mehr aktualisiert. Deine

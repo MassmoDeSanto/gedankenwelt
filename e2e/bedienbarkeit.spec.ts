@@ -53,6 +53,10 @@ test('Tastatur: Fokus sichtbar, Dialog hält den Fokus und schließt mit Escape'
   await schreibeInEingang(page, 'Notiz für den Papierkorb');
   await page.getByRole('button', { name: 'In den Papierkorb' }).last().click();
 
+  // Einzahl in den Einstellungen (früher „1 Einträge“)
+  await gehe(page, '#/einstellungen');
+  await expect(page.getByText('1 Eintrag', { exact: true })).toBeVisible();
+
   // Startseite: Mit Tab bekommen Knöpfe und Links einen sichtbaren Fokusrahmen.
   await gehe(page, '#/');
   await page.locator('body').click({ position: { x: 1, y: 1 } });

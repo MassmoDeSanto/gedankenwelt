@@ -323,7 +323,7 @@ function ladeBibliothek(): Promise<GoogleBibliothek> {
     skript.onload = () => fertig((window as unknown as { google: GoogleBibliothek }).google);
     skript.onerror = () => {
       bibliothek = null;
-      fehler(new Error('Googles Anmelde-Bibliothek konnte nicht geladen werden (kein Netz?).'));
+      fehler(new Error('Die Anmeldung bei Google ließ sich nicht laden. Besteht eine Internetverbindung?'));
     };
     document.head.append(skript);
   });

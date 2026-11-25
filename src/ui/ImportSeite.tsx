@@ -33,6 +33,7 @@ import type { ImportEintrag } from '../modell/typen';
 import { Dialog, Kopfzeile, ListenWahlDialog, Segment, klassen } from './Bausteine';
 import { ausAblage, ausAuswahl, leseDateien, type GewaehlteDatei } from './importDateien';
 import { adresse } from './router';
+import { mehrzahl } from '../logik/mehrzahl';
 
 /** Ausführliche Anleitung in der README auf GitHub (Abschnitt 10) */
 const ANLEITUNG = 'https://github.com/MassmoDeSanto/gedankenwelt#';
@@ -70,10 +71,6 @@ interface Zeile {
   eintrag: Eintrag;
   optionen: EintragOptionen;
   vorschau: EintragVorschau;
-}
-
-function mehrzahl(n: number, eins: string, viele: string): string {
-  return `${n} ${n === 1 ? eins : viele}`;
 }
 
 export function ImportSeite() {

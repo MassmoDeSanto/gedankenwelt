@@ -630,7 +630,7 @@ describe('Kaputte oder unerwartete Dateien in Drive (Phase 6)', () => {
     const ergebnis = await gleicheAb(b, um('11:00'));
 
     expect(ergebnis.gesichert).toEqual([
-      { pfad: '_meta.json', kopie: `_Sicherung/${kopieName('_meta.json', um('11:00'))}`, grund: expect.stringContaining('JSON') },
+      { pfad: '_meta.json', kopie: `_Sicherung/${kopieName('_meta.json', um('11:00'))}`, grund: expect.stringContaining('beschädigt') },
     ]);
     expect(drive.dateien().get(`_Sicherung/${kopieName('_meta.json', um('11:00'))}`)).toBe(kaputt);
     // Die gelöschte Liste liegt weiter im Papierkorb, ihre Notiz auch – nichts ist verschwunden.

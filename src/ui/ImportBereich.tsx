@@ -16,10 +16,7 @@ import { formatStempel } from '../logik/zeit';
 import type { ImportEintrag } from '../modell/typen';
 import { BestaetigungsDialog } from './Bausteine';
 import { adresse } from './router';
-
-function mehrzahl(n: number, eins: string, viele: string): string {
-  return `${n} ${n === 1 ? eins : viele}`;
-}
+import { mehrzahl } from '../logik/mehrzahl';
 
 /** Uhrzeit eines Zeitstempels in Ortszeit, z. B. „08:04“ – damit sich mehrere Importe eines Tages unterscheiden lassen. */
 function uhrzeit(stempel: string): string {

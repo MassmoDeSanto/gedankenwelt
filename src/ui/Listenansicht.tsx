@@ -187,14 +187,14 @@ function ListenMenue({
           optionen={[
             { wert: 'an', text: 'An' },
             { wert: 'aus', text: 'Aus' },
-            { wert: 'erben', text: 'Erben' },
+            { wert: 'erben', text: 'Wie darüber' },
           ]}
         />
         {liste.tagesgedanke === 'erben' && (
           <p className="hinweis klein">
             {liste.eltern_id
               ? `Übernimmt die Einstellung der Liste darüber: ${geerbtAktiv ? 'an' : 'aus'}.`
-              : 'Ganz oben bedeutet „Erben“: aus.'}
+              : 'Diese Liste liegt ganz oben, darum: aus.'}
           </p>
         )}
       </div>

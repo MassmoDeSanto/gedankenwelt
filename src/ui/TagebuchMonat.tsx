@@ -19,6 +19,7 @@ import { Kopfzeile, klassen } from './Bausteine';
 import { adresse, gehe } from './router';
 import { PfeilZurueck, Winkel } from './Symbole';
 import { useTagebuchRaum } from './TagebuchSeite';
+import { mehrzahl } from '../logik/mehrzahl';
 
 const WOCHENTAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
@@ -41,7 +42,7 @@ function GewohnheitenImMonat({ anzahl, bisher }: { anzahl: Map<string, number>; 
               <span style={{ width: `${bisher ? Math.min(100, (n / bisher) * 100) : 0}%` }} />
             </span>
             <span className="mono meta">
-              {n}/{bisher} Tage
+              {n}/{bisher} {bisher === 1 ? 'Tag' : 'Tage'}
             </span>
           </div>
         );
@@ -135,7 +136,7 @@ export function TagebuchMonat({ monat: gewaehlt }: { monat?: string }) {
       <div className="tb-zahlen">
         <div>
           <span className="tb-zahl">{m.geschrieben}</span>
-          <span className="mono meta">von {bisher} Tagen geschrieben</span>
+          <span className="mono meta">von {mehrzahl(bisher, 'Tag', 'Tagen')} geschrieben</span>
         </div>
         <div>
           <span className="tb-zahl">{m.erledigt}</span>

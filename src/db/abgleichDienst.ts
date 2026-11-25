@@ -627,7 +627,7 @@ export async function aktiviereErinnerungen(): Promise<string | null> {
     await gleicheAb('hand');
     return null;
   } catch (fehler) {
-    return `Die Erinnerungen ließen sich nicht aktivieren: ${fehlertext(fehler)}`;
+    return `Die Erinnerungen ließen sich nicht einschalten: ${fehlertext(fehler)}`;
   }
 }
 
@@ -661,8 +661,8 @@ export async function deaktiviereErinnerungen(kalenderLoeschen: boolean): Promis
 
 /** „Erinnerungen neu aufbauen“: gleicht alle offenen Aufgaben mit dem Kalender ab und räumt verwaiste Termine auf. */
 export async function baueErinnerungenNeuAuf(): Promise<string> {
-  if (!erinnerungenAktiv()) return 'Die Erinnerungen sind nicht aktiviert.';
-  if (!kalenderNutzbar()) return 'Auf diesem Gerät fehlt die Kalender-Berechtigung. Aktiviere die Erinnerungen hier erneut.';
+  if (!erinnerungenAktiv()) return 'Die Erinnerungen sind nicht eingeschaltet.';
+  if (!kalenderNutzbar()) return 'Auf diesem Gerät fehlt die Kalender-Berechtigung. Schalte die Erinnerungen hier erneut ein.';
   try {
     await sichereKalender();
     await kalenderRunde(true);
@@ -688,7 +688,7 @@ export async function kalenderSelbsttest(melde: (zeile: string) => void): Promis
         return false;
       }
       if (!hatBerechtigung(KALENDER_SCOPE)) {
-        melde('Nicht möglich: Die Kalender-Berechtigung fehlt noch. Tippe zuerst auf „Erinnerungen aktivieren“.');
+        melde('Nicht möglich: Die Kalender-Berechtigung fehlt noch. Tippe zuerst auf „Erinnerungen einschalten“.');
         return false;
       }
     } else {

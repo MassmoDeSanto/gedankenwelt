@@ -57,7 +57,7 @@ test('kaputte _meta.json: Warnzeichen und Hinweis, Kopie in _Sicherung', async (
 
 test('Erinnerung: Aufgabe mit Uhrzeit wird Termin im simulierten Kalender', async ({ page }) => {
   await page.goto('/#/einstellungen');
-  await page.getByRole('button', { name: 'Aktivieren' }).click();
+  await page.getByRole('button', { name: 'Einschalten', exact: true }).click();
   await expect(page.getByText('Erinnerungen sind aktiv')).toBeVisible();
 
   await page.goto(EINGANG);

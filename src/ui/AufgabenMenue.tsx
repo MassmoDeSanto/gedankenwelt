@@ -93,7 +93,7 @@ export function AufgabenMenue({ notiz }: { notiz: Notiz }) {
       </label>
       {!uhrzeit && <p className="hinweis klein">Erinnerungen gibt es nur für Aufgaben mit Uhrzeit.</p>}
       {uhrzeit && !z.einstellungen.erinnerungen && (
-        <p className="hinweis klein">Erinnerungen sind noch nicht aktiviert.</p>
+        <p className="hinweis klein">Erinnerungen sind noch nicht eingeschaltet.</p>
       )}
 
       <label>

@@ -29,6 +29,7 @@ import {
 import { useZustand } from '../db/speicher';
 import { vorWieLange } from './AbgleichSymbol';
 import { BestaetigungsDialog } from './Bausteine';
+import { mehrzahl } from '../logik/mehrzahl';
 
 function uhrzeit(ms: number): string {
   return new Date(ms).toLocaleTimeString('de-DE');
@@ -296,8 +297,8 @@ function Einrichtung({
       {hatBeispiele ? (
         <>
           <p>
-            Auf diesem Gerät liegen noch Beispieldaten aus Phase 1 ({beispiele.notizen} Notizen, {beispiele.listen}{' '}
-            Listen). Sollen sie vorher gelöscht werden, damit sie nicht in dein Drive wandern?
+            Auf diesem Gerät liegen noch Beispieldaten ({mehrzahl(beispiele.notizen, 'Notiz', 'Notizen')},{' '}
+            {mehrzahl(beispiele.listen, 'Liste', 'Listen')}). Sollen sie vorher gelöscht werden, damit sie nicht in dein Drive wandern?
           </p>
           <div className="knopfreihe">
             <button className="knopf haupt" disabled={arbeitet} onClick={() => schalteEin(true)}>
