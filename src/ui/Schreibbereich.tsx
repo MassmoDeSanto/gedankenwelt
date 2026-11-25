@@ -516,6 +516,9 @@ function NotizBlock({ id, notiz, liste_id, tag, nachId, fokus, aktiv, leuchtet, 
   const aufgabe = notiz?.aufgabe ?? null;
   const heute = lokalesDatum();
   const faellig = aufgabe?.faellig ?? null;
+  // Knöpfe an der Notiz behalten den Cursor im Textfeld. Wichtig für Safari: Dort wird ein angetippter
+  // Knopf nicht selbst aktiv. Ohne das verlöre das Textfeld den Cursor, die Knöpfe (am Handy nur bei
+  // aktiver Notiz sichtbar) verschwänden und der Tipp ginge ins Leere.
   const halteFokus = (e: { preventDefault: () => void }) => e.preventDefault();
 
   return (
@@ -674,11 +677,17 @@ function NotizBlock({ id, notiz, liste_id, tag, nachId, fokus, aktiv, leuchtet, 
                 <button
                   title="Verschieben nach …"
                   aria-label="Verschieben nach …"
+                  onMouseDown={halteFokus}
                   onClick={() => steuerung.verschiebeDialog(id)}
                 >
                   <OrdnerPfeil />
                 </button>
-                <button title="In den Papierkorb" aria-label="In den Papierkorb" onClick={() => loescheNotiz(id)}>
+                <button
+                  title="In den Papierkorb"
+                  aria-label="In den Papierkorb"
+                  onMouseDown={halteFokus}
+                  onClick={() => loescheNotiz(id)}
+                >
                   <Korb />
                 </button>
               </span>
